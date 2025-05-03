@@ -18,12 +18,6 @@ export default defineConfig([
       },
       globals: {
         ...globals.browser,
-        vi: 'readonly',
-        test: 'readonly',
-        expect: 'readonly',
-        describe: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
       },
     },
     plugins: {
@@ -33,7 +27,7 @@ export default defineConfig([
     },
     settings: {
       react: {
-        version: 'detect', // ✅ Fixes react version warning
+        version: 'detect', // Fixes react version warning
       },
     },
     rules: {
@@ -42,6 +36,28 @@ export default defineConfig([
       ...pluginReact.configs.recommended.rules,
       'prettier/prettier': 'error',
       'react/react-in-jsx-scope': 'off',
+    },
+  },
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+        jsxImportSource: 'react',
+      },
+      globals: {
+        vi: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        describe: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        global: 'readonly',
+        it: 'readonly',
+      },
     },
   },
 ]);

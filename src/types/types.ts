@@ -6,24 +6,26 @@ export enum Difficulty {
   Hard = 'Hard',
 }
 
-// High-level algorithm categories — feel free to extend
-export type Category =
-  | 'Array'
-  | 'String'
-  | 'Hash Table'
-  | 'Two Pointers'
-  | 'Sliding Window'
-  | 'Stack'
-  | 'Queue'
-  | 'Linked List'
-  | 'Tree'
-  | 'Graph'
-  | 'Dynamic Programming'
-  | 'Greedy'
-  | 'Binary Search'
-  | 'Math'
-  | 'Backtracking'
-  | 'Heap';
+export const allCategories = [
+  'Array',
+  'String',
+  'Hash Table',
+  'Two Pointers',
+  'Sliding Window',
+  'Stack',
+  'Queue',
+  'Linked List',
+  'Tree',
+  'Graph',
+  'Dynamic Programming',
+  'Greedy',
+  'Binary Search',
+  'Math',
+  'Backtracking',
+  'Heap',
+] as const;
+
+export type Category = (typeof allCategories)[number];
 
 // Core LeetCode problem definition
 export interface Problem {
