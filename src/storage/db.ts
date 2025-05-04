@@ -1,7 +1,7 @@
-import { openDB, DBSchema } from 'idb';
+import { openDB, DBSchema, IDBPTransaction, IDBTransactionMode } from 'idb';
 import { Problem, Solve, GoalProfile } from '../types/types';
 
-interface LeetTrackerDB extends DBSchema {
+export interface LeetTrackerDB extends DBSchema {
   'leetcode-username': {
     key: 'username';
     value: string;
@@ -12,7 +12,7 @@ interface LeetTrackerDB extends DBSchema {
   };
   'problem-metadata': {
     key: 'lastUpdated';
-    value: string; // ISO date
+    value: number; // Epock timestamp
   };
   solves: {
     key: string; // slug|timestamp
@@ -27,6 +27,9 @@ interface LeetTrackerDB extends DBSchema {
     value: string; // profileId
   };
 }
+
+// Create a union type of all valid store names
+type ValidStoreName = keyof LeetTrackerDB;
 
 const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 1, {
   upgrade(db) {
@@ -55,16 +58,20 @@ export const db = {
   async addOrUpdateProblem(problem: Problem): Promise<string> {
     return (await dbPromise).put('problem-list', problem, problem.slug);
   },
-  async setProblemListLastUpdated(date: string): Promise<string> {
-    return (await dbPromise).put('problem-metadata', date, 'lastUpdated');
+  async setProblemListLastUpdated(epock: number): Promise<string> {
+    return (await dbPromise).put('problem-metadata', epock, 'lastUpdated');
   },
-  async getProblemListLastUpdated(): Promise<string | undefined> {
+  async getProblemListLastUpdated(): Promise<number | undefined> {
     return (await dbPromise).get('problem-metadata', 'lastUpdated');
   },
 
   // Solves
   async getAllSolves(): Promise<Solve[]> {
     return (await dbPromise).getAll('solves');
+  },
+  async getSolve(slug: string, timestamp: number): Promise<Solve | undefined> {
+    const key = `${slug}|${timestamp}`;
+    return (await dbPromise).get('solves', key);
   },
   async saveSolve(solve: Solve): Promise<string> {
     const key = `${solve.slug}|${solve.timestamp}`;
@@ -83,5 +90,32 @@ export const db = {
   },
   async getActiveGoalProfileId(): Promise<string | undefined> {
     return (await dbPromise).get('active-goal-profile', 'active');
+  },
+
+  // Transaction support
+  async transaction(
+    storeNames: ValidStoreName | ValidStoreName[],
+    mode: IDBTransactionMode = 'readonly',
+  ): Promise<IDBPTransaction<LeetTrackerDB, any, typeof mode>> {
+    const names = Array.isArray(storeNames) ? storeNames : [storeNames];
+    const idb = await dbPromise;
+    // cast to any so TS will pick the overload that accepts string[]:
+    return idb.transaction(names as any, mode);
+  },
+
+  async withTransaction<T>(
+    storeNames: ValidStoreName | ValidStoreName[],
+    // eslint-disable-next-line no-unused-vars
+    callback: (tx: IDBPTransaction<LeetTrackerDB, any, 'readwrite'>) => Promise<T>,
+  ): Promise<T> {
+    const tx = await this.transaction(storeNames, 'readwrite');
+    try {
+      const result = await callback(tx);
+      await tx.done;
+      return result;
+    } catch (err) {
+      tx.abort();
+      throw err;
+    }
   },
 };

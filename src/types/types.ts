@@ -36,13 +36,14 @@ export interface Problem {
   difficulty: Difficulty;
   popularity: number; // 0.0–1.0
   isFundamental: boolean; // infered from ai model
+  createdAt: number; // epock time
 }
 
 // Single user solve attempt
 export interface Solve {
   slug: string;
   title: string;
-  timestamp: string; // Unix timestamp as string (from API)
+  timestamp: number; // Unix timestamp as number (from API)
   status: string;
   lang: string; // e.g. "python3", "cpp", etc.
   difficulty?: Difficulty; // ← optional at first, inferred from Problem DB

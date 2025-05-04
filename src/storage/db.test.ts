@@ -10,12 +10,13 @@ const exampleProblem: Problem = {
   difficulty: Difficulty.Easy,
   popularity: 0.9,
   isFundamental: true,
+  createdAt: 1746308137,
 };
 
 const exampleSolve: Solve = {
   slug: 'two-sum',
   title: 'Two Sum',
-  timestamp: '1234567890',
+  timestamp: 1234567890,
   status: 'Accepted',
   lang: 'python3',
 };
@@ -86,8 +87,8 @@ describe('db storage module', () => {
   });
 
   it('sets and retrieves the problem list last update timestamp', async () => {
-    await db.setProblemListLastUpdated('2025-05-02T12:00:00Z');
+    await db.setProblemListLastUpdated(1746308137);
     const timestamp = await db.getProblemListLastUpdated();
-    expect(timestamp).toBe('2025-05-02T12:00:00Z');
+    expect(timestamp).toBe(1746308137);
   });
 });

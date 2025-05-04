@@ -53,6 +53,7 @@ describe('fetchProblemCatalog', () => {
         likes: 54000,
         dislikes: 2000,
         description: '<p>desc</p>',
+        createdAt: 1746308137,
       },
     ];
 
@@ -71,6 +72,7 @@ describe('fetchProblemCatalog', () => {
         difficulty: 'Easy',
         description: '<p>desc</p>',
         tags: ['Array', 'Hash Table'],
+        createdAt: 1746308137,
       },
     ]);
   });
@@ -112,14 +114,14 @@ describe('fetchRecentSolves', () => {
       {
         slug: 'minimum-window-substring',
         title: 'Minimum Window Substring',
-        timestamp: '1746032384',
+        timestamp: 1746032384,
         status: 'Accepted',
         lang: 'python3',
       },
       {
         slug: 'sliding-window-maximum',
         title: 'Sliding Window Maximum',
-        timestamp: '1746031189',
+        timestamp: 1746031189,
         status: 'Accepted',
         lang: 'python3',
       },

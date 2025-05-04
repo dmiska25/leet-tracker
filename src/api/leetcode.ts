@@ -12,6 +12,7 @@ interface RawProblemData {
   likes: number;
   dislikes: number;
   description: string;
+  createdAt: number; // epock time
 }
 
 // Response from alfa-leetcode-api
@@ -44,6 +45,7 @@ export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
     difficulty: p.difficulty as Difficulty,
     popularity: p.popularity,
     isFundamental: p.isFundamental,
+    createdAt: p.createdAt,
   }));
 }
 
@@ -55,7 +57,7 @@ export async function fetchRecentSolves(username: string): Promise<Solve[]> {
   return data.submission.map((s) => ({
     slug: s.titleSlug,
     title: s.title,
-    timestamp: s.timestamp,
+    timestamp: Number(s.timestamp),
     status: s.statusDisplay,
     lang: s.lang,
   }));
