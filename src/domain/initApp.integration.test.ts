@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { initApp } from './initApp';
-import { db, LeetTrackerDB } from '../storage/db';
 import { IDBPDatabase, openDB } from 'idb';
+import { initApp } from './initApp';
+import { LeetTrackerDB, db } from '../storage/db';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { dirname } from 'path';
@@ -13,14 +13,14 @@ const __dirname = dirname(__filename);
 // Mock the database module
 vi.mock('../storage/db');
 
-describe('InitApp Integration', () => {
+describe('initApp (integration with fake‑indexeddb)', () => {
   let testDb: IDBPDatabase<LeetTrackerDB>;
 
   beforeEach(async () => {
-    // mock the fetch function
+    // Mock the fetch function
     vi.stubGlobal('fetch', async (input: string) => {
       if (input === '/sample-problems.json') {
-        // load sample-problems.json from the public folder
+        // Load sample-problems.json from the public folder
         const filePath = path.join(__dirname, '../../public/sample-problems.json');
         const fileContents = await readFile(filePath, 'utf-8');
         return new Response(fileContents, {
@@ -74,7 +74,6 @@ describe('InitApp Integration', () => {
       testDb.get('problem-metadata', 'lastUpdated'),
     );
     vi.mocked(db.getAllSolves).mockImplementation(() => testDb.getAll('solves'));
-    // Fixed timestamp type to number
     vi.mocked(db.getSolve).mockImplementation((slug: string, timestamp: number) =>
       testDb.get('solves', `${slug}|${timestamp}`),
     );
@@ -96,7 +95,38 @@ describe('InitApp Integration', () => {
 
   it('should fetch and store real problem catalog and solves', async () => {
     const result = await initApp();
+
+    // Verify username
     expect(result.username).toBe('testuser');
+
+    // Verify progress
+    expect(result.progress).toBeDefined();
+    expect(result.progress?.length).toBeGreaterThan(0);
+
+    // Verify progress for all categories
+    for (const category of result.progress!) {
+      expect(category).toHaveProperty('tag');
+      expect(category).toHaveProperty('goal');
+      expect(category).toHaveProperty('estimatedScore');
+      expect(category).toHaveProperty('confidenceLevel');
+      expect(category).toHaveProperty('adjustedScore');
+      expect(category.estimatedScore).toBeGreaterThanOrEqual(0);
+      expect(category.estimatedScore).toBeLessThanOrEqual(1);
+      expect(category.confidenceLevel).toBeGreaterThanOrEqual(0);
+      expect(category.confidenceLevel).toBeLessThanOrEqual(1);
+      expect(category.adjustedScore).toBeGreaterThanOrEqual(0);
+      expect(category.adjustedScore).toBeLessThanOrEqual(1);
+    }
+
+    // verify the specific categories from the sample data are non zero
+    const categoriesToCheck = ['Array', 'Hash Table', 'Linked List', 'Math', 'Recursion'];
+    for (const category of categoriesToCheck) {
+      const progress = result.progress?.find((p) => p.tag === category);
+      expect(progress).toBeDefined();
+      expect(progress?.estimatedScore).toBeGreaterThan(0);
+      expect(progress?.confidenceLevel).toBeGreaterThan(0);
+      expect(progress?.adjustedScore).toBeGreaterThan(0);
+    }
 
     // Verify real data was stored
     const problems = await db.getAllProblems();
@@ -125,7 +155,7 @@ describe('InitApp Integration', () => {
 
     expect(result).toEqual({
       username: undefined,
-      additionalData: undefined,
+      progress: undefined,
     });
   });
 });

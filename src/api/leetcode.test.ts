@@ -16,7 +16,7 @@ describe('mapTagsToCategories', () => {
   });
 
   it('should return an empty array if no valid categories are given', () => {
-    const input = ['Graphs', 'HashMaps', 'Recursion'];
+    const input = ['Graphs', 'HashMaps', 'Quantum'];
     const result = mapTagsToCategories(input);
 
     expect(result).toEqual([]);

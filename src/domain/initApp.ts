@@ -1,5 +1,9 @@
 import { db } from '../storage/db';
 import { fetchProblemCatalog, fetchRecentSolves } from '../api/leetcode';
+import { allCategories } from '../types/types';
+import { evaluateCategoryProgress } from './progress';
+import { CategoryProgress } from '../types/progress';
+import { clearCache, primeData, setSolves } from './recommendations';
 
 const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL ?? '/sample-problems.json';
 
@@ -13,19 +17,7 @@ function isStale(epock: number | undefined): boolean {
   return diffInHours > 24;
 }
 
-export async function initApp(): Promise<{
-  username: string | undefined;
-  additionalData: Boolean | undefined;
-}> {
-  const username = await db.getUsername();
-  if (!username) {
-    console.log('[initApp] No username — app not initialized');
-    return { username: undefined, additionalData: undefined };
-  }
-
-  console.log(`[initApp] Username found: ${username}`);
-
-  // 1. Update problem list if needed
+async function updateProblemList() {
   const lastUpdated = await db.getProblemListLastUpdated();
   if (isStale(lastUpdated)) {
     console.log('[initApp] Fetching latest problem catalog...');
@@ -46,21 +38,27 @@ export async function initApp(): Promise<{
       console.error('[initApp] Failed to fetch problem catalog:', err);
     }
   }
+}
 
-  // 2. Sync recent solves
-  var additionalData = false;
+async function updateSolves(username: string) {
   try {
     const recent = await fetchRecentSolves(username);
 
-    // check if the first solve is in the db, if no, set additionalData to true
-    const firstSolve = recent[0];
-    const firstSolveData = await db.getSolve(firstSolve.slug, firstSolve.timestamp);
-    if (!firstSolveData) {
-      additionalData = true;
-    }
-
-    await db.withTransaction(['solves'], async (tx) => {
+    await db.withTransaction(['solves', 'problem-list'], async (tx) => {
       for (const solve of recent) {
+        // get the problem from the database
+        const problem = await tx.objectStore('problem-list').get(solve.slug);
+        if (!problem) {
+          console.warn(
+            `[initApp] Problem ${solve.slug} not found in local database, skipping solve`,
+          );
+          continue;
+        }
+
+        // update the tags and difficulty from the problem
+        solve.tags = problem.tags;
+        solve.difficulty = problem.difficulty;
+
         const key = `${solve.slug}|${solve.timestamp}`;
         await tx.objectStore('solves').put(solve, key);
       }
@@ -69,6 +67,59 @@ export async function initApp(): Promise<{
   } catch (err) {
     console.error('[initApp] Failed to sync recent solves:', err);
   }
+}
 
-  return { username: username, additionalData: additionalData };
+export async function initApp(): Promise<{
+  username: string | undefined;
+  progress: CategoryProgress[] | undefined;
+}> {
+  const username = await db.getUsername();
+  if (!username) {
+    console.log('[initApp] No username — app not initialized');
+    return { username: undefined, progress: undefined };
+  }
+
+  console.log(`[initApp] Username found: ${username}`);
+
+  // 1. Update problem list if needed
+  await updateProblemList();
+
+  // 2. Sync recent solves
+  await updateSolves(username);
+
+  // 3. Load solve history + goal profile in one shot
+  const solves = await db.getAllSolves();
+  // clear recommendation cache and set solves
+
+  clearCache();
+  setSolves(solves);
+  primeData();
+
+  // TODO: just set a default profile if none exists
+  const defaultGoal = 0.6;
+  const goals: Record<string, number> = {};
+  for (const tag of allCategories) {
+    goals[tag] = defaultGoal;
+  }
+
+  const activeId = await db.getActiveGoalProfileId();
+  if (activeId) {
+    const profile = await db.getGoalProfile(activeId);
+    if (profile) {
+      Object.assign(goals, profile.goals);
+    }
+  }
+
+  // 4. Compute category progress
+  const progress = allCategories.map((tag) => {
+    const tagSolves = solves.filter((s) => s.tags?.includes(tag));
+    const scores = evaluateCategoryProgress(tagSolves);
+    return {
+      tag,
+      goal: goals[tag],
+      ...scores,
+    };
+  });
+
+  return { username, progress };
 }
