@@ -116,12 +116,12 @@ export interface CategoryScore {
   adjustedScore: number; // confidence-weighted score [0.0–1.0]
 }
 
-export type GoalMap = Record<Category, number>;
+export type GoalMap = Partial<Record<Category, number>>;
 export interface GoalProfile {
   id: string; // Unique identifier
   name: string; // User-visible name (e.g. "My Custom Goals")
   description?: string; // Optional details
-  goals: GoalMap; // REQUIRED: must define all categories
+  goals: GoalMap; // Goals by category
   createdAt: string; // ISO string
   isEditable: boolean; // If false, profile is locked(default profile)
 }

@@ -26,6 +26,13 @@ describe('initApp (integration with fake‑indexeddb)', () => {
         return new Response(fileContents, {
           headers: { 'Content-Type': 'application/json' },
         });
+      } else if (input === '/default-goal-profiles.json') {
+        // Serve default-goal-profiles.json so initApp can seed the default profile
+        const filePath = path.join(__dirname, '../../public/default-goal-profiles.json');
+        const fileContents = await readFile(filePath, 'utf-8');
+        return new Response(fileContents, {
+          headers: { 'Content-Type': 'application/json' },
+        });
       } else if (input === 'https://alfa-leetcode-api.onrender.com/testuser/submission') {
         return new Response(
           JSON.stringify({
@@ -76,6 +83,10 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     vi.mocked(db.getAllSolves).mockImplementation(() => testDb.getAll('solves'));
     vi.mocked(db.getSolve).mockImplementation((slug: string, timestamp: number) =>
       testDb.get('solves', `${slug}|${timestamp}`),
+    );
+    vi.mocked(db.saveGoalProfile).mockImplementation((p) => testDb.put('goal-profiles', p, p.id));
+    vi.mocked(db.setActiveGoalProfile).mockImplementation((id) =>
+      testDb.put('active-goal-profile', id, 'active'),
     );
     vi.mocked(db.withTransaction).mockImplementation(async (storeNames, callback) => {
       const tx = testDb.transaction(storeNames, 'readwrite');

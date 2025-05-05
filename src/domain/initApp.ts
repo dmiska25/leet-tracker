@@ -1,9 +1,10 @@
 import { db } from '../storage/db';
 import { fetchProblemCatalog, fetchRecentSolves } from '../api/leetcode';
-import { allCategories } from '../types/types';
+import { Category, GoalProfile } from '../types/types';
 import { evaluateCategoryProgress } from './progress';
 import { CategoryProgress } from '../types/progress';
 import { clearCache, primeData, setSolves } from './recommendations';
+import { getActiveOrInitProfile } from './goalProfiles';
 
 const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL ?? '/sample-problems.json';
 
@@ -93,30 +94,20 @@ export async function initApp(): Promise<{
 
   clearCache();
   setSolves(solves);
-  primeData();
+  await primeData();
 
-  // TODO: just set a default profile if none exists
-  const defaultGoal = 0.6;
-  const goals: Record<string, number> = {};
-  for (const tag of allCategories) {
-    goals[tag] = defaultGoal;
-  }
+  // Load (or seed) active goal profile
+  const profile: GoalProfile = await getActiveOrInitProfile();
+  const goals = profile.goals;
 
-  const activeId = await db.getActiveGoalProfileId();
-  if (activeId) {
-    const profile = await db.getGoalProfile(activeId);
-    if (profile) {
-      Object.assign(goals, profile.goals);
-    }
-  }
-
-  // 4. Compute category progress
-  const progress = allCategories.map((tag) => {
+  // 4. Compute progress only for the categories present in the profile
+  const profileTags = Object.keys(goals) as Category[];
+  const progress = profileTags.map((tag) => {
     const tagSolves = solves.filter((s) => s.tags?.includes(tag));
     const scores = evaluateCategoryProgress(tagSolves);
     return {
       tag,
-      goal: goals[tag],
+      goal: goals[tag] as number,
       ...scores,
     };
   });
