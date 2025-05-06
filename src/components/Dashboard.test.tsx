@@ -26,6 +26,9 @@ describe('Dashboard buttons', () => {
   let confirmSpy: ReturnType<typeof vi.spyOn>;
   let reloadSpy: ReturnType<typeof vi.fn>;
   let setUsernameSpy: ReturnType<typeof vi.spyOn>;
+  let getAllGoalProfilesSpy: ReturnType<typeof vi.spyOn>;
+  let getActiveGoalProfileIdSpy: ReturnType<typeof vi.spyOn>;
+  let setActiveProfileSpy: ReturnType<typeof vi.spyOn>;
   const originalLocation = window.location;
 
   beforeEach(() => {
@@ -43,11 +46,30 @@ describe('Dashboard buttons', () => {
 
     /* db.setUsername */
     setUsernameSpy = vi.spyOn(db, 'setUsername').mockResolvedValue('');
+
+    /* goal profiles */
+    const profiles = [
+      {
+        id: 'default',
+        name: 'Default',
+        description: '',
+        goals: {},
+        createdAt: '',
+        isEditable: false,
+      },
+      { id: 'alt', name: 'Alt', description: '', goals: {}, createdAt: '', isEditable: true },
+    ] as any;
+    getAllGoalProfilesSpy = vi.spyOn(db, 'getAllGoalProfiles').mockResolvedValue(profiles);
+    getActiveGoalProfileIdSpy = vi.spyOn(db, 'getActiveGoalProfileId').mockResolvedValue('default');
+    setActiveProfileSpy = vi.spyOn(db, 'setActiveGoalProfile').mockResolvedValue('');
   });
 
   afterEach(() => {
     confirmSpy.mockRestore();
     setUsernameSpy.mockRestore();
+    setActiveProfileSpy.mockRestore();
+    getAllGoalProfilesSpy.mockRestore();
+    getActiveGoalProfileIdSpy.mockRestore();
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: originalLocation,
@@ -78,6 +100,26 @@ describe('Dashboard buttons', () => {
     await waitFor(() => {
       expect(setUsernameSpy).toHaveBeenCalledWith('');
       expect(reloadSpy).toHaveBeenCalled();
+    });
+  });
+
+  it('changes active profile when dropdown item clicked', async () => {
+    const user = userEvent.setup();
+    render(<Dashboard />);
+
+    // Wait for the default profile to appear in the dropdown button
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Default/i })).toBeInTheDocument();
+    });
+
+    // open dropdown
+    await user.click(screen.getByRole('button', { name: /Default/i }));
+    // select alternate profile
+    await user.click(screen.getByRole('button', { name: /Alt/i }));
+
+    await waitFor(() => {
+      expect(setActiveProfileSpy).toHaveBeenCalledWith('alt');
+      expect(refreshMock).toHaveBeenCalled();
     });
   });
 });

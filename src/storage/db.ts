@@ -91,6 +91,9 @@ export const db = {
   async getActiveGoalProfileId(): Promise<string | undefined> {
     return (await dbPromise).get('active-goal-profile', 'active');
   },
+  async getAllGoalProfiles(): Promise<GoalProfile[]> {
+    return (await dbPromise).getAll('goal-profiles');
+  },
 
   // Transaction support
   async transaction(

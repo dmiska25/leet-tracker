@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { GoalProfile } from '@/types/types';
 import { RefreshCcw, ExternalLink } from 'lucide-react';
 
 import { useInitApp } from '@/hooks/useInitApp';
@@ -52,12 +53,28 @@ export default function Dashboard() {
   const [suggestions, setSuggestions] = useState<Record<string, CategoryRecommendation>>({});
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
+
+  // Profile selector
+  const [profiles, setProfiles] = useState<GoalProfile[]>([]);
+  const [activeProfileId, setActiveProfileId] = useState<string | undefined>(undefined);
+  const [profileOpen, setProfileOpen] = useState(false);
   const timeAgo = useTimeAgo(lastSynced);
 
   /* update the last‑synced timestamp once initial data is ready */
   useEffect(() => {
     if (!loading) setLastSynced(new Date());
   }, [loading]);
+
+  // Fetch saved profiles + active profile ID
+  useEffect(() => {
+    const load = async () => {
+      const list = await db.getAllGoalProfiles();
+      setProfiles(list);
+      const activeId = await db.getActiveGoalProfileId();
+      setActiveProfileId(activeId ?? list[0]?.id);
+    };
+    load();
+  }, []);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
@@ -88,6 +105,18 @@ export default function Dashboard() {
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleSelectProfile = async (id: string) => {
+    if (id === activeProfileId) {
+      setProfileOpen(false);
+      return;
+    }
+    await db.setActiveGoalProfile(id);
+    setActiveProfileId(id);
+    setProfileOpen(false);
+    await refresh();
+    setLastSynced(new Date());
   };
 
   const handleSignOut = async () => {
@@ -139,10 +168,40 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Your category progress</p>
             <p className="text-xs text-muted-foreground">Last synced: {timeAgo}</p>
           </div>
-          <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2">
-            <RefreshCcw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing…' : 'Sync Now'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Profile selector */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                onClick={() => setProfileOpen((o) => !o)}
+                className="px-3 py-2"
+              >
+                Profile: {profiles.find((p) => p.id === activeProfileId)?.name ?? 'Select profile'}
+              </Button>
+              {profileOpen && (
+                <div className="absolute right-0 z-20 mt-1 w-44 max-h-60 overflow-y-auto rounded-md border bg-card shadow">
+                  {profiles.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleSelectProfile(p.id)}
+                      className={`block w-full text-left px-3 py-1.5 text-sm ${
+                        p.id === activeProfileId ? 'bg-muted font-medium' : 'hover:bg-muted'
+                      }`}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Sync button */}
+            <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2">
+              <RefreshCcw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing…' : 'Sync Now'}
+            </Button>
+          </div>
         </header>
 
         {/* Category list */}

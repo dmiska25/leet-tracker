@@ -48,7 +48,7 @@ export async function getActiveOrInitProfile(): Promise<GoalProfile> {
 
   const defaults = await fetchDefaultProfiles();
   const def = defaults.find((p) => p.id === 'default') ?? defaults[0];
-  await db.saveGoalProfile(def);
+  await Promise.all(defaults.map((p) => db.saveGoalProfile(p)));
   await db.setActiveGoalProfile(def.id);
   return def;
 }
