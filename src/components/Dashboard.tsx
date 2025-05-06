@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RefreshCcw, ExternalLink } from 'lucide-react';
 
 import { useInitApp } from '@/hooks/useInitApp';
@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ModeBadge } from '@/components/ModeBadge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useTimeAgo } from '@/hooks/useTimeAgo';
 
 /* ---------- Helpers ---------- */
 
@@ -50,6 +51,13 @@ export default function Dashboard() {
   const [open, setOpen] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Record<string, CategoryRecommendation>>({});
   const [syncing, setSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const timeAgo = useTimeAgo(lastSynced);
+
+  /* update the last‑synced timestamp once initial data is ready */
+  useEffect(() => {
+    if (!loading) setLastSynced(new Date());
+  }, [loading]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
@@ -76,6 +84,7 @@ export default function Dashboard() {
     setSyncing(true);
     try {
       await refresh();
+      setLastSynced(new Date());
     } finally {
       setSyncing(false);
     }
@@ -128,6 +137,7 @@ export default function Dashboard() {
           <div>
             <h2 className="text-3xl font-bold">Hello, {username}!</h2>
             <p className="text-muted-foreground">Your category progress</p>
+            <p className="text-xs text-muted-foreground">Last synced: {timeAgo}</p>
           </div>
           <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2">
             <RefreshCcw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
