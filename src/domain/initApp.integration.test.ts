@@ -4,11 +4,6 @@ import { initApp } from './initApp';
 import { LeetTrackerDB, db } from '../storage/db';
 import { readFile } from 'fs/promises';
 import path from 'path';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Mock the database module
 vi.mock('../storage/db');

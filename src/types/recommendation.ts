@@ -6,6 +6,7 @@ export interface ProblemLite {
   difficulty: Difficulty;
   popularity: number; // 0‑1 normalised
   isFundamental: boolean;
+  tags?: Category[];
 }
 
 export interface CategoryRecommendation {

@@ -4,5 +4,5 @@ import App from './App';
 
 test('renders the main heading', () => {
   render(<App />);
-  expect(screen.getByText(/Leet Tracker/i)).toBeInTheDocument();
+  expect(screen.getByText(/Loading…/i)).toBeInTheDocument();
 });

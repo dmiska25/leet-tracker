@@ -18,6 +18,7 @@ export default defineConfig([
       },
       globals: {
         ...globals.browser,
+        __dirname: 'readonly',
       },
     },
     plugins: {
@@ -36,6 +37,14 @@ export default defineConfig([
       ...pluginReact.configs.recommended.rules,
       'prettier/prettier': 'error',
       'react/react-in-jsx-scope': 'off',
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_', // Ignore unused function arguments starting with "_"
+          varsIgnorePattern: '^_', // Ignore unused variables starting with "_"
+          caughtErrorsIgnorePattern: '^_', // Ignore unused caught errors starting with "_"
+        },
+      ],
     },
   },
   {

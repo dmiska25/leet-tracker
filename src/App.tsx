@@ -1,9 +1,15 @@
+import { useInitApp } from '@/hooks/useInitApp';
+import Dashboard from '@/components/Dashboard';
+import SignIn from '@/components/SignIn';
+
 function App() {
-  return (
-    <div className="flex h-screen items-center justify-center bg-gray-100">
-      <h1 className="text-3xl font-bold text-blue-600">Leet Tracker</h1>
-    </div>
-  );
+  const { loading, username } = useInitApp();
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
+  }
+
+  return username ? <Dashboard /> : <SignIn />;
 }
 
 export default App;

@@ -68,26 +68,36 @@ function recencyBoost(daysAgo: number): number {
 }
 
 /**
- * Selects `k` items from a list, weighted by their scores.
+ * Samples up to `k` unique items using weighted random selection.
+ *  • Weights ≤ 0 are ignored.
+ *  • Falls back to simple slice when all weights are non‑positive.
  */
 function weightedSample<T>(items: T[], weights: number[], k: number): T[] {
   if (items.length === 0) return [];
-  const picked: T[] = [];
-  const w = [...weights];
-  const copy = [...items];
-  for (let i = 0; i < Math.min(k, items.length); i++) {
-    const sum = w.reduce((a, b) => a + b, 0);
-    if (sum === 0) break;
-    let r = Math.random() * sum;
-    let idx = 0;
-    while (r >= w[idx]) {
-      r -= w[idx];
-      idx++;
-    }
-    picked.push(copy[idx]);
-    copy.splice(idx, 1);
-    w.splice(idx, 1);
+
+  // Build candidate list with positive weights only
+  const pool = items
+    .map((item, i) => ({ item, weight: weights[i] ?? 0 }))
+    .filter((c) => c.weight > 0);
+
+  // If every weight is zero, just return the first k items (stable order)
+  if (pool.length === 0) {
+    return items.slice(0, k);
   }
+
+  const picked: T[] = [];
+  while (picked.length < k && pool.length) {
+    const total = pool.reduce((sum, c) => sum + c.weight, 0);
+    let r = Math.random() * total;
+    const idx = pool.findIndex((c) => {
+      r -= c.weight;
+      return r <= 0;
+    });
+    // Defensive guard (should never be -1, but just in case)
+    const chosen = pool.splice(idx === -1 ? 0 : idx, 1)[0];
+    picked.push(chosen.item);
+  }
+
   return picked;
 }
 
@@ -124,6 +134,7 @@ export async function getCategorySuggestions(
       difficulty: p.difficulty,
       popularity: p.popularity,
       isFundamental: p.isFundamental,
+      tags: p.tags,
     };
 
     const solved = solveMap.get(p.slug);
