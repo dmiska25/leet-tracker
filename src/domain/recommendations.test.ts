@@ -12,6 +12,7 @@ const problems: Problem[] = [
     tags: ['Array'],
     description: '',
     difficulty: Difficulty.Easy,
+    isPaid: false,
     popularity: 0.9,
     isFundamental: true,
     createdAt: 0,
@@ -22,6 +23,7 @@ const problems: Problem[] = [
     tags: ['Array'],
     description: '',
     difficulty: Difficulty.Medium,
+    isPaid: false,
     popularity: 0.6,
     isFundamental: false,
     createdAt: 0,
@@ -32,7 +34,30 @@ const problems: Problem[] = [
     tags: ['Array'],
     description: '',
     difficulty: Difficulty.Easy,
+    isPaid: false,
     popularity: 0.5,
+    isFundamental: false,
+    createdAt: 0,
+  },
+  {
+    slug: 'paid-problem', // Should be ignored
+    title: 'Paid Problem',
+    tags: ['Array'],
+    description: '',
+    difficulty: Difficulty.Hard,
+    isPaid: true,
+    popularity: 0.8,
+    isFundamental: false,
+    createdAt: 0,
+  },
+  {
+    slug: 'no-category-problem',
+    title: 'No Category Problem',
+    tags: [], // No categories, should be ignored
+    description: '',
+    difficulty: Difficulty.Medium,
+    isPaid: false,
+    popularity: 0.4,
     isFundamental: false,
     createdAt: 0,
   },
@@ -86,5 +111,23 @@ describe('recommendation engine', () => {
     expect(res.fundamentals.length).toBe(0);
     expect(res.refresh.length).toBe(0);
     expect(res.new.length).toBe(0);
+  });
+
+  it('filters out paid problems', async () => {
+    const res = await getCategorySuggestions('Array', 5);
+
+    // Ensure the paid problem is not included in any bucket
+    expect(res.fundamentals.find((p) => p.slug === 'paid-problem')).toBeFalsy();
+    expect(res.refresh.find((p) => p.slug === 'paid-problem')).toBeFalsy();
+    expect(res.new.find((p) => p.slug === 'paid-problem')).toBeFalsy();
+  });
+
+  it('handles problems with no categories gracefully', async () => {
+    const res = await getCategorySuggestions('Array', 5);
+
+    // Ensure the problem with no categories is not included in any bucket
+    expect(res.fundamentals.find((p) => p.slug === 'no-category-problem')).toBeFalsy();
+    expect(res.refresh.find((p) => p.slug === 'no-category-problem')).toBeFalsy();
+    expect(res.new.find((p) => p.slug === 'no-category-problem')).toBeFalsy();
   });
 });

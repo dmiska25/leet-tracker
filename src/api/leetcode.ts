@@ -44,6 +44,7 @@ export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
     description: p.description,
     difficulty: p.difficulty as Difficulty,
     popularity: p.popularity,
+    isPaid: p.isPaidOnly,
     isFundamental: p.isFundamental,
     createdAt: p.createdAt,
   }));

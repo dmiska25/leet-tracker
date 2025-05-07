@@ -91,7 +91,6 @@ export async function initApp(): Promise<{
   // 3. Load solve history + goal profile in one shot
   const solves = await db.getAllSolves();
   // clear recommendation cache and set solves
-
   clearCache();
   setSolves(solves);
   await primeData();

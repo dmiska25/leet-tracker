@@ -68,6 +68,7 @@ describe('fetchProblemCatalog', () => {
         slug: 'two-sum',
         title: 'Two Sum',
         isFundamental: true,
+        isPaid: false,
         popularity: 0.9,
         difficulty: 'Easy',
         description: '<p>desc</p>',

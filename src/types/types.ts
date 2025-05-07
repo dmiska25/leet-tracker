@@ -90,6 +90,7 @@ export interface Problem {
   description: string;
   difficulty: Difficulty;
   popularity: number; // 0.0–1.0
+  isPaid: boolean; // true if problem is paid
   isFundamental: boolean; // infered from ai model
   createdAt: number; // epock time
 }

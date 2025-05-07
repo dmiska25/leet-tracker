@@ -76,14 +76,10 @@ function weightedSample<T>(items: T[], weights: number[], k: number): T[] {
   if (items.length === 0) return [];
 
   // Build candidate list with positive weights only
-  const pool = items
-    .map((item, i) => ({ item, weight: weights[i] ?? 0 }))
-    .filter((c) => c.weight > 0);
-
-  // If every weight is zero, just return the first k items (stable order)
-  if (pool.length === 0) {
-    return items.slice(0, k);
-  }
+  const pool = items.map((item, i) => ({
+    item,
+    weight: !weights[i] || weights[i] === 0 ? Number.EPSILON : weights[i],
+  }));
 
   const picked: T[] = [];
   while (picked.length < k && pool.length) {
@@ -126,7 +122,9 @@ export async function getCategorySuggestions(
   const fresh: Array<[ProblemLite, number]> = [];
 
   for (const p of _problems) {
-    if (!p.tags.includes(tag)) continue;
+    // Filter out problems that don't match the tag or are paid only
+    // TODO: Allow a toggle for paid problems in the future
+    if (!p.tags.includes(tag) || p.isPaid) continue;
 
     const lite: ProblemLite = {
       slug: p.slug,
@@ -149,9 +147,7 @@ export async function getCategorySuggestions(
         latest.qualityScore ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
       const refreshScore = (1 - quality) * boost * (0.7 + 0.3 * popularityScore);
 
-      if (boost > 0.1 || quality < 0.85) {
-        refresh.push([lite, refreshScore]);
-      }
+      refresh.push([lite, refreshScore]);
     } else {
       // unsolved → either fundamental or new
       // TODO: consider changing selection to be equal among difficulty levels
