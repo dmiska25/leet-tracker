@@ -68,6 +68,13 @@ describe('initApp (integration with fake‑indexeddb)', () => {
         db.createObjectStore('active-goal-profile');
       },
     });
+    type StoreName =
+      | 'leetcode-username'
+      | 'problem-list'
+      | 'problem-metadata'
+      | 'solves'
+      | 'goal-profiles'
+      | 'active-goal-profile';
 
     // Set up the mock implementations after testDb is initialized
     vi.mocked(db.getUsername).mockImplementation(() => testDb.get('leetcode-username', 'username'));
@@ -83,8 +90,12 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     vi.mocked(db.setActiveGoalProfile).mockImplementation((id) =>
       testDb.put('active-goal-profile', id, 'active'),
     );
+
     vi.mocked(db.withTransaction).mockImplementation(async (storeNames, callback) => {
-      const tx = testDb.transaction(storeNames, 'readwrite');
+      const tx = testDb.transaction(
+        Array.isArray(storeNames) ? (storeNames as StoreName[]) : [storeNames as StoreName],
+        'readwrite',
+      );
       await callback(tx);
       await tx.done;
     });

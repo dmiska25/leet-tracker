@@ -19,6 +19,7 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         __dirname: 'readonly',
+        IDBTransactionMode: 'readonly',
       },
     },
     plugins: {
@@ -68,5 +69,8 @@ export default defineConfig([
         it: 'readonly',
       },
     },
+  },
+  {
+    ignores: ['dist/*'],
   },
 ]);

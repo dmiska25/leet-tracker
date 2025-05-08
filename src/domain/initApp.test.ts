@@ -15,6 +15,7 @@ const mockProblems: Problem[] = [
     description: '',
     difficulty: Difficulty.Easy,
     popularity: 0.8,
+    isPaid: false,
     isFundamental: true,
     createdAt: 0,
   },

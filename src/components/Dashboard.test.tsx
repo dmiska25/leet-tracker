@@ -45,7 +45,7 @@ describe('Dashboard buttons', () => {
     });
 
     /* db.setUsername */
-    setUsernameSpy = vi.spyOn(db, 'setUsername').mockResolvedValue('');
+    setUsernameSpy = vi.spyOn(db, 'setUsername').mockResolvedValue('') as Mock;
 
     /* goal profiles */
     const profiles = [
@@ -61,7 +61,7 @@ describe('Dashboard buttons', () => {
     ] as any;
     getAllGoalProfilesSpy = vi.spyOn(db, 'getAllGoalProfiles').mockResolvedValue(profiles);
     getActiveGoalProfileIdSpy = vi.spyOn(db, 'getActiveGoalProfileId').mockResolvedValue('default');
-    setActiveProfileSpy = vi.spyOn(db, 'setActiveGoalProfile').mockResolvedValue('');
+    setActiveProfileSpy = vi.spyOn(db, 'setActiveGoalProfile').mockResolvedValue('') as Mock;
   });
 
   afterEach(() => {

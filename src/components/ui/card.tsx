@@ -21,8 +21,8 @@ export const CardHeader = Section;
 export const CardContent = Section;
 export const CardFooter = Section;
 
-export function CardTitle({ children }: PropsWithChildren) {
-  return <h3 className="text-sm font-medium">{children}</h3>;
+export function CardTitle({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <h3 className={clsx('text-sm font-medium', className)}>{children}</h3>;
 }
 
 export function CardDescription({ children }: PropsWithChildren) {

@@ -1,4 +1,4 @@
-import { openDB, DBSchema, IDBPTransaction, IDBTransactionMode } from 'idb';
+import { openDB, DBSchema, IDBPTransaction } from 'idb';
 import { Problem, Solve, GoalProfile } from '../types/types';
 
 export interface LeetTrackerDB extends DBSchema {
@@ -111,7 +111,11 @@ export const db = {
     // eslint-disable-next-line no-unused-vars
     callback: (tx: IDBPTransaction<LeetTrackerDB, any, 'readwrite'>) => Promise<T>,
   ): Promise<T> {
-    const tx = await this.transaction(storeNames, 'readwrite');
+    const tx = (await this.transaction(storeNames, 'readwrite')) as IDBPTransaction<
+      LeetTrackerDB,
+      any,
+      'readwrite'
+    >;
     try {
       const result = await callback(tx);
       await tx.done;

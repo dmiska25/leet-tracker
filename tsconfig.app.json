@@ -23,7 +23,13 @@
     "noUncheckedSideEffectImports": true,
 
     /* Testing */
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals"],
+
+    /* Alias support */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src"]
 }

@@ -9,6 +9,7 @@ const exampleProblem: Problem = {
   description: 'desc',
   difficulty: Difficulty.Easy,
   popularity: 0.9,
+  isPaid: false,
   isFundamental: true,
   createdAt: 1746308137,
 };
@@ -41,7 +42,7 @@ const exampleProfile: GoalProfile = {
     'Binary Search': 0.6,
     Math: 0.6,
     Backtracking: 0.6,
-    Heap: 0.6,
+    'Heap (Priority Queue)': 0.6,
   },
   createdAt: new Date().toISOString(),
   isEditable: true,
