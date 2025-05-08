@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { GoalProfile } from '@/types/types';
 import { RefreshCcw, ExternalLink } from 'lucide-react';
-
+import clsx from 'clsx';
 import { useInitApp } from '@/hooks/useInitApp';
 import { getCategorySuggestions } from '@/domain/recommendations';
 import { CategoryRecommendation } from '@/types/recommendation';
@@ -248,69 +248,78 @@ export default function Dashboard() {
                   </button>
 
                   {/* Detail – tabbed recommendations */}
-                  {isOpen && suggestions[cat.tag] && (
-                    <Tabs defaultValue="fundamentals" className="mt-4 w-full">
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="fundamentals">Fundamentals</TabsTrigger>
-                        <TabsTrigger value="refresh">Refresh</TabsTrigger>
-                        <TabsTrigger value="new">New</TabsTrigger>
-                      </TabsList>
+                  <div
+                    className={clsx(
+                      'overflow-hidden transition-all duration-300 origin-top',
+                      isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0',
+                    )}
+                  >
+                    {suggestions[cat.tag] && (
+                      <Tabs defaultValue="fundamentals" className="mt-4 w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="fundamentals">Fundamentals</TabsTrigger>
+                          <TabsTrigger value="refresh">Refresh</TabsTrigger>
+                          <TabsTrigger value="new">New</TabsTrigger>
+                        </TabsList>
 
-                      {(['fundamentals', 'refresh', 'new'] as const).map((bucket) => (
-                        <TabsContent key={bucket} value={bucket} className="mt-4">
-                          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {(suggestions[cat.tag] as CategoryRecommendation)[bucket].map((p) => (
-                              <Card key={p.slug} className="flex flex-col">
-                                <CardHeader className="p-4 pb-2">
-                                  <div className="flex justify-between items-start">
-                                    <CardTitle className="text-base">{p.title}</CardTitle>
-                                    <DifficultyBadge level={p.difficulty} />
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-0 pb-2">
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {p.tags?.map((tag) => (
-                                      <Badge
-                                        key={tag}
-                                        variant="secondary"
-                                        className="text-[11px] px-1.5 py-0.5"
+                        {(['fundamentals', 'refresh', 'new'] as const).map((bucket) => (
+                          <TabsContent key={bucket} value={bucket} className="mt-4">
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                              {(suggestions[cat.tag] as CategoryRecommendation)[bucket].map(
+                                (p: any) => (
+                                  <Card key={p.slug} className="flex flex-col">
+                                    <CardHeader className="p-4 pb-2">
+                                      <div className="flex justify-between items-start">
+                                        <CardTitle className="text-base">{p.title}</CardTitle>
+                                        <DifficultyBadge level={p.difficulty} />
+                                      </div>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-0 pb-2">
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {p.tags?.map((tag: any) => (
+                                          <Badge
+                                            key={tag}
+                                            variant="secondary"
+                                            className="text-[11px] px-1.5 py-0.5"
+                                          >
+                                            {tag}
+                                          </Badge>
+                                        ))}
+                                        {p.isFundamental && (
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-[11px] px-1.5 py-0.5"
+                                          >
+                                            Fundamental
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </CardContent>
+                                    <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                        onClick={() =>
+                                          window.open(
+                                            `https://leetcode.com/problems/${p.slug}`,
+                                            '_blank',
+                                          )
+                                        }
                                       >
-                                        {tag}
-                                      </Badge>
-                                    ))}
-                                    {p.isFundamental && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-[11px] px-1.5 py-0.5"
-                                      >
-                                        Fundamental
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </CardContent>
-                                <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="gap-1"
-                                    onClick={() =>
-                                      window.open(
-                                        `https://leetcode.com/problems/${p.slug}`,
-                                        '_blank',
-                                      )
-                                    }
-                                  >
-                                    <ExternalLink className="h-4 w-4" />
-                                    Solve on LeetCode
-                                  </Button>
-                                </CardFooter>
-                              </Card>
-                            ))}
-                          </div>
-                        </TabsContent>
-                      ))}
-                    </Tabs>
-                  )}
+                                        <ExternalLink className="h-4 w-4" />
+                                        Solve on LeetCode
+                                      </Button>
+                                    </CardFooter>
+                                  </Card>
+                                ),
+                              )}
+                            </div>
+                          </TabsContent>
+                        ))}
+                      </Tabs>
+                    )}
+                  </div>
                 </div>
               );
             })}
