@@ -28,7 +28,7 @@ describe('initApp (integration with fake‑indexeddb)', () => {
         return new Response(fileContents, {
           headers: { 'Content-Type': 'application/json' },
         });
-      } else if (input === 'https://alfa-leetcode-api.onrender.com/testuser/submission') {
+      } else if (input === 'test.com/testuser/submission') {
         return new Response(
           JSON.stringify({
             submission: [

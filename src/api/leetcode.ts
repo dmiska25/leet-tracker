@@ -1,5 +1,7 @@
 import { allCategories, Category, Difficulty, Problem, Solve } from '../types/types';
 
+const SOLVES_BASE_URL = import.meta.env.VITE_SOLVES_BASE_URL;
+
 // Raw problem data shape from your external JSON file
 interface RawProblemData {
   slug: string;
@@ -52,7 +54,7 @@ export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
 
 // Fetch recent solves for a given LeetCode username
 export async function fetchRecentSolves(username: string): Promise<Solve[]> {
-  const res = await fetch(`https://alfa-leetcode-api.onrender.com/${username}/submission`);
+  const res = await fetch(`${SOLVES_BASE_URL}/${username}/submission`);
   const data: RawSubmissionResponse = await res.json();
 
   return data.submission.map((s) => ({

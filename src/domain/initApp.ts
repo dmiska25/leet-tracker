@@ -6,7 +6,7 @@ import { CategoryProgress } from '../types/progress';
 import { clearCache, primeData, setSolves } from './recommendations';
 import { getActiveOrInitProfile } from './goalProfiles';
 
-const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL ?? '/sample-problems.json';
+const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL;
 
 function isStale(epock: number | undefined): boolean {
   if (!epock) return true;
