@@ -13,7 +13,8 @@ interface RawProblemData {
   topicTags: string[];
   likes: number;
   dislikes: number;
-  description: string;
+  /** optional in problems‑lite.json */
+  description?: string;
   createdAt: number; // epock time
 }
 
@@ -43,7 +44,7 @@ export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
     slug: p.slug,
     title: p.title,
     tags: mapTagsToCategories(p.topicTags),
-    description: p.description,
+    description: p.description ?? '',
     difficulty: p.difficulty as Difficulty,
     popularity: p.popularity,
     isPaid: p.isPaidOnly,
