@@ -6,6 +6,8 @@ import { useInitApp } from '@/hooks/useInitApp';
 import { getCategorySuggestions } from '@/domain/recommendations';
 import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 
 import {
   Card,
@@ -145,9 +147,17 @@ export default function Dashboard() {
                 <TabsTrigger value="dashboard" disabled>
                   Dashboard
                 </TabsTrigger>
-                <TabsTrigger value="history" disabled>
-                  Solve History
-                </TabsTrigger>
+                <div id="solveHistoryTooltip">
+                  <TabsTrigger value="history" disabled>
+                    Solve History
+                  </TabsTrigger>
+                </div>
+                <Tooltip
+                  anchorId="solveHistoryTooltip"
+                  content="Work in progress"
+                  place="top"
+                  className="rounded-md bg-black text-white px-2 py-1 text-sm shadow-md"
+                />
               </TabsList>
             </Tabs>
 

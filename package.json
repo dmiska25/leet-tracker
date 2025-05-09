@@ -20,7 +20,8 @@
     "lucide-react": "^0.397.0",
     "postcss": "^8.5.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-tooltip": "^5.28.1"
   },
   "devDependencies": {
     "@eslint/css": "^0.7.0",
