@@ -1,6 +1,8 @@
 import { FormEvent, useState } from 'react';
 import { db } from '@/storage/db';
 import { Button } from '@/components/ui/button';
+import { verifyUser } from '@/api/leetcode';
+import { useToast } from './ui/toast';
 
 function InfoBox({ className }: { className?: string }) {
   return (
@@ -21,15 +23,33 @@ function InfoBox({ className }: { className?: string }) {
 }
 
 export default function SignIn() {
+  const toast = useToast();
   const [username, setUsername] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
+    if (saving) return;
     e.preventDefault();
     const trimmed = username.trim();
     if (!trimmed) return;
     setSaving(true);
     try {
+      // Verify if the user exists
+      try {
+        const res = await verifyUser(trimmed);
+        if (!res.exists) {
+          setSaving(false);
+          toast('User not found. Please check your username and try again.', 'error');
+          return;
+        }
+      } catch (err) {
+        console.error('[SignIn] an error occurred while verifying user', err);
+        setSaving(false);
+        toast('An unexpected error occurred. Please try again later.', 'error');
+        return;
+      }
+
+      // Save the username to the database
       await db.setUsername(trimmed);
       // A full reload is simplest to re‑run initApp with the new username
       window.location.reload();

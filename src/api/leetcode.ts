@@ -53,9 +53,37 @@ export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
   }));
 }
 
+// Fetch user's info to verify if the user exists
+export async function verifyUser(username: string): Promise<{ exists: boolean }> {
+  const res = await fetch(`${SOLVES_BASE_URL}/${username}`);
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  // Check if the response contains errors or matchedUser is null
+  if (data.errors || data.data?.matchedUser === null) {
+    return { exists: false };
+  }
+
+  return { exists: true };
+}
+
 // Fetch recent solves for a given LeetCode username
 export async function fetchRecentSolves(username: string): Promise<Solve[]> {
   const res = await fetch(`${SOLVES_BASE_URL}/${username}/submission`);
+
+  if (res.status === 429) {
+    const err: any = new Error('Rate limited');
+    err.code = 'RATE_LIMITED';
+    throw err;
+  }
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
   const data: RawSubmissionResponse = await res.json();
 
   return data.submission.map((s) => ({

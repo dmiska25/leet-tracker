@@ -36,31 +36,34 @@ const mockSolves: Solve[] = [
 describe('initApp', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+
+    /* db mocks */
     vi.mocked(db.getUsername).mockResolvedValue('user');
     vi.mocked(db.getProblemListLastUpdated).mockResolvedValue(undefined);
     vi.mocked(db.saveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.setActiveGoalProfile).mockResolvedValue('default');
-    vi.mocked(fetchProblemCatalog).mockResolvedValue(mockProblems);
-    vi.mocked(fetchRecentSolves).mockResolvedValue(mockSolves);
     vi.mocked(db.getAllSolves).mockResolvedValue(mockSolves);
     vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
       cb({ objectStore: () => ({ put: vi.fn(), get: vi.fn() }) } as any),
     );
+
+    /* API mocks */
+    vi.mocked(fetchProblemCatalog).mockResolvedValue(mockProblems);
+    vi.mocked(fetchRecentSolves).mockResolvedValue(mockSolves);
   });
 
   it('handles missing username path', async () => {
     vi.mocked(db.getUsername).mockResolvedValue(undefined);
     const res = await initApp();
-    expect(res).toEqual({ username: undefined, progress: undefined });
+    expect(res).toEqual({ username: undefined, progress: undefined, errors: [] });
   });
 
   it('returns progress with default goals when no profile', async () => {
     vi.mocked(db.getActiveGoalProfileId).mockResolvedValue(undefined);
     const res = await initApp();
-    // Default profile should include "Array" and goal 0.6
     const arr = res.progress?.find((p) => p.tag === 'Array');
     expect(arr?.goal).toBeCloseTo(0.6);
-    expect(res.progress?.length).toBeGreaterThan(0);
+    expect(res.errors).toEqual([]);
   });
 
   it('applies goal profile override', async () => {
@@ -77,18 +80,36 @@ describe('initApp', () => {
     const res = await initApp();
     const arr = res.progress?.find((p) => p.tag === 'Array');
     expect(arr?.goal).toBeCloseTo(0.9);
+    expect(res.errors).toEqual([]);
   });
 
-  it('continues when catalog fetch fails', async () => {
+  it('continues when catalog fetch fails and returns error message', async () => {
     vi.mocked(fetchProblemCatalog).mockRejectedValue(new Error('network'));
     const res = await initApp();
     expect(res.username).toBe('user');
     expect(res.progress).toBeDefined();
+    expect(res.errors).toContain(
+      'An unexpected error occurred, new problems are temporarily unavailable.',
+    );
   });
 
-  it('continues when recent solve sync fails', async () => {
+  it('continues when recent solve sync fails and returns error message', async () => {
     vi.mocked(fetchRecentSolves).mockRejectedValue(new Error('api down'));
     const res = await initApp();
     expect(res.progress?.length).toBeGreaterThan(0);
+    expect(res.errors).toContain(
+      'An unexpected error occurred, recent solves are temporarily unavailable.',
+    );
+  });
+
+  it('maps RATE_LIMITED error to user‑friendly message', async () => {
+    const err: any = new Error('Rate limited');
+    err.code = 'RATE_LIMITED';
+    vi.mocked(fetchRecentSolves).mockRejectedValue(err);
+
+    const res = await initApp();
+    expect(res.errors).toContain(
+      'LeetCode API rate limit hit — recent solves are temporarily unavailable.',
+    );
   });
 });

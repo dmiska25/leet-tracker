@@ -18,7 +18,11 @@ function isStale(epock: number | undefined): boolean {
   return diffInHours > 24;
 }
 
-async function updateProblemList() {
+/**
+ * Fetches the problem catalog from the given URL and updates the local database.
+ * @returns Promise<string[]> - A list of error messages
+ */
+async function updateProblemList(): Promise<string[]> {
   const lastUpdated = await db.getProblemListLastUpdated();
   if (isStale(lastUpdated)) {
     console.log('[initApp] Fetching latest problem catalog...');
@@ -35,13 +39,16 @@ async function updateProblemList() {
         await tx.objectStore('problem-metadata').put(Date.now(), 'lastUpdated');
         console.log(`[initApp] Catalog updated — ${newProblems.length} new problems added`);
       });
+      return [];
     } catch (err) {
       console.error('[initApp] Failed to fetch problem catalog:', err);
+      return ['An unexpected error occurred, new problems are temporarily unavailable.'];
     }
   }
+  return [];
 }
 
-async function updateSolves(username: string) {
+async function updateSolves(username: string): Promise<string[]> {
   try {
     const recent = await fetchRecentSolves(username);
 
@@ -63,30 +70,41 @@ async function updateSolves(username: string) {
         const key = `${solve.slug}|${solve.timestamp}`;
         await tx.objectStore('solves').put(solve, key);
       }
-      console.log(`[initApp] Synced ${recent.length} recent solves`);
     });
-  } catch (err) {
-    console.error('[initApp] Failed to sync recent solves:', err);
+    console.log(`[initApp] Synced ${recent.length} recent solves`);
+    return [];
+  } catch (err: any) {
+    if (err?.code === 'RATE_LIMITED') {
+      console.warn('[initApp] Rate limited by LeetCode API');
+      return ['LeetCode API rate limit hit — recent solves are temporarily unavailable.'];
+    } else {
+      console.error('[initApp] Failed to sync recent solves:', err);
+      return ['An unexpected error occurred, recent solves are temporarily unavailable.'];
+    }
   }
 }
 
 export async function initApp(): Promise<{
   username: string | undefined;
   progress: CategoryProgress[] | undefined;
+  errors: string[];
 }> {
+  const errors: string[] = [];
   const username = await db.getUsername();
   if (!username) {
     console.log('[initApp] No username — app not initialized');
-    return { username: undefined, progress: undefined };
+    return { username: undefined, progress: undefined, errors: [] };
   }
 
   console.log(`[initApp] Username found: ${username}`);
 
   // 1. Update problem list if needed
-  await updateProblemList();
+  const updateProblemListErrors = await updateProblemList();
+  errors.push(...updateProblemListErrors);
 
-  // 2. Sync recent solves
-  await updateSolves(username);
+  // 2. Sync recent solves (handle rate limiting gracefully)
+  const updateSolvesErrors = await updateSolves(username);
+  errors.push(...updateSolvesErrors);
 
   // 3. Load solve history + goal profile in one shot
   const solves = await db.getAllSolves();
@@ -111,5 +129,5 @@ export async function initApp(): Promise<{
     };
   });
 
-  return { username, progress };
+  return { username, progress, errors };
 }

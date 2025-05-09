@@ -173,6 +173,7 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     expect(result).toEqual({
       username: undefined,
       progress: undefined,
+      errors: [],
     });
   });
 });
