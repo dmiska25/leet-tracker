@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ErrorBoundary } from './ErrorBoundary';
+import React from 'react';
 
-function Boom() {
+function Boom(): React.ReactElement {
   throw new Error('💥');
 }
 
