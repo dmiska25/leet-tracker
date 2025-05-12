@@ -20,6 +20,10 @@ LeetCode and other platforms are great for improving algorithm skills and learni
 - 🔐 **Fully local-first** (data stored in IndexedDB)
 - 🌙 **Dark mode** supported
 
+## Live App
+
+Try the app here: [leet-tracker-log.vercel.app](https://leet-tracker-log.vercel.app/)
+
 ## How It Works
 
 ### Data Flow
@@ -76,6 +80,10 @@ npm run dev
 - Support for **exporting** solve history data (JSON format)
 - Support for **importing** past solve history manually (upload-based or paste-in)
 
+## Acknowledgments
+
+- API data provided by [alfa-leetcode-api](https://github.com/alfaarghya/alfa-leetcode-api)
+
 ## Screenshots
 
 Overview:
@@ -89,3 +97,7 @@ Recommendations:
 ## Contact Me
 
 [GitHub](https://github.com/dmiska25) · [LinkedIn](https://www.linkedin.com/in/djmiska25/) · [Website](https://djmiska25.vercel.app/)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
