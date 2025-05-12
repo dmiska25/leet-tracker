@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { verifyUser } from '@/api/leetcode';
 import { useToast } from './ui/toast';
 
+const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
+
 function InfoBox({ className }: { className?: string }) {
   return (
     <div
@@ -85,6 +87,19 @@ export default function SignIn() {
           />
           <Button type="submit" className="w-full" disabled={saving || username.trim() === ''}>
             {saving ? 'Signing in…' : 'Sign in'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              setSaving(true);
+              await db.setUsername(DEMO_USERNAME);
+              setSaving(false);
+              window.location.reload();
+            }}
+          >
+            Try Demo
           </Button>
         </form>
 

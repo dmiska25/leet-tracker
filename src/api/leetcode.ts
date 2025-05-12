@@ -1,6 +1,8 @@
 import { allCategories, Category, Difficulty, Problem, Solve } from '../types/types';
+import { loadDemoSolves } from './demo';
 
 const SOLVES_BASE_URL = import.meta.env.VITE_SOLVES_BASE_URL;
+const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
 
 // Raw problem data shape from your external JSON file
 interface RawProblemData {
@@ -73,6 +75,10 @@ export async function verifyUser(username: string): Promise<{ exists: boolean }>
 
 // Fetch recent solves for a given LeetCode username
 export async function fetchRecentSolves(username: string): Promise<Solve[]> {
+  if (username === DEMO_USERNAME) {
+    return loadDemoSolves();
+  }
+
   const res = await fetch(`${SOLVES_BASE_URL}/${username}/submission`);
 
   if (res.status === 429) {
