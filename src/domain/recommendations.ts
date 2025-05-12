@@ -136,7 +136,7 @@ export async function getCategorySuggestions(
     };
 
     const solved = solveMap.get(p.slug);
-    const popularityScore = p.popularity; // already 0‑1 !! This assumption is wrong
+    const popularityScore = p.popularity; // already 0‑1
 
     if (solved && solved.length) {
       // Candidate for refresh

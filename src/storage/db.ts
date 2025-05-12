@@ -77,6 +77,16 @@ export const db = {
     const key = `${solve.slug}|${solve.timestamp}`;
     return (await dbPromise).put('solves', solve, key);
   },
+  async clearSolves(): Promise<void> {
+    await this.withTransaction(['solves'], async (tx) => {
+      const store = tx.objectStore('solves');
+      const allSolves = await store.getAll();
+      for (const solve of allSolves) {
+        const key = `${solve.slug}|${solve.timestamp}`;
+        await store.delete(key);
+      }
+    });
+  },
 
   // Goal profiles
   async getGoalProfile(id: string): Promise<GoalProfile | undefined> {

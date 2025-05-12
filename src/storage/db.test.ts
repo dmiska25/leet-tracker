@@ -74,6 +74,15 @@ describe('db storage module', () => {
     expect(solves[0].slug).toBe('two-sum');
   });
 
+  it('clears solves', async () => {
+    await db.saveSolve(exampleSolve);
+    const solvesBeforeClear = await db.getAllSolves();
+    expect(solvesBeforeClear).toHaveLength(1);
+    await db.clearSolves();
+    const solves = await db.getAllSolves();
+    expect(solves).toHaveLength(0);
+  });
+
   it('stores and retrieves a goal profile', async () => {
     await db.saveGoalProfile(exampleProfile);
     const result = await db.getGoalProfile('default');

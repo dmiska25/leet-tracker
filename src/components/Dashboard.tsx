@@ -125,6 +125,7 @@ export default function Dashboard() {
     if (!window.confirm('Are you sure you want to sign out? Your local progress will be cleared.'))
       return;
     await db.setUsername('');
+    await db.clearSolves();
     window.location.reload();
   };
 
