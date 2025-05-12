@@ -64,4 +64,19 @@ describe('<SignIn>', () => {
 
     expect(reloadSpy).not.toHaveBeenCalled();
   });
+
+  it('sets demo user and reloads when Try Demo button clicked', async () => {
+    vi.mocked(db.setUsername).mockResolvedValue('leet-tracker-demo-user');
+
+    const user = userEvent.setup();
+    renderWithToast();
+
+    const demoButton = screen.getByRole('button', { name: /try demo/i });
+    await user.click(demoButton);
+
+    await waitFor(() => {
+      expect(db.setUsername).toHaveBeenCalledWith('leet-tracker-demo-user');
+      expect(reloadSpy).toHaveBeenCalled();
+    });
+  });
 });
