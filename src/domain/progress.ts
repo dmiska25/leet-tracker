@@ -37,40 +37,45 @@ export function evaluateCategoryProgress(solves: Solve[]): Omit<CategoryProgress
     // TODO: grouping by date is good but we should also consider
     // that repeated problems over multiple days should also not be
     // rewarded as highly as novel problems
+    // Also, note that timezone is not considered in grouping, so all timestamps are treated as UTC
+    // This will need to be addressed in the future
     const key = `${s.slug}|${date}`;
     (grouped[key] ||= []).push(s);
   }
 
   let totalScore = 0;
   let totalEvidence = 0;
-  let count = 0;
+  let totalEasyEquivalentEvidence = 0;
   const nowMs = Date.now();
 
   for (const attempts of Object.values(grouped)) {
-    const latest = attempts.reduce((a, b) => (a.timestamp > b.timestamp ? a : b));
+    const accepted = attempts.filter((s) => s.status === 'Accepted');
+    if (accepted.length === 0) continue;
+
+    const latest = accepted.reduce((a, b) => (a.timestamp > b.timestamp ? a : b));
     const failedAttempts = attempts.filter((s) => s.status !== 'Accepted').length;
 
     const daysAgo = Math.floor((nowMs - latest.timestamp * 1000) / 86_400_000);
     const decay = recencyDecay(daysAgo);
-    const diffWeight = difficultyWeights[latest.difficulty ?? Difficulty.Easy];
+    const diffWeight = difficultyWeights[latest.difficulty ?? Difficulty.Easy]; // NOTE: fallback _should_ never happen since we fill in difficulty
     const attemptPenalty = getAttemptPenalty(failedAttempts);
 
-    const quality =
-      latest.qualityScore ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0.0);
+    const quality = latest.qualityScore ?? DEFAULT_QUALITY_SCORE;
     const adjustedQuality = quality * attemptPenalty;
 
-    totalScore += adjustedQuality * decay * diffWeight;
-    totalEvidence += decay * diffWeight;
-    count += 1;
+    const weight = decay * diffWeight;
+    totalScore += adjustedQuality * weight;
+    totalEvidence += weight;
+    totalEasyEquivalentEvidence += decay * 1.0;
   }
 
-  // Divide by the maximum difficulty weight to normalize from 0 to 1
-  const estimated = totalScore / (count * Math.max(...Object.values(difficultyWeights)));
+  const estimated = totalEasyEquivalentEvidence > 0 ? totalScore / totalEasyEquivalentEvidence : 0;
   const confidence = Math.min(1, totalEvidence / SUGGESTED_CATEGORY_SOLVES);
+  const adjusted = Math.min(1, estimated * confidence);
 
   return {
     estimatedScore: Math.round(Math.min(1, estimated) * 100) / 100,
     confidenceLevel: Math.round(confidence * 100) / 100,
-    adjustedScore: Math.round(estimated * confidence * 100) / 100,
+    adjustedScore: Math.round(adjusted * 100) / 100,
   };
 }
