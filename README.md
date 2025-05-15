@@ -49,6 +49,8 @@ adjustedScore = estimatedScore * confidenceLevel;
 - **Confidence:** Measures how much relevant recent evidence you have in a category. Maxes out at ~20 weighted solves.
 - **Grouped Attempts:** Multiple attempts on the same problem within one day are grouped to avoid inflation.
 
+You can read more about the scoring algorithm in the [Scoring Algorithm Deep Dive](docs/leet-tracker-scoring-doc.md).
+
 ### Recommendations
 
 For each problem category:
