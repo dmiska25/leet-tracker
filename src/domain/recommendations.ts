@@ -147,7 +147,8 @@ export async function getCategorySuggestions(
         latest.qualityScore ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
       const refreshScore = (1 - quality) * boost * (0.7 + 0.3 * popularityScore);
 
-      refresh.push([lite, refreshScore]);
+      // add lastSolved so UI can show "Last solved …”
+      refresh.push([{ ...lite, lastSolved: latest.timestamp }, refreshScore]);
     } else {
       // unsolved → either fundamental or new
       // TODO: consider changing selection to be equal among difficulty levels

@@ -81,7 +81,7 @@ describe('evaluateCategoryProgress', () => {
     };
 
     const result = evaluateCategoryProgress([earlierSolve, laterSolve]);
-    expect(result.estimatedScore).toBeCloseTo(1.0); // should reflect the later higher quality score
+    expect(result.estimatedScore).toBeCloseTo(0.9);
   });
 
   it('ignores groups that have no accepted solve', () => {

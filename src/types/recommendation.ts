@@ -6,6 +6,8 @@ export interface ProblemLite {
   difficulty: Difficulty;
   popularity: number; // 0‑1 normalised
   isFundamental: boolean;
+  /** Unix timestamp (seconds) of most recent accepted solve – present only for "refresh” bucket */
+  lastSolved?: number;
   tags?: Category[];
 }
 

@@ -47,6 +47,17 @@ function DifficultyBadge({ level }: { level: string }) {
   );
 }
 
+/* ---------- "Last solved …” pill ---------- */
+
+function LastSolvedLabel({ ts }: { ts: number }) {
+  const ago = useTimeAgo(new Date(ts * 1000));
+  return (
+    <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+      Last solved {ago}
+    </span>
+  );
+}
+
 /* ---------- Main Component ---------- */
 
 export default function Dashboard() {
@@ -311,6 +322,9 @@ export default function Dashboard() {
                                             </Badge>
                                           )}
                                         </div>
+                                        {bucket === 'refresh' && p.lastSolved && (
+                                          <LastSolvedLabel ts={p.lastSolved} />
+                                        )}
                                       </CardContent>
                                       <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
                                         <Button

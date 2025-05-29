@@ -102,8 +102,11 @@ describe('recommendation engine', () => {
     // Unsolved non‑fundamental goes to new
     expect(res.new.find((p) => p.slug === 'unsolved-new')).toBeTruthy();
 
-    // Low‑quality recent solve should trigger refresh bucket
-    expect(res.refresh.find((p) => p.slug === 'needs-refresh')).toBeTruthy();
+    // Low‑quality recent solve → should land in refresh bucket and expose lastSolved
+    const refreshItem = res.refresh.find((p) => p.slug === 'needs-refresh');
+    expect(refreshItem).toBeTruthy();
+    expect(refreshItem?.lastSolved).toBeDefined();
+    expect(typeof refreshItem!.lastSolved).toBe('number');
   });
 
   it('returns empty buckets when category has no problems', async () => {
