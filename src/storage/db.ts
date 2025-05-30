@@ -95,6 +95,9 @@ export const db = {
   async saveGoalProfile(profile: GoalProfile): Promise<string> {
     return (await dbPromise).put('goal-profiles', profile, profile.id);
   },
+  async deleteGoalProfile(id: string): Promise<void> {
+    return (await dbPromise).delete('goal-profiles', id);
+  },
   async setActiveGoalProfile(id: string): Promise<string> {
     return (await dbPromise).put('active-goal-profile', id, 'active');
   },

@@ -3,6 +3,7 @@ import type { GoalProfile } from '@/types/types';
 import { RefreshCcw, ExternalLink } from 'lucide-react';
 import clsx from 'clsx';
 import { useInitApp } from '@/hooks/useInitApp';
+import { ProfileManager } from '@/components/ProfileManager';
 import { getCategorySuggestions } from '@/domain/recommendations';
 import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
@@ -66,6 +67,7 @@ export default function Dashboard() {
   const [suggestions, setSuggestions] = useState<Record<string, CategoryRecommendation>>({});
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [profileManagerOpen, setProfileManagerOpen] = useState(false);
 
   // Profile selector
   const [profiles, setProfiles] = useState<GoalProfile[]>([]);
@@ -79,14 +81,15 @@ export default function Dashboard() {
   }, [loading]);
 
   // Fetch saved profiles + active profile ID
+  const loadProfiles = async () => {
+    const list = await db.getAllGoalProfiles();
+    setProfiles(list);
+    const activeId = await db.getActiveGoalProfileId();
+    setActiveProfileId(activeId ?? list[0]?.id);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      const list = await db.getAllGoalProfiles();
-      setProfiles(list);
-      const activeId = await db.getActiveGoalProfileId();
-      setActiveProfileId(activeId ?? list[0]?.id);
-    };
-    load();
+    loadProfiles();
   }, []);
 
   if (loading) {
@@ -179,6 +182,16 @@ export default function Dashboard() {
           </div>
         </div>
       </nav>
+      {profileManagerOpen && (
+        <ProfileManager
+          onDone={async () => {
+            setProfileManagerOpen(false);
+            await loadProfiles();
+            await refresh();
+            setLastSynced(new Date());
+          }}
+        />
+      )}
 
       {/* ───────── Main Content ───────── */}
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -217,6 +230,10 @@ export default function Dashboard() {
               )}
             </div>
 
+            {/* Manage Profiles */}
+            <Button variant="outline" onClick={() => setProfileManagerOpen(true)}>
+              Manage Profiles
+            </Button>
             {/* Sync button */}
             <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2">
               <RefreshCcw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
