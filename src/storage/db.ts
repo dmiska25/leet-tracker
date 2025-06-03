@@ -12,7 +12,7 @@ export interface LeetTrackerDB extends DBSchema {
   };
   'problem-metadata': {
     key: 'lastUpdated';
-    value: number; // Epock timestamp
+    value: number; // Epoch timestamp
   };
   solves: {
     key: string; // slug|timestamp
@@ -58,8 +58,8 @@ export const db = {
   async addOrUpdateProblem(problem: Problem): Promise<string> {
     return (await dbPromise).put('problem-list', problem, problem.slug);
   },
-  async setProblemListLastUpdated(epock: number): Promise<string> {
-    return (await dbPromise).put('problem-metadata', epock, 'lastUpdated');
+  async setProblemListLastUpdated(epoch: number): Promise<string> {
+    return (await dbPromise).put('problem-metadata', epoch, 'lastUpdated');
   },
   async getProblemListLastUpdated(): Promise<number | undefined> {
     return (await dbPromise).get('problem-metadata', 'lastUpdated');

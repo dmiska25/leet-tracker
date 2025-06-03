@@ -17,7 +17,7 @@ interface RawProblemData {
   dislikes: number;
   /** optional in problems‑lite.json */
   description?: string;
-  createdAt: number; // epock time
+  createdAt: number; // epoch time
 }
 
 // Response from alfa-leetcode-api

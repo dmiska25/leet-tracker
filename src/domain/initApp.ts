@@ -8,11 +8,11 @@ import { getActiveOrInitProfile } from './goalProfiles';
 
 const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL;
 
-function isStale(epock: number | undefined): boolean {
-  if (!epock) return true;
-  // check if epock is within the last 24 hours
+function isStale(epoch: number | undefined): boolean {
+  if (!epoch) return true;
+  // check if epoch is within the last 24 hours
   const now = new Date().getTime();
-  const lastUpdated = new Date(epock).getTime();
+  const lastUpdated = new Date(epoch).getTime();
   const diff = now - lastUpdated;
   const diffInHours = diff / (1000 * 60 * 60);
   return diffInHours > 24;

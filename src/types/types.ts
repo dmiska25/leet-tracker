@@ -92,14 +92,14 @@ export interface Problem {
   popularity: number; // 0.0–1.0
   isPaid: boolean; // true if problem is paid
   isFundamental: boolean; // infered from ai model
-  createdAt: number; // epock time in seconds
+  createdAt: number; // epoch time in seconds
 }
 
 // Single user solve attempt
 export interface Solve {
   slug: string;
   title: string;
-  timestamp: number; // epock time in seconds
+  timestamp: number; // epoch time in seconds
   status: string;
   lang: string; // e.g. "python3", "cpp", etc.
   difficulty?: Difficulty; // ← optional at first, inferred from Problem DB
