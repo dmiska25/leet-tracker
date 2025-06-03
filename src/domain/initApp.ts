@@ -29,7 +29,7 @@ async function updateProblemList(): Promise<string[]> {
     try {
       const remoteProblems = await fetchProblemCatalog(PROBLEM_CATALOG_URL);
       const newProblems = remoteProblems.filter(
-        (problem) => !lastUpdated || problem.createdAt > lastUpdated,
+        (problem) => !lastUpdated || problem.createdAt * 1000 > lastUpdated,
       );
 
       await db.withTransaction(['problem-list', 'problem-metadata'], async (tx) => {

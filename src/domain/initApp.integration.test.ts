@@ -102,7 +102,7 @@ describe('initApp (integration with fake‑indexeddb)', () => {
 
     // Set up test data
     await testDb.put('leetcode-username', 'testuser', 'username');
-    await testDb.put('problem-metadata', 1746208137, 'lastUpdated');
+    await testDb.put('problem-metadata', 1746208137152, 'lastUpdated');
   });
 
   afterEach(async () => {

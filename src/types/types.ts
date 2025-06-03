@@ -92,14 +92,14 @@ export interface Problem {
   popularity: number; // 0.0–1.0
   isPaid: boolean; // true if problem is paid
   isFundamental: boolean; // infered from ai model
-  createdAt: number; // epock time
+  createdAt: number; // epock time in seconds
 }
 
 // Single user solve attempt
 export interface Solve {
   slug: string;
   title: string;
-  timestamp: number; // Unix timestamp as number (from API)
+  timestamp: number; // epock time in seconds
   status: string;
   lang: string; // e.g. "python3", "cpp", etc.
   difficulty?: Difficulty; // ← optional at first, inferred from Problem DB
@@ -123,6 +123,6 @@ export interface GoalProfile {
   name: string; // User-visible name (e.g. "My Custom Goals")
   description?: string; // Optional details
   goals: GoalMap; // Goals by category
-  createdAt: string; // ISO string
+  createdAt: string; // epoch time in milliseconds
   isEditable: boolean; // If false, profile is locked(default profile)
 }
