@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "preview": "vite preview",
     "prepare": "if [ \"$VERCEL\" != \"1\" ]; then husky install; fi",
-    "test": "vitest --mode test"
+    "test": "vitest run --mode test"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.5",
