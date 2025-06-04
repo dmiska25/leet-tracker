@@ -174,3 +174,71 @@ export async function getCategorySuggestions(
     new: pick(fresh),
   };
 }
+
+/**
+ * Return weighted‑random suggestions across the given categories.
+ * Tags are omitted from results so users cannot infer the category.
+ */
+export async function getRandomSuggestions(
+  tags: Category[],
+  k = 3,
+): Promise<CategoryRecommendation> {
+  if (!isPrimed()) await primeData();
+
+  const tagSet = new Set(tags);
+  const nowMs = Date.now();
+  const solveMap = new Map<string, Solve[]>();
+  for (const s of _solves) {
+    if (!s.tags || !s.tags.some((t) => tagSet.has(t))) continue;
+    if (!solveMap.has(s.slug)) solveMap.set(s.slug, []);
+    solveMap.get(s.slug)!.push(s);
+  }
+
+  const fundamentals: Array<[ProblemLite, number]> = [];
+  const refresh: Array<[ProblemLite, number]> = [];
+  const fresh: Array<[ProblemLite, number]> = [];
+
+  for (const p of _problems) {
+    if (p.isPaid || !p.tags.some((t) => tagSet.has(t))) continue;
+
+    const lite: ProblemLite = {
+      slug: p.slug,
+      title: p.title,
+      difficulty: p.difficulty,
+      popularity: p.popularity,
+      isFundamental: p.isFundamental,
+      // intentionally omit tags
+    };
+
+    const solved = solveMap.get(p.slug);
+    const popularityScore = p.popularity;
+
+    if (solved && solved.length) {
+      const latest = solved.reduce((a, b) => (a.timestamp > b.timestamp ? a : b));
+      const daysAgo = Math.floor((nowMs - latest.timestamp * 1000) / 86_400_000);
+      const boost = recencyBoost(daysAgo);
+      const quality =
+        latest.qualityScore ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
+      const refreshScore = (1 - quality) * boost * (0.7 + 0.3 * popularityScore);
+      refresh.push([{ ...lite, lastSolved: latest.timestamp }, refreshScore]);
+    } else if (p.isFundamental) {
+      fundamentals.push([lite, popularityScore + 0.2]);
+    } else {
+      fresh.push([lite, popularityScore]);
+    }
+  }
+
+  const pick = (pool: Array<[ProblemLite, number]>) =>
+    weightedSample(
+      pool.map((x) => x[0]),
+      pool.map((x) => x[1]),
+      k,
+    );
+
+  return {
+    tag: 'Random' as any,
+    fundamentals: pick(fundamentals),
+    refresh: pick(refresh),
+    new: pick(fresh),
+  };
+}
