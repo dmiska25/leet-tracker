@@ -15,6 +15,12 @@ This project is a **local-first LeetCode tracker** written in TypeScript + React
 
 ---
 
+## Commenting Guidelines
+
+- **Preserve existing comments:** Do not remove comments unless they are outdated or no longer relevant.
+- Comments provide important context, rationale, or usage notes—keep them intact to help future contributors.
+- When updating code, review nearby comments and update them if the logic changes.
+
 ## Testing/linting Tips
 
 ### Run full suite (CI-style)
