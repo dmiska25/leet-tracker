@@ -296,41 +296,49 @@ export default function Dashboard() {
                         {(['fundamentals', 'refresh', 'new'] as const).map((bucket) => (
                           <TabsContent key={bucket} value={bucket} className="mt-4">
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {(suggestions['Random'] as CategoryRecommendation)[bucket].map((p: any) => (
-                                <Card key={p.slug} className="flex flex-col">
-                                  <CardHeader className="p-4 pb-2">
-                                    <div className="flex justify-between items-start">
-                                      <CardTitle className="text-base">{p.title}</CardTitle>
-                                      <DifficultyBadge level={p.difficulty} />
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent className="p-4 pt-0 pb-2">
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {p.isFundamental && (
-                                        <Badge variant="secondary" className="text-[11px] px-1.5 py-0.5">
-                                          Fundamental
-                                        </Badge>
+                              {(suggestions['Random'] as CategoryRecommendation)[bucket].map(
+                                (p: any) => (
+                                  <Card key={p.slug} className="flex flex-col">
+                                    <CardHeader className="p-4 pb-2">
+                                      <div className="flex justify-between items-start">
+                                        <CardTitle className="text-base">{p.title}</CardTitle>
+                                        <DifficultyBadge level={p.difficulty} />
+                                      </div>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-0 pb-2">
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {p.isFundamental && (
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-[11px] px-1.5 py-0.5"
+                                          >
+                                            Fundamental
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {bucket === 'refresh' && p.lastSolved && (
+                                        <LastSolvedLabel ts={p.lastSolved} />
                                       )}
-                                    </div>
-                                    {bucket === 'refresh' && p.lastSolved && (
-                                      <LastSolvedLabel ts={p.lastSolved} />
-                                    )}
-                                  </CardContent>
-                                  <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="gap-1"
-                                      onClick={() =>
-                                        window.open(`https://leetcode.com/problems/${p.slug}`, '_blank')
-                                      }
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                      Solve on LeetCode
-                                    </Button>
-                                  </CardFooter>
-                                </Card>
-                              ))}
+                                    </CardContent>
+                                    <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                        onClick={() =>
+                                          window.open(
+                                            `https://leetcode.com/problems/${p.slug}`,
+                                            '_blank',
+                                          )
+                                        }
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                        Solve on LeetCode
+                                      </Button>
+                                    </CardFooter>
+                                  </Card>
+                                ),
+                              )}
                             </div>
                           </TabsContent>
                         ))}
@@ -344,114 +352,114 @@ export default function Dashboard() {
                   const goalPercent = Math.round(cat.goal * 100);
                   const isOpen = open === cat.tag;
 
-                return (
-                  <div key={cat.tag} className="py-4 space-y-3">
-                    {/* Summary row */}
-                    <button
-                      className="w-full text-left space-y-2"
-                      onClick={() => handleToggle(cat.tag)}
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2">
-                        {/* Category name – fixed width so bars align */}
-                        <div className="min-w-[180px]">
-                          <span>{cat.tag}</span>
-                        </div>
-
-                        {/* Percentage, goal and progress bar */}
-                        <div className="flex-1 space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>{percent}%</span>
-                            <span className="text-muted-foreground">Goal: {goalPercent}%</span>
+                  return (
+                    <div key={cat.tag} className="py-4 space-y-3">
+                      {/* Summary row */}
+                      <button
+                        className="w-full text-left space-y-2"
+                        onClick={() => handleToggle(cat.tag)}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2">
+                          {/* Category name – fixed width so bars align */}
+                          <div className="min-w-[180px]">
+                            <span>{cat.tag}</span>
                           </div>
-                          <div className="relative">
-                            <ProgressBar value={percent} />
-                            <div
-                              className="absolute top-0 h-2 border-r-2 border-primary/60"
-                              style={{ left: `${goalPercent}%` }}
-                            />
+
+                          {/* Percentage, goal and progress bar */}
+                          <div className="flex-1 space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span>{percent}%</span>
+                              <span className="text-muted-foreground">Goal: {goalPercent}%</span>
+                            </div>
+                            <div className="relative">
+                              <ProgressBar value={percent} />
+                              <div
+                                className="absolute top-0 h-2 border-r-2 border-primary/60"
+                                style={{ left: `${goalPercent}%` }}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
+                      </button>
 
-                    {/* Detail – tabbed recommendations */}
-                    <div
-                      className={clsx(
-                        'overflow-hidden transition-all duration-300 origin-top',
-                        isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0',
-                      )}
-                    >
-                      {suggestions[cat.tag] && (
-                        <Tabs defaultValue="fundamentals" className="mt-4 w-full">
-                          <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="fundamentals">Fundamentals</TabsTrigger>
-                            <TabsTrigger value="refresh">Refresh</TabsTrigger>
-                            <TabsTrigger value="new">New</TabsTrigger>
-                          </TabsList>
+                      {/* Detail – tabbed recommendations */}
+                      <div
+                        className={clsx(
+                          'overflow-hidden transition-all duration-300 origin-top',
+                          isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0',
+                        )}
+                      >
+                        {suggestions[cat.tag] && (
+                          <Tabs defaultValue="fundamentals" className="mt-4 w-full">
+                            <TabsList className="grid w-full grid-cols-3">
+                              <TabsTrigger value="fundamentals">Fundamentals</TabsTrigger>
+                              <TabsTrigger value="refresh">Refresh</TabsTrigger>
+                              <TabsTrigger value="new">New</TabsTrigger>
+                            </TabsList>
 
-                          {(['fundamentals', 'refresh', 'new'] as const).map((bucket) => (
-                            <TabsContent key={bucket} value={bucket} className="mt-4">
-                              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {(suggestions[cat.tag] as CategoryRecommendation)[bucket].map(
-                                  (p: any) => (
-                                    <Card key={p.slug} className="flex flex-col">
-                                      <CardHeader className="p-4 pb-2">
-                                        <div className="flex justify-between items-start">
-                                          <CardTitle className="text-base">{p.title}</CardTitle>
-                                          <DifficultyBadge level={p.difficulty} />
-                                        </div>
-                                      </CardHeader>
-                                      <CardContent className="p-4 pt-0 pb-2">
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                          {p.tags?.map((tag: any) => (
-                                            <Badge
-                                              key={tag}
-                                              variant="secondary"
-                                              className="text-[11px] px-1.5 py-0.5"
-                                            >
-                                              {tag}
-                                            </Badge>
-                                          ))}
-                                          {p.isFundamental && (
-                                            <Badge
-                                              variant="secondary"
-                                              className="text-[11px] px-1.5 py-0.5"
-                                            >
-                                              Fundamental
-                                            </Badge>
+                            {(['fundamentals', 'refresh', 'new'] as const).map((bucket) => (
+                              <TabsContent key={bucket} value={bucket} className="mt-4">
+                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                  {(suggestions[cat.tag] as CategoryRecommendation)[bucket].map(
+                                    (p: any) => (
+                                      <Card key={p.slug} className="flex flex-col">
+                                        <CardHeader className="p-4 pb-2">
+                                          <div className="flex justify-between items-start">
+                                            <CardTitle className="text-base">{p.title}</CardTitle>
+                                            <DifficultyBadge level={p.difficulty} />
+                                          </div>
+                                        </CardHeader>
+                                        <CardContent className="p-4 pt-0 pb-2">
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {p.tags?.map((tag: any) => (
+                                              <Badge
+                                                key={tag}
+                                                variant="secondary"
+                                                className="text-[11px] px-1.5 py-0.5"
+                                              >
+                                                {tag}
+                                              </Badge>
+                                            ))}
+                                            {p.isFundamental && (
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-[11px] px-1.5 py-0.5"
+                                              >
+                                                Fundamental
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          {bucket === 'refresh' && p.lastSolved && (
+                                            <LastSolvedLabel ts={p.lastSolved} />
                                           )}
-                                        </div>
-                                        {bucket === 'refresh' && p.lastSolved && (
-                                          <LastSolvedLabel ts={p.lastSolved} />
-                                        )}
-                                      </CardContent>
-                                      <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="gap-1"
-                                          onClick={() =>
-                                            window.open(
-                                              `https://leetcode.com/problems/${p.slug}`,
-                                              '_blank',
-                                            )
-                                          }
-                                        >
-                                          <ExternalLink className="h-4 w-4" />
-                                          Solve on LeetCode
-                                        </Button>
-                                      </CardFooter>
-                                    </Card>
-                                  ),
-                                )}
-                              </div>
-                            </TabsContent>
-                          ))}
-                        </Tabs>
-                      )}
+                                        </CardContent>
+                                        <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-1"
+                                            onClick={() =>
+                                              window.open(
+                                                `https://leetcode.com/problems/${p.slug}`,
+                                                '_blank',
+                                              )
+                                            }
+                                          >
+                                            <ExternalLink className="h-4 w-4" />
+                                            Solve on LeetCode
+                                          </Button>
+                                        </CardFooter>
+                                      </Card>
+                                    ),
+                                  )}
+                                </div>
+                              </TabsContent>
+                            ))}
+                          </Tabs>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
+                  );
                 })}
               </>
             )}

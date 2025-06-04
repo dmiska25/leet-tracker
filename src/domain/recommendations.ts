@@ -107,72 +107,11 @@ export async function getCategorySuggestions(
   tag: Category,
   k = 3,
 ): Promise<CategoryRecommendation> {
-  if (!isPrimed()) await primeData();
-
-  const nowMs = Date.now();
-  const solveMap = new Map<string, Solve[]>();
-  for (const s of _solves) {
-    if (!s.tags?.includes(tag)) continue;
-    if (!solveMap.has(s.slug)) solveMap.set(s.slug, []);
-    solveMap.get(s.slug)!.push(s);
-  }
-
-  const fundamentals: Array<[ProblemLite, number]> = [];
-  const refresh: Array<[ProblemLite, number]> = [];
-  const fresh: Array<[ProblemLite, number]> = [];
-
-  for (const p of _problems) {
-    // Filter out problems that don't match the tag or are paid only
-    // TODO: Allow a toggle for paid problems in the future
-    if (!p.tags.includes(tag) || p.isPaid) continue;
-
-    const lite: ProblemLite = {
-      slug: p.slug,
-      title: p.title,
-      difficulty: p.difficulty,
-      popularity: p.popularity,
-      isFundamental: p.isFundamental,
-      tags: p.tags,
-    };
-
-    const solved = solveMap.get(p.slug);
-    const popularityScore = p.popularity; // already 0‑1
-
-    if (solved && solved.length) {
-      // Candidate for refresh
-      const latest = solved.reduce((a, b) => (a.timestamp > b.timestamp ? a : b));
-      const daysAgo = Math.floor((nowMs - latest.timestamp * 1000) / 86_400_000);
-      const boost = recencyBoost(daysAgo);
-      const quality =
-        latest.qualityScore ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
-      const refreshScore = (1 - quality) * boost * (0.7 + 0.3 * popularityScore);
-
-      // add lastSolved so UI can show "Last solved …”
-      refresh.push([{ ...lite, lastSolved: latest.timestamp }, refreshScore]);
-    } else {
-      // unsolved → either fundamental or new
-      // TODO: consider changing selection to be equal among difficulty levels
-      if (p.isFundamental) {
-        fundamentals.push([lite, popularityScore + 0.2]);
-      } else {
-        fresh.push([lite, popularityScore]);
-      }
-    }
-  }
-
-  const pick = (pool: Array<[ProblemLite, number]>) =>
-    weightedSample(
-      pool.map((x) => x[0]),
-      pool.map((x) => x[1]),
-      k,
-    );
-
-  return {
-    tag,
-    fundamentals: pick(fundamentals),
-    refresh: pick(refresh),
-    new: pick(fresh),
-  };
+  return getSuggestions([tag], {
+    k,
+    includeTags: true,
+    label: tag,
+  });
 }
 
 /**
@@ -182,6 +121,23 @@ export async function getCategorySuggestions(
 export async function getRandomSuggestions(
   tags: Category[],
   k = 3,
+): Promise<CategoryRecommendation> {
+  return getSuggestions(tags, {
+    k,
+    includeTags: false,
+    label: 'Random' as Category,
+  });
+}
+
+interface BuildOpts {
+  k: number;
+  includeTags: boolean;
+  label: Category;
+}
+
+async function getSuggestions(
+  tags: Category[],
+  { k, includeTags, label }: BuildOpts,
 ): Promise<CategoryRecommendation> {
   if (!isPrimed()) await primeData();
 
@@ -207,8 +163,8 @@ export async function getRandomSuggestions(
       difficulty: p.difficulty,
       popularity: p.popularity,
       isFundamental: p.isFundamental,
-      // intentionally omit tags
-    };
+      ...(includeTags && { tags: p.tags }),
+    } as ProblemLite;
 
     const solved = solveMap.get(p.slug);
     const popularityScore = p.popularity;
@@ -236,7 +192,7 @@ export async function getRandomSuggestions(
     );
 
   return {
-    tag: 'Random' as any,
+    tag: label,
     fundamentals: pick(fundamentals),
     refresh: pick(refresh),
     new: pick(fresh),
