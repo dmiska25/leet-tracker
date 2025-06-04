@@ -40,6 +40,9 @@ export function mapTagsToCategories(tags: string[]): Category[] {
 // Fetch full problem catalog from hosted JSON (URL configurable)
 export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
   const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
   const data: RawProblemData[] = await res.json();
 
   return data.map((p) => ({
