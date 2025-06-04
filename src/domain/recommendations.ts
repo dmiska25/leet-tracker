@@ -101,7 +101,6 @@ function weightedSample<T>(items: T[], weights: number[], k: number): T[] {
 
 /**
  * Return weighted‑random problem recommendations for a single category.
- * Requires `primeData` to have been called at least once.
  */
 export async function getCategorySuggestions(
   tag: Category,
@@ -169,7 +168,7 @@ async function getSuggestions(
     } as ProblemLite;
 
     const solved = solveMap.get(p.slug);
-    const popularityScore = p.popularity; // already 0‑1 !! This assumption is wrong
+    const popularityScore = p.popularity; // already 0‑1
 
     if (solved && solved.length) {
       // Candidate for refresh
