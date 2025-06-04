@@ -60,7 +60,11 @@ describe('fetchProblemCatalog', () => {
       },
     ];
 
-    (fetch as any).mockResolvedValueOnce({ json: async () => mockData });
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockData,
+    });
 
     const result = await fetchProblemCatalog('https://example.com/data.json');
 
@@ -77,6 +81,14 @@ describe('fetchProblemCatalog', () => {
         createdAt: 1746308137,
       },
     ]);
+  });
+
+  it('throws when HTTP status is not ok', async () => {
+    (fetch as any).mockResolvedValueOnce({ ok: false, status: 404 });
+
+    await expect(fetchProblemCatalog('https://example.com/missing.json')).rejects.toThrow(
+      'HTTP 404',
+    );
   });
 });
 
