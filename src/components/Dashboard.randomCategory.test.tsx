@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { vi, describe, it, beforeEach, afterEach } from 'vitest';
 
-import Dashboard from './Dashboard';
+import Dashboard, { RANDOM_TAG } from './Dashboard';
 import { db } from '@/storage/db';
 import { getRandomSuggestions, getCategorySuggestions } from '@/domain/recommendations';
 import type { CategoryRecommendation } from '@/types/recommendation';
@@ -83,7 +83,7 @@ describe('Dashboard \u2013 Random category', () => {
     const user = userEvent.setup();
     render(<Dashboard />);
 
-    const randomBtn = screen.getByRole('button', { name: 'Random' });
+    const randomBtn = screen.getByRole('button', { name: RANDOM_TAG });
     expect(randomBtn).toBeInTheDocument();
 
     await user.click(randomBtn);
