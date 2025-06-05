@@ -108,14 +108,13 @@ export async function getCategorySuggestions(
 ): Promise<CategoryRecommendation> {
   return getSuggestions([tag], {
     k,
-    includeTags: true,
     label: tag,
   });
 }
 
 /**
  * Return weighted‑random suggestions across the given categories.
- * Tags are omitted from results so users cannot infer the category.
+ * Tags remain on the problems and the UI decides whether to display them.
  */
 export async function getRandomSuggestions(
   tags: Category[],
@@ -123,20 +122,18 @@ export async function getRandomSuggestions(
 ): Promise<CategoryRecommendation> {
   return getSuggestions(tags, {
     k,
-    includeTags: false,
     label: 'Random',
   });
 }
 
 interface BuildOpts {
   k: number;
-  includeTags: boolean;
   label: Category;
 }
 
 async function getSuggestions(
   tags: Category[],
-  { k, includeTags, label }: BuildOpts,
+  { k, label }: BuildOpts,
 ): Promise<CategoryRecommendation> {
   if (!isPrimed()) await primeData();
 
@@ -164,7 +161,7 @@ async function getSuggestions(
       difficulty: p.difficulty,
       popularity: p.popularity,
       isFundamental: p.isFundamental,
-      ...(includeTags && { tags: p.tags }),
+      tags: p.tags,
     } as ProblemLite;
 
     const solved = solveMap.get(p.slug);

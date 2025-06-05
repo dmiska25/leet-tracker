@@ -21,10 +21,11 @@ describe('<ProblemCards>', () => {
     expect(screen.getByText('Fundamental')).toBeInTheDocument();
   });
 
-  it('hides tags and displays last solved for refresh bucket', () => {
+  it('hides tags and fundamental badge when showTags is false', () => {
     const prob = { ...baseProblem, lastSolved: Date.now() / 1000 };
     render(<ProblemCards problems={[prob]} bucket="refresh" showTags={false} />);
     expect(screen.queryByText('Array')).not.toBeInTheDocument();
+    expect(screen.queryByText('Fundamental')).not.toBeInTheDocument();
     expect(screen.getByText(/Last solved/)).toBeInTheDocument();
   });
 });

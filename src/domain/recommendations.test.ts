@@ -139,11 +139,11 @@ describe('recommendation engine', () => {
     expect(res.new.find((p) => p.slug === 'no-category-problem')).toBeFalsy();
   });
 
-  it('getRandomSuggestions omits category tags', async () => {
+  it('getRandomSuggestions includes category tags', async () => {
     const res = await getRandomSuggestions(['Array'], 5);
     const all = [...res.fundamentals, ...res.refresh, ...res.new];
     for (const p of all) {
-      expect(p.tags).toBeUndefined();
+      expect(p.tags).toBeDefined();
     }
   });
 });

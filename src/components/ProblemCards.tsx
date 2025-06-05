@@ -51,16 +51,19 @@ export default function ProblemCards({ problems, bucket, showTags = true }: Prob
           </CardHeader>
           <CardContent className="p-4 pt-0 pb-2">
             <div className="flex flex-wrap gap-1 mt-1">
-              {showTags &&
-                p.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-[11px] px-1.5 py-0.5">
-                    {tag}
-                  </Badge>
-                ))}
-              {p.isFundamental && (
-                <Badge variant="secondary" className="text-[11px] px-1.5 py-0.5">
-                  Fundamental
-                </Badge>
+              {showTags && (
+                <>
+                  {p.tags?.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-[11px] px-1.5 py-0.5">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {p.isFundamental && (
+                    <Badge variant="secondary" className="text-[11px] px-1.5 py-0.5">
+                      Fundamental
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
             {bucket === 'refresh' && p.lastSolved && <LastSolvedLabel ts={p.lastSolved} />}
