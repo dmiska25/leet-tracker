@@ -6,7 +6,6 @@ import { vi, describe, it, beforeEach, afterEach } from 'vitest';
 import Dashboard, { RANDOM_TAG } from './Dashboard';
 import { db } from '@/storage/db';
 import { getRandomSuggestions, getCategorySuggestions } from '@/domain/recommendations';
-import type { CategoryRecommendation } from '@/types/recommendation';
 import { Difficulty } from '@/types/types';
 
 /* ------------------------------------------------------------------ */
@@ -45,10 +44,10 @@ describe('Dashboard \u2013 Random category', () => {
       fundamentals: [],
       refresh: [],
       new: [],
-    } as CategoryRecommendation);
+    });
 
     vi.mocked(getRandomSuggestions).mockResolvedValue({
-      tag: 'Random' as any,
+      tag: 'Random',
       fundamentals: [
         {
           slug: 'rand-1',
@@ -60,7 +59,7 @@ describe('Dashboard \u2013 Random category', () => {
       ],
       refresh: [],
       new: [],
-    } as CategoryRecommendation);
+    });
 
     vi.mocked(db.getAllGoalProfiles).mockResolvedValue([
       {

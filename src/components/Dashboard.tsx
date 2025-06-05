@@ -1,122 +1,35 @@
 import { useState, useEffect } from 'react';
 import type { GoalProfile } from '@/types/types';
-import { RefreshCcw, ExternalLink } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import clsx from 'clsx';
 import { useInitApp } from '@/hooks/useInitApp';
 import { ProfileManager } from '@/components/ProfileManager';
 import { getCategorySuggestions, getRandomSuggestions } from '@/domain/recommendations';
-import { CategoryRecommendation, ProblemLite } from '@/types/recommendation';
+import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ModeBadge } from '@/components/ModeBadge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
+import ProblemCards from './ProblemCards';
+import type { Category } from '@/types/types';
 
-export const RANDOM_TAG = 'Random';
-
-/* ---------- Helpers ---------- */
-
-function DifficultyBadge({ level }: { level: string }) {
-  const lvl = level.toLowerCase();
-  const classes =
-    lvl === 'easy'
-      ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-      : lvl === 'medium'
-        ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-        : 'bg-rose-100 text-rose-800 hover:bg-rose-200';
-
-  const label = lvl.charAt(0).toUpperCase() + lvl.slice(1);
-
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${classes}`}
-    >
-      {label}
-    </span>
-  );
-}
-
-/* ---------- "Last solved …” pill ---------- */
-
-function LastSolvedLabel({ ts }: { ts: number }) {
-  const ago = useTimeAgo(new Date(ts * 1000));
-  return (
-    <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-      Last solved {ago}
-    </span>
-  );
-}
-
-interface ProblemCardsProps {
-  problems: ProblemLite[];
-  bucket: 'fundamentals' | 'refresh' | 'new';
-  showTags?: boolean;
-}
-
-function ProblemCards({ problems, bucket, showTags = true }: ProblemCardsProps) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {problems.map((p) => (
-        <Card key={p.slug} className="flex flex-col">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex justify-between items-start">
-              <CardTitle className="text-base">{p.title}</CardTitle>
-              <DifficultyBadge level={p.difficulty} />
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 pb-2">
-            <div className="flex flex-wrap gap-1 mt-1">
-              {showTags &&
-                p.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-[11px] px-1.5 py-0.5">
-                    {tag}
-                  </Badge>
-                ))}
-              {p.isFundamental && (
-                <Badge variant="secondary" className="text-[11px] px-1.5 py-0.5">
-                  Fundamental
-                </Badge>
-              )}
-            </div>
-            {bucket === 'refresh' && p.lastSolved && <LastSolvedLabel ts={p.lastSolved} />}
-          </CardContent>
-          <CardFooter className="p-4 pt-2 mt-auto flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1"
-              onClick={() => window.open(`https://leetcode.com/problems/${p.slug}`, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Solve on LeetCode
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
-  );
-}
+export const RANDOM_TAG: Category = 'Random';
 
 /* ---------- Main Component ---------- */
 
 export default function Dashboard() {
   const { loading, username, progress, refresh, criticalError } = useInitApp();
-  const [open, setOpen] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<Record<string, CategoryRecommendation>>({});
+  const [open, setOpen] = useState<Category | null>(null);
+  const [suggestions, setSuggestions] = useState<Record<Category, CategoryRecommendation>>(
+    {} as Record<Category, CategoryRecommendation>,
+  );
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [profileManagerOpen, setProfileManagerOpen] = useState(false);
@@ -156,17 +69,17 @@ export default function Dashboard() {
 
   /* ----- events ----- */
 
-  const handleToggle = async (tag: string) => {
+  const handleToggle = async (tag: Category) => {
     if (open === tag) return setOpen(null);
     setOpen(tag);
     if (!suggestions[tag]) {
       const rec =
         tag === RANDOM_TAG
           ? await getRandomSuggestions(
-              progress.map((p) => p.tag as any),
+              progress.map((p) => p.tag),
               5,
             )
-          : await getCategorySuggestions(tag as any, 5);
+          : await getCategorySuggestions(tag, 5);
       setSuggestions((s) => ({ ...s, [tag]: rec }));
     }
   };
@@ -348,7 +261,7 @@ export default function Dashboard() {
                         {(['fundamentals', 'refresh', 'new'] as const).map((bucket) => (
                           <TabsContent key={bucket} value={bucket} className="mt-4">
                             <ProblemCards
-                              problems={(suggestions[RANDOM_TAG] as CategoryRecommendation)[bucket]}
+                              problems={suggestions[RANDOM_TAG][bucket]}
                               bucket={bucket}
                               showTags={false}
                             />
@@ -412,9 +325,7 @@ export default function Dashboard() {
                             {(['fundamentals', 'refresh', 'new'] as const).map((bucket) => (
                               <TabsContent key={bucket} value={bucket} className="mt-4">
                                 <ProblemCards
-                                  problems={
-                                    (suggestions[cat.tag] as CategoryRecommendation)[bucket]
-                                  }
+                                  problems={suggestions[cat.tag][bucket]}
                                   bucket={bucket}
                                 />
                               </TabsContent>

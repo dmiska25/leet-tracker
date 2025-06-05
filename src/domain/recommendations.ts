@@ -124,7 +124,7 @@ export async function getRandomSuggestions(
   return getSuggestions(tags, {
     k,
     includeTags: false,
-    label: 'Random' as Category,
+    label: 'Random',
   });
 }
 
