@@ -80,7 +80,7 @@ export const allCategories = [
   'Suffix Array',
 ] as const;
 
-export type Category = (typeof allCategories)[number];
+export type Category = (typeof allCategories)[number] | 'Random';
 
 // Core LeetCode problem definition
 export interface Problem {

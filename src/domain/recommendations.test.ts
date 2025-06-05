@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getCategorySuggestions, primeData, clearCache } from './recommendations';
+import {
+  getCategorySuggestions,
+  getRandomSuggestions,
+  primeData,
+  clearCache,
+} from './recommendations';
 import { db } from '../storage/db';
 import { Difficulty, Problem, Solve } from '../types/types';
 
@@ -132,5 +137,13 @@ describe('recommendation engine', () => {
     expect(res.fundamentals.find((p) => p.slug === 'no-category-problem')).toBeFalsy();
     expect(res.refresh.find((p) => p.slug === 'no-category-problem')).toBeFalsy();
     expect(res.new.find((p) => p.slug === 'no-category-problem')).toBeFalsy();
+  });
+
+  it('getRandomSuggestions includes category tags', async () => {
+    const res = await getRandomSuggestions(['Array'], 5);
+    const all = [...res.fundamentals, ...res.refresh, ...res.new];
+    for (const p of all) {
+      expect(p.tags).toBeDefined();
+    }
   });
 });

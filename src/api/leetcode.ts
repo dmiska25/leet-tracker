@@ -34,7 +34,9 @@ interface RawSubmissionResponse {
 
 const categorySet = new Set(allCategories);
 export function mapTagsToCategories(tags: string[]): Category[] {
-  return tags.filter((tag): tag is Category => categorySet.has(tag as Category));
+  return tags.filter((tag): tag is (typeof allCategories)[number] =>
+    categorySet.has(tag as (typeof allCategories)[number]),
+  );
 }
 
 // Fetch full problem catalog from hosted JSON (URL configurable)

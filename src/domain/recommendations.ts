@@ -101,18 +101,47 @@ function weightedSample<T>(items: T[], weights: number[], k: number): T[] {
 
 /**
  * Return weighted‑random problem recommendations for a single category.
- * Requires `primeData` to have been called at least once.
  */
 export async function getCategorySuggestions(
   tag: Category,
   k = 3,
 ): Promise<CategoryRecommendation> {
+  return getSuggestions([tag], {
+    k,
+    label: tag,
+  });
+}
+
+/**
+ * Return weighted‑random suggestions across the given categories.
+ * Tags remain on the problems and the UI decides whether to display them.
+ */
+export async function getRandomSuggestions(
+  tags: Category[],
+  k = 3,
+): Promise<CategoryRecommendation> {
+  return getSuggestions(tags, {
+    k,
+    label: 'Random',
+  });
+}
+
+interface BuildOpts {
+  k: number;
+  label: Category;
+}
+
+async function getSuggestions(
+  tags: Category[],
+  { k, label }: BuildOpts,
+): Promise<CategoryRecommendation> {
   if (!isPrimed()) await primeData();
 
+  const tagSet = new Set(tags);
   const nowMs = Date.now();
   const solveMap = new Map<string, Solve[]>();
   for (const s of _solves) {
-    if (!s.tags?.includes(tag)) continue;
+    if (!s.tags || !s.tags.some((t) => tagSet.has(t))) continue;
     if (!solveMap.has(s.slug)) solveMap.set(s.slug, []);
     solveMap.get(s.slug)!.push(s);
   }
@@ -124,7 +153,7 @@ export async function getCategorySuggestions(
   for (const p of _problems) {
     // Filter out problems that don't match the tag or are paid only
     // TODO: Allow a toggle for paid problems in the future
-    if (!p.tags.includes(tag) || p.isPaid) continue;
+    if (p.isPaid || !p.tags.some((t) => tagSet.has(t))) continue;
 
     const lite: ProblemLite = {
       slug: p.slug,
@@ -133,7 +162,7 @@ export async function getCategorySuggestions(
       popularity: p.popularity,
       isFundamental: p.isFundamental,
       tags: p.tags,
-    };
+    } as ProblemLite;
 
     const solved = solveMap.get(p.slug);
     const popularityScore = p.popularity; // already 0‑1
@@ -147,7 +176,7 @@ export async function getCategorySuggestions(
         latest.qualityScore ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
       const refreshScore = (1 - quality) * boost * (0.7 + 0.3 * popularityScore);
 
-      // add lastSolved so UI can show "Last solved …”
+      // add lastSolved so UI can show "Last solved …"
       refresh.push([{ ...lite, lastSolved: latest.timestamp }, refreshScore]);
     } else {
       // unsolved → either fundamental or new
@@ -168,7 +197,7 @@ export async function getCategorySuggestions(
     );
 
   return {
-    tag,
+    tag: label,
     fundamentals: pick(fundamentals),
     refresh: pick(refresh),
     new: pick(fresh),
