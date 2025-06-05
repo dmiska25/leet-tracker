@@ -21,15 +21,15 @@ import ProblemCards from './ProblemCards';
 import type { Category } from '@/types/types';
 
 export const RANDOM_TAG: Category = 'Random';
+const initialSuggestions = {} as Record<Category, CategoryRecommendation>;
 
 /* ---------- Main Component ---------- */
 
 export default function Dashboard() {
   const { loading, username, progress, refresh, criticalError } = useInitApp();
   const [open, setOpen] = useState<Category | null>(null);
-  const [suggestions, setSuggestions] = useState<Record<Category, CategoryRecommendation>>(
-    {} as Record<Category, CategoryRecommendation>,
-  );
+  const [suggestions, setSuggestions] =
+    useState<Record<Category, CategoryRecommendation>>(initialSuggestions);
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [profileManagerOpen, setProfileManagerOpen] = useState(false);
@@ -103,7 +103,7 @@ export default function Dashboard() {
     setActiveProfileId(id);
     setProfileOpen(false);
     await refresh();
-    setSuggestions({});
+    setSuggestions(initialSuggestions);
     setOpen(null);
     setLastSynced(new Date());
   };
