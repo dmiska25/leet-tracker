@@ -26,19 +26,30 @@ export interface LeetTrackerDB extends DBSchema {
     key: 'active';
     value: string; // profileId
   };
+  'extension-sync': {
+    key: 'lastTimestamp';
+    value: number; // epoch seconds of most-recent extension solve
+  };
 }
 
 // Create a union type of all valid store names
 type ValidStoreName = keyof LeetTrackerDB;
 
-const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 1, {
-  upgrade(db) {
-    db.createObjectStore('leetcode-username');
-    db.createObjectStore('problem-list');
-    db.createObjectStore('problem-metadata');
-    db.createObjectStore('solves');
-    db.createObjectStore('goal-profiles');
-    db.createObjectStore('active-goal-profile');
+const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 2, {
+  upgrade(db, oldVersion) {
+    if (oldVersion < 1) {
+      // v1 schema
+      db.createObjectStore('leetcode-username');
+      db.createObjectStore('problem-list');
+      db.createObjectStore('problem-metadata');
+      db.createObjectStore('solves');
+      db.createObjectStore('goal-profiles');
+      db.createObjectStore('active-goal-profile');
+    }
+    if (oldVersion < 2) {
+      // v2 – extension support
+      db.createObjectStore('extension-sync');
+    }
   },
 });
 
@@ -54,6 +65,9 @@ export const db = {
   // Problem catalog
   async getAllProblems(): Promise<Problem[]> {
     return (await dbPromise).getAll('problem-list');
+  },
+  async getProblem(slug: string): Promise<Problem | undefined> {
+    return (await dbPromise).get('problem-list', slug);
   },
   async addOrUpdateProblem(problem: Problem): Promise<string> {
     return (await dbPromise).put('problem-list', problem, problem.slug);
@@ -98,6 +112,15 @@ export const db = {
   async deleteGoalProfile(id: string): Promise<void> {
     return (await dbPromise).delete('goal-profiles', id);
   },
+  async clearGoalProfiles(): Promise<void> {
+    await this.withTransaction(['goal-profiles'], async (tx) => {
+      const store = tx.objectStore('goal-profiles');
+      const allProfiles = await store.getAll();
+      for (const profile of allProfiles) {
+        await store.delete(profile.id);
+      }
+    });
+  },
   async setActiveGoalProfile(id: string): Promise<string> {
     return (await dbPromise).put('active-goal-profile', id, 'active');
   },
@@ -106,6 +129,15 @@ export const db = {
   },
   async getAllGoalProfiles(): Promise<GoalProfile[]> {
     return (await dbPromise).getAll('goal-profiles');
+  },
+
+  // Extension sync
+  async getExtensionLastTimestamp(): Promise<number> {
+    const ts = await (await dbPromise).get('extension-sync', 'lastTimestamp');
+    return ts !== undefined ? ts : 0;
+  },
+  async setExtensionLastTimestamp(ts: number): Promise<string> {
+    return (await dbPromise).put('extension-sync', ts, 'lastTimestamp');
   },
 
   // Transaction support

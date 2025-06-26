@@ -28,6 +28,7 @@ describe('useInitApp', () => {
       username: 'alice',
       progress: [],
       errors: ['warn‑1', 'warn‑2'],
+      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());
@@ -60,13 +61,23 @@ describe('useInitApp', () => {
 
   it('refresh() triggers a reload cycle', async () => {
     // First init call
-    initApp.mockResolvedValueOnce({ username: 'bob', progress: [], errors: [] });
+    initApp.mockResolvedValueOnce({
+      username: 'bob',
+      progress: [],
+      errors: [],
+      extensionInstalled: false,
+    });
 
     const { result } = renderHook(() => useInitApp());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     // Second init call (for refresh)
-    initApp.mockResolvedValueOnce({ username: 'bob', progress: [], errors: [] });
+    initApp.mockResolvedValueOnce({
+      username: 'bob',
+      progress: [],
+      errors: [],
+      extensionInstalled: false,
+    });
 
     // Run the entire refresh flow inside act so all state updates are flushed
     await act(async () => {

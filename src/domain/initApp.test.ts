@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '../storage/db';
 import { fetchProblemCatalog, fetchRecentSolves } from '../api/leetcode';
 import { Difficulty, Problem, Solve, GoalProfile } from '../types/types';
+import { syncFromExtension } from './extensionSync';
 import { initApp } from './initApp';
 
 vi.mock('../storage/db');
 vi.mock('../api/leetcode');
+vi.mock('./extensionSync');
 
 const mockProblems: Problem[] = [
   {
@@ -55,7 +57,12 @@ describe('initApp', () => {
   it('handles missing username path', async () => {
     vi.mocked(db.getUsername).mockResolvedValue(undefined);
     const res = await initApp();
-    expect(res).toEqual({ username: undefined, progress: undefined, errors: [] });
+    expect(res).toEqual({
+      username: undefined,
+      progress: undefined,
+      errors: [],
+      extensionInstalled: false,
+    });
   });
 
   it('returns progress with default goals when no profile', async () => {
@@ -111,5 +118,28 @@ describe('initApp', () => {
     expect(res.errors).toContain(
       'LeetCode API rate limit hit — recent solves are temporarily unavailable.',
     );
+  });
+  it('handles successful extension sync', async () => {
+    vi.mocked(syncFromExtension).mockResolvedValue(5); // Simulate 5 solves added via extension
+    const res = await initApp();
+    expect(res.extensionInstalled).toBe(true);
+    expect(res.errors).toEqual([]);
+  });
+
+  it('handles extension unavailable gracefully', async () => {
+    const err: any = new Error('Extension unavailable');
+    err.code = 'EXTENSION_UNAVAILABLE';
+    vi.mocked(syncFromExtension).mockRejectedValue(err);
+
+    const res = await initApp();
+    expect(res.extensionInstalled).toBe(false);
+    expect(res.errors).toEqual([]);
+  });
+
+  it('handles unexpected extension sync errors', async () => {
+    vi.mocked(syncFromExtension).mockRejectedValue(new Error('Unexpected error'));
+    const res = await initApp();
+    expect(res.extensionInstalled).toBe(false);
+    expect(res.errors).toContain('An unexpected error occurred while syncing with the extension.');
   });
 });

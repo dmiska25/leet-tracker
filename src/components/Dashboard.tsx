@@ -15,6 +15,7 @@ import { ProgressBar } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ModeBadge } from '@/components/ModeBadge';
+import { ExtensionWarning } from '@/components/ExtensionWarning';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import ProblemCards from './ProblemCards';
@@ -26,7 +27,7 @@ const initialSuggestions = {} as Record<Category, CategoryRecommendation>;
 /* ---------- Main Component ---------- */
 
 export default function Dashboard() {
-  const { loading, username, progress, refresh, criticalError } = useInitApp();
+  const { loading, username, progress, refresh, criticalError, extensionInstalled } = useInitApp();
   const [open, setOpen] = useState<Category | null>(null);
   const [suggestions, setSuggestions] =
     useState<Record<Category, CategoryRecommendation>>(initialSuggestions);
@@ -111,8 +112,11 @@ export default function Dashboard() {
   const handleSignOut = async () => {
     if (!window.confirm('Are you sure you want to sign out? Your local progress will be cleared.'))
       return;
+    await db.setActiveGoalProfile('default');
+    await db.clearGoalProfiles();
     await db.setUsername('');
     await db.clearSolves();
+    await db.setExtensionLastTimestamp(0);
     window.location.reload();
   };
 
@@ -168,6 +172,8 @@ export default function Dashboard() {
 
       {/* ───────── Main Content ───────── */}
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Chrome extension banner */}
+        <ExtensionWarning extensionInstalled={extensionInstalled} />
         {/* Header */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

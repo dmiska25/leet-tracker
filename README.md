@@ -24,12 +24,20 @@ LeetCode and other platforms are great for improving algorithm skills and learni
 
 Try the app here: [leet-tracker-log.vercel.app](https://leet-tracker-log.vercel.app/)
 
+## Chrome Extension
+
+To unlock full LeetCode history install the LeetTracker Chrome Extension:
+
+👉 [Install on Chrome Web Store](https://chrome.google.com/webstore/detail/leettracker/aabfdphdfflecolneofmehajjmmpmgeg)
+
+Once installed, the extension runs in the background while you're signed in to LeetCode, automatically syncing your full solve history with the app. This includes older submissions that are not available through the public API, enabling more accurate tracking and smarter recommendations.
+
 ## How It Works
 
 ### Data Flow
 
 - ✅ **Problems:** Pulled from a daily-updated S3 file with likes/dislikes, tags, and popularity
-- ✅ **Solves:** Pulled from `alfa-leetcode-api` (most recent 20 solves)
+- ✅ **Solves:** Pulled from `alfa-leetcode-api` (most recent 20 solves) + Full history can optionally be pulled via the companion Chrome extension
 - ✅ **Local Storage:** IndexedDB for user progress, settings, and sync timestamps
 
 ### Scoring Algorithm
@@ -77,7 +85,7 @@ npm run dev
 
 ## Future Plans
 
-- Chrome extension to pull a user's **full solve history** (beyond the latest 20)
+- ✅ ~~Chrome extension now supports full solve history syncing~~
 - Visual timeline of solves across categories and problem tags
 - Support for **exporting** solve history data (JSON format)
 - Support for **importing** past solve history manually (upload-based or paste-in)
