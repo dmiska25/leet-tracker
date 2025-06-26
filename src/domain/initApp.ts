@@ -85,6 +85,13 @@ async function updateSolves(username: string): Promise<string[]> {
   }
 }
 
+/**
+ * Initializes the application by synchronizing user data, problem lists, and solve history from local and remote sources.
+ *
+ * Retrieves the stored username, updates the problem catalog and recent solves, attempts to sync additional solves from a browser extension, refreshes recommendation data, loads or initializes the user's goal profile, and computes progress for each goal category.
+ *
+ * @returns An object containing the username (if available), per-category progress, any errors encountered during initialization, and a flag indicating whether the browser extension is installed.
+ */
 export async function initApp(): Promise<{
   username: string | undefined;
   progress: CategoryProgress[] | undefined;

@@ -11,8 +11,12 @@ interface ChunkMeta {
 export { ExtensionUnavailable };
 
 /**
- * Pulls new solves (and problem descriptions) from the extension,
- * stores them in IndexedDB, and returns the number of *new* solves added.
+ * Synchronizes new solve records and updated problem descriptions from the extension into the local database for the specified user.
+ *
+ * Retrieves only solves that have not been previously imported, updates problem descriptions if provided, and returns the count of newly added solves.
+ *
+ * @param username - The username whose solves are to be synchronized from the extension
+ * @returns The number of new solves added to the database
  */
 export async function syncFromExtension(username: string): Promise<number> {
   const lastTs = await db.getExtensionLastTimestamp();

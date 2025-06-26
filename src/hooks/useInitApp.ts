@@ -11,6 +11,11 @@ interface InitState {
   extensionInstalled: boolean;
 }
 
+/**
+ * React hook that initializes and manages the application's startup state, including loading status, user progress, critical error state, and extension installation status.
+ *
+ * Returns the current initialization state along with a `refresh` function to re-run the initialization process.
+ */
 export function useInitApp() {
   const toast = useToast();
   const [state, setState] = useState<InitState>({

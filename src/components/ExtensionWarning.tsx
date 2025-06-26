@@ -10,6 +10,15 @@ interface ExtensionWarningProps {
   className?: string;
 }
 
+/**
+ * Displays a dismissible warning banner when the LeetTracker Chrome extension is not detected.
+ *
+ * The warning informs users that their submission history may be incomplete without the extension and provides options to install the extension or dismiss the warning. Dismissal is persisted in localStorage for 24 hours. The banner is hidden on screens narrower than 768px.
+ *
+ * @param extensionInstalled - Whether the Chrome extension is currently installed
+ * @param className - Optional additional CSS classes for styling the warning banner
+ * @returns The warning banner element, or null if the extension is installed or the warning has been dismissed
+ */
 export function ExtensionWarning({ extensionInstalled, className }: ExtensionWarningProps) {
   const [dismissed, setDismissed] = useState(false);
 

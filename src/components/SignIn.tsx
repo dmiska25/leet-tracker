@@ -6,6 +6,11 @@ import { useToast } from './ui/toast';
 
 const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
 
+/**
+ * Displays an informational message about local data storage and potential data loss when clearing browser data.
+ *
+ * @param className - Optional additional CSS class names for styling the container
+ */
 function InfoBox({ className }: { className?: string }) {
   return (
     <div

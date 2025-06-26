@@ -12,6 +12,14 @@ type Req =
   | { type: 'request_chunk_manifest_since'; username: string; since: number }
   | { type: 'request_chunk_by_index'; username: string; index: number };
 
+/**
+ * Sends a message to the browser extension and waits for a corresponding reply.
+ *
+ * The function posts the given payload to the extension and listens for a reply message that matches the request type and username. If a valid response is received within 100ms, the promise resolves with the response data. If no response arrives in time, the promise is rejected with an `ExtensionUnavailable` error.
+ *
+ * @param payload - The request payload to send to the extension
+ * @returns A promise that resolves with the extension's response data
+ */
 function postMessageWithReply<T extends Req, R>(payload: T): Promise<R> {
   return new Promise<R>((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -39,6 +47,13 @@ function postMessageWithReply<T extends Req, R>(payload: T): Promise<R> {
   });
 }
 
+/**
+ * Retrieves the chunk manifest for a user from the extension, including only chunks created since the specified timestamp.
+ *
+ * @param username - The username whose chunk manifest is requested
+ * @param since - The timestamp (in milliseconds) to filter chunks created after
+ * @returns An array of chunk manifest entries from the extension
+ */
 export async function getManifestSince(username: string, since: number) {
   const res = await postMessageWithReply<
     Req,
@@ -47,6 +62,13 @@ export async function getManifestSince(username: string, since: number) {
   return res.chunks;
 }
 
+/**
+ * Retrieves a specific chunk of data for a user from the browser extension by index.
+ *
+ * @param username - The username associated with the requested chunk
+ * @param index - The index of the chunk to retrieve
+ * @returns The data array for the specified chunk
+ */
 export async function getChunk(username: string, index: number) {
   const res = await postMessageWithReply<
     Req,

@@ -24,7 +24,11 @@ import type { Category } from '@/types/types';
 export const RANDOM_TAG: Category = 'Random';
 const initialSuggestions = {} as Record<Category, CategoryRecommendation>;
 
-/* ---------- Main Component ---------- */
+/**
+ * Displays the main dashboard for tracking coding problem progress, managing user profiles, and viewing problem recommendations by category.
+ *
+ * Renders user progress, category completion, and personalized recommendations. Supports profile selection and management, syncing progress, and sign-out. Integrates extension status warnings and handles loading and error states.
+ */
 
 export default function Dashboard() {
   const { loading, username, progress, refresh, criticalError, extensionInstalled } = useInitApp();
