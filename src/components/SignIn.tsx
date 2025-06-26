@@ -12,13 +12,9 @@ function InfoBox({ className }: { className?: string }) {
       className={`w-full space-y-2 rounded-lg border border-border bg-muted p-4 text-sm text-muted-foreground ${className}`}
     >
       <p>
-        <strong className="font-medium text-foreground">Heads up!</strong> Please Note: This
-        application does not store your data remotely. All your data is stored locally in your
-        browser. Clearing your browser data will remove all your data from this application.
-      </p>
-      <p>
-        In addition, due to current API limitations, only your 20 most recent solves can be pulled
-        at any given time. A solution is planned in the future to support full solve history.
+        <strong className="font-medium text-foreground">Heads up!</strong> This application does not
+        store your data remotely. All your data is stored locally in your browser. Clearing your
+        browser data will remove all your data from this application.
       </p>
     </div>
   );

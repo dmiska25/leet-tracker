@@ -3,10 +3,12 @@ import { IDBPDatabase, openDB } from 'idb';
 import { initApp } from './initApp';
 import { LeetTrackerDB, db } from '../storage/db';
 import { readFile } from 'fs/promises';
+import { getManifestSince, getChunk } from '../api/extensionBridge';
 import path from 'path';
 
 // Mock the database module
 vi.mock('../storage/db');
+vi.mock('../api/extensionBridge');
 
 describe('initApp (integration with fake‑indexeddb)', () => {
   let testDb: IDBPDatabase<LeetTrackerDB>;
@@ -174,6 +176,57 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       username: undefined,
       progress: undefined,
       errors: [],
+      extensionInstalled: false,
     });
+  });
+
+  it('sets extensionInstalled when extension returns no new solves', async () => {
+    /* Extension responds but has no new data */
+    vi.mocked(getManifestSince).mockResolvedValue([{ index: 0, from: 0, to: 0 }]);
+    vi.mocked(getChunk).mockResolvedValue([]);
+
+    const result = await initApp();
+
+    /* Flag should still indicate extension presence         */
+    expect(result.extensionInstalled).toBe(true);
+    /* Solve list should remain API-only (≤20)               */
+    const solves = await db.getAllSolves();
+    expect(solves.length).toBeLessThanOrEqual(20);
+  });
+
+  it('merges solves from multiple extension chunks', async () => {
+    const chunk0 = [
+      {
+        titleSlug: 'two-sum',
+        timestamp: 1746032384,
+        statusDisplay: 'Accepted',
+        lang: 'Python',
+      },
+    ];
+    const chunk1 = [
+      {
+        titleSlug: 'add-two-numbers',
+        timestamp: 1746032390,
+        statusDisplay: 'Accepted',
+        lang: 'TypeScript',
+      },
+    ];
+
+    vi.mocked(getManifestSince).mockResolvedValue([
+      { index: 0, from: 0, to: 1746032384 },
+      { index: 1, from: 1746032385, to: 1746032390 },
+    ]);
+
+    vi.mocked(getChunk).mockImplementation(async (_username: string, idx: number) => {
+      return idx === 0 ? chunk0 : chunk1;
+    });
+
+    const result = await initApp();
+
+    const solves = await db.getAllSolves();
+    expect(solves.length).toBe(2);
+    const slugs = solves.map((s) => s.slug);
+    expect(slugs).toEqual(expect.arrayContaining(['two-sum', 'add-two-numbers']));
+    expect(result.extensionInstalled).toBe(true);
   });
 });

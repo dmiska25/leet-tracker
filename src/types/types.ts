@@ -102,6 +102,7 @@ export interface Solve {
   timestamp: number; // epoch time in seconds
   status: string;
   lang: string; // e.g. "python3", "cpp", etc.
+  code?: string; // full source code
   difficulty?: Difficulty; // ← optional at first, inferred from Problem DB
   tags?: Category[]; // ← optional at first, inferred from Problem DB
   timeUsed?: number; // Optional: user input later

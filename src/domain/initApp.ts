@@ -5,6 +5,7 @@ import { evaluateCategoryProgress } from './progress';
 import { CategoryProgress } from '../types/progress';
 import { clearCache, primeData, setSolves } from './recommendations';
 import { getActiveOrInitProfile } from './goalProfiles';
+import { syncFromExtension } from './extensionSync';
 
 const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL;
 
@@ -88,12 +89,19 @@ export async function initApp(): Promise<{
   username: string | undefined;
   progress: CategoryProgress[] | undefined;
   errors: string[];
+  extensionInstalled: boolean;
 }> {
   const errors: string[] = [];
   const username = await db.getUsername();
+  var extensionInstalled = false;
   if (!username) {
     console.log('[initApp] No username — app not initialized');
-    return { username: undefined, progress: undefined, errors: [] };
+    return {
+      username: undefined,
+      progress: undefined,
+      errors: [],
+      extensionInstalled: extensionInstalled,
+    };
   }
 
   console.log(`[initApp] Username found: ${username}`);
@@ -105,6 +113,18 @@ export async function initApp(): Promise<{
   // 2. Sync recent solves (handle rate limiting gracefully)
   const updateSolvesErrors = await updateSolves(username);
   errors.push(...updateSolvesErrors);
+
+  /* 2b. Try to pull supplementary data from browser extension */
+  try {
+    const added = await syncFromExtension(username);
+    extensionInstalled = true;
+    if (added) console.log(`[initApp] Added ${added} solves via extension`);
+  } catch (err: any) {
+    if (err?.code !== 'EXTENSION_UNAVAILABLE') {
+      console.warn('[initApp] Extension sync failed', err);
+      errors.push('An unexpected error occurred while syncing with the extension.');
+    }
+  }
 
   // 3. Load solve history + goal profile in one shot
   const solves = await db.getAllSolves();
@@ -129,5 +149,5 @@ export async function initApp(): Promise<{
     };
   });
 
-  return { username, progress, errors };
+  return { username, progress, errors, extensionInstalled };
 }
