@@ -38,19 +38,9 @@ export function ExtensionWarning({ extensionInstalled, className }: ExtensionWar
 
   return (
     <>
-      <style>
-        {`
-          @media (max-width: 768px) {
-            .warning {
-              display: none;
-            }
-          }
-        `}
-      </style>
-
       <div
         className={clsx(
-          'warning flex items-start justify-between gap-4 rounded-md border border-leetcode-orange bg-leetcode-orange/5 p-4',
+          'flex items-start justify-between gap-4 rounded-md border border-leetcode-orange bg-leetcode-orange/5 p-4 hidden md:flex',
           className,
         )}
       >
