@@ -24,7 +24,11 @@ const initialSuggestions = {} as Record<Category, CategoryRecommendation>;
 
 /* ---------- Main Component ---------- */
 
-export default function Dashboard() {
+export default function Dashboard({
+  onNavigate,
+}: {
+  onNavigate?: (_screen: 'dashboard' | 'history') => void;
+}) {
   const { loading, username, progress, refresh, criticalError, extensionInstalled } = useInitApp();
   const [open, setOpen] = useState<Category | null>(null);
   const [suggestions, setSuggestions] =
@@ -123,7 +127,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* ───────── Nav Bar ───────── */}
-      <TopNav active="dashboard" onSignOut={handleSignOut} />
+      <TopNav active="dashboard" onNavigate={onNavigate} onSignOut={handleSignOut} />
       {profileManagerOpen && (
         <ProfileManager
           onDone={async () => {

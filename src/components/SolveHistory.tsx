@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select';
 import { TopNav } from './TopNav';
 import { useToast } from './ui/toast';
 import type { Solve } from '@/types/types';
+import { db } from '@/storage/db';
 
 // Temporary mock data
 const mockSolves: Solve[] = [
@@ -32,7 +33,11 @@ const mockSolves: Solve[] = [
   },
 ];
 
-export default function SolveHistory() {
+export default function SolveHistory({
+  onNavigate,
+}: {
+  onNavigate?: (_screen: 'dashboard' | 'history') => void;
+}) {
   const [selectedSolve, setSelectedSolve] = useState<Solve | null>(mockSolves[0]);
   const [showSidebar, setShowSidebar] = useState(true);
   const [expandedCode, setExpandedCode] = useState(false);
@@ -42,6 +47,17 @@ export default function SolveHistory() {
     selectedSolve?.solveDetails || { solveTime: '', usedHints: 'none', userNotes: '' },
   );
   const toast = useToast();
+
+  const handleSignOut = async () => {
+    if (!window.confirm('Are you sure you want to sign out? Your local progress will be cleared.'))
+      return;
+    await db.setActiveGoalProfile('default');
+    await db.clearGoalProfiles();
+    await db.setUsername('');
+    await db.clearSolves();
+    await db.setExtensionLastTimestamp(0);
+    window.location.reload();
+  };
 
   const formatTimestamp = (ts: number) => {
     const d = new Date(ts * 1000);
@@ -54,7 +70,7 @@ export default function SolveHistory() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav active="history" onSignOut={() => {}} />
+      <TopNav active="history" onNavigate={onNavigate} onSignOut={handleSignOut} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex gap-6" style={{ height: 'calc(100vh - 8rem)' }}>
           {/* Sidebar */}
