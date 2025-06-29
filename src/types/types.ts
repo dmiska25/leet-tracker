@@ -103,10 +103,37 @@ export interface Solve {
   status: string;
   lang: string; // e.g. "python3", "cpp", etc.
   code?: string; // full source code
+  /** Optional problem description at time of solve */
+  problemDescription?: string;
   difficulty?: Difficulty; // ← optional at first, inferred from Problem DB
   tags?: Category[]; // ← optional at first, inferred from Problem DB
   timeUsed?: number; // Optional: user input later
   hintUsed?: boolean; // Optional: if user flags this
+  /** Additional details recorded by the user */
+  solveDetails?: {
+    solveTime?: string;
+    usedHints?: 'none' | 'leetcode_hint' | 'solution_peek' | 'gpt_help';
+    userNotes?: string;
+  };
+  /** Structured feedback from manual entry or LLM */
+  feedback?: {
+    performance: {
+      time_to_solve: number;
+      time_complexity: string;
+      space_complexity: string;
+      comments: string;
+    };
+    code_quality: {
+      readability: number;
+      correctness: number;
+      maintainability: number;
+      comments: string;
+    };
+    summary: {
+      final_score: number;
+      comments: string;
+    };
+  };
   qualityScore?: number; // Optional: manual or GPT
 }
 
