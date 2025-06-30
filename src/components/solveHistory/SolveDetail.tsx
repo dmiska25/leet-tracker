@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/components/ui/toast';
 import { db } from '@/storage/db';
 import type { Solve } from '@/types/types';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
@@ -50,6 +51,25 @@ interface Props {
 export default function SolveDetail({ solve, onSaved, onShowList, showListButton }: Props) {
   /* ---------- relative timestamp ---------- */
   const timeText = useTimeAgo(new Date(solve.timestamp * 1000));
+  const toast = useToast();
+
+  /* ---------- cancel helpers ---------- */
+  const cancelCodeEdit = () => {
+    setCode(solve.code ?? '');
+    setCodeEdit(false);
+  };
+
+  const cancelDetailsEdit = () => {
+    setTimeMinutes(solve.timeUsed ? Math.round(solve.timeUsed / 60).toString() : '');
+    setUsedHints((solve.usedHints as HintType) ?? 'none');
+    setNotes(solve.notes ?? '');
+    setDetailsEdit(false);
+  };
+
+  const cancelFeedbackEdit = () => {
+    setFeedback(solve.feedback ?? feedback);
+    setFbEdit(false);
+  };
 
   /* ---------- code edit state ---------- */
   const [codeEdit, setCodeEdit] = useState(false);
@@ -121,26 +141,67 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
   /* ---------- persist helpers ---------- */
   const saveCode = async () => {
-    await db.saveSolve({ ...solve, code });
-    setCodeEdit(false);
-    onSaved();
+    if (!code.trim()) {
+      toast('Code cannot be empty.', 'error');
+      return;
+    }
+    try {
+      await db.saveSolve({ ...solve, code });
+      onSaved();
+    } catch (err) {
+      cancelCodeEdit();
+      console.error(err);
+      toast('Failed to save code. Please try again.', 'error');
+    }
   };
 
   const saveDetails = async () => {
-    await db.saveSolve({
-      ...solve,
-      timeUsed: timeMinutes ? parseInt(timeMinutes, 10) * 60 : undefined,
-      usedHints: usedHints as HintType,
-      notes,
-    });
-    setDetailsEdit(false);
-    onSaved();
+    /* ----- validation ----- */
+    if (timeMinutes.trim()) {
+      const mins = Number.parseInt(timeMinutes, 10);
+      if (Number.isNaN(mins) || mins < 0) {
+        toast('Solve time must be a non-negative number.', 'error');
+        return;
+      }
+    }
+    try {
+      await db.saveSolve({
+        ...solve,
+        timeUsed: timeMinutes.trim() ? Number.parseInt(timeMinutes, 10) * 60 : undefined,
+        usedHints,
+        notes: notes.trim() ? notes : undefined,
+      });
+      onSaved();
+    } catch (err) {
+      cancelDetailsEdit();
+      console.error(err);
+      toast('Failed to save details. Please try again.', 'error');
+    }
   };
 
   const saveFeedback = async () => {
-    await db.saveSolve({ ...solve, feedback });
-    setFbEdit(false);
-    onSaved();
+    /* ----- basic validation ----- */
+    const fb = feedback!;
+    const ratings = [
+      fb.performance.time_to_solve,
+      fb.code_quality.readability,
+      fb.code_quality.correctness,
+      fb.code_quality.maintainability,
+    ];
+    const ratingsValid = ratings.every((r) => r >= 1 && r <= 5);
+    const finalValid = fb.summary.final_score > 0 && fb.summary.final_score <= 100;
+    if (!ratingsValid || !finalValid) {
+      toast('Numeric ratings are out of range.', 'error');
+      return;
+    }
+    try {
+      await db.saveSolve({ ...solve, feedback });
+      onSaved();
+    } catch (err) {
+      cancelFeedbackEdit();
+      console.error(err);
+      toast('Failed to save feedback. Please try again.', 'error');
+    }
   };
 
   /* -------------------------------------------------- */
@@ -149,11 +210,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
   const renderSolveDetails = () => {
     if (!detailsEdit) {
-      const hasContent = solve.timeUsed || solve.usedHints || solve.notes;
-      if (!hasContent) {
-        /* still render grid below with placeholders */
-      }
-
       return (
         <div className="grid gap-3">
           <div className="flex justify-between">
@@ -319,12 +375,15 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
           <div className="grid gap-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium block mb-1">Time to Solve (1-5)</label>
+                <label className="text-sm font-medium block mb-1" htmlFor="time-to-solve">
+                  Time to Solve (1-5)
+                </label>
                 <input
+                  id="time-to-solve"
                   type="number"
                   min={1}
                   max={5}
-                  value={feedback?.performance?.time_to_solve ?? 0}
+                  value={feedback?.performance?.time_to_solve ?? ''}
                   onChange={(e) =>
                     upd(
                       'performance' as keyof Solve['feedback'],
@@ -336,28 +395,49 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                 />
               </div>
               <div>
-                <label className="text-sm font-medium block mb-1">Time Complexity</label>
+                <label className="text-sm font-medium block mb-1" htmlFor="time-complexity">
+                  Time Complexity
+                </label>
                 <input
-                  value={feedback?.performance?.time_complexity}
-                  onChange={(e) => upd('performance', 'time_complexity', e.target.value)}
+                  id="time-complexity"
+                  type="text"
+                  value={feedback?.performance?.time_complexity ?? ''}
+                  onChange={(e) =>
+                    upd('performance' as keyof Solve['feedback'], 'time_complexity', e.target.value)
+                  }
                   className="w-full rounded-md border px-3 py-2 text-sm bg-background"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium block mb-1">Space Complexity</label>
+                <label className="text-sm font-medium block mb-1" htmlFor="space-complexity">
+                  Space Complexity
+                </label>
                 <input
-                  value={feedback?.performance?.space_complexity}
-                  onChange={(e) => upd('performance', 'space_complexity', e.target.value)}
+                  id="space-complexity"
+                  type="text"
+                  value={feedback?.performance?.space_complexity ?? ''}
+                  onChange={(e) =>
+                    upd(
+                      'performance' as keyof Solve['feedback'],
+                      'space_complexity',
+                      e.target.value,
+                    )
+                  }
                   className="w-full rounded-md border px-3 py-2 text-sm bg-background"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">Comments</label>
-              <Textarea
-                value={feedback?.performance?.comments}
-                onChange={(e) => upd('performance', 'comments', e.target.value)}
-                rows={2}
+              <label className="text-sm font-medium block mb-1" htmlFor="performance-comments">
+                Performance Comments
+              </label>
+              <textarea
+                id="performance-comments"
+                value={feedback?.performance?.comments ?? ''}
+                onChange={(e) =>
+                  upd('performance' as keyof Solve['feedback'], 'comments', e.target.value)
+                }
+                className="w-full rounded-md border px-3 py-2 text-sm bg-background"
               />
             </div>
           </div>
@@ -370,10 +450,11 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {(['readability', 'correctness', 'maintainability'] as const).map((f) => (
                 <div key={f}>
-                  <label className="text-sm font-medium block mb-1">
+                  <label className="text-sm font-medium block mb-1" htmlFor={f}>
                     {f.charAt(0).toUpperCase() + f.slice(1)} (1-5)
                   </label>
                   <input
+                    id={f}
                     type="number"
                     min={1}
                     max={5}
@@ -385,11 +466,16 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
               ))}
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">Comments</label>
-              <Textarea
-                value={feedback?.code_quality?.comments}
-                onChange={(e) => upd('code_quality', 'comments', e.target.value)}
-                rows={2}
+              <label className="text-sm font-medium block mb-1" htmlFor="code-quality-comments">
+                Code Quality Comments
+              </label>
+              <textarea
+                id="code-quality-comments"
+                value={feedback?.code_quality?.comments ?? ''}
+                onChange={(e) =>
+                  upd('code_quality' as keyof Solve['feedback'], 'comments', e.target.value)
+                }
+                className="w-full rounded-md border px-3 py-2 text-sm bg-background"
               />
             </div>
           </div>
@@ -401,24 +487,35 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
           <div className="grid gap-4">
             <div className="max-w-xs">
               <label className="text-sm font-medium block mb-1" htmlFor="final-score">
-                Final Score (0-100)
+                Final Score (1-100)
               </label>
               <input
                 id="final-score"
                 type="number"
-                min={0}
+                min={1}
                 max={100}
-                value={feedback?.summary?.final_score}
-                onChange={(e) => upd('summary', 'final_score', Number.parseInt(e.target.value, 10))}
+                value={feedback?.summary?.final_score ?? ''}
+                onChange={(e) =>
+                  upd(
+                    'summary' as keyof Solve['feedback'],
+                    'final_score',
+                    Number.parseInt(e.target.value, 10),
+                  )
+                }
                 className="w-full rounded-md border px-3 py-2 text-sm bg-background"
               />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">Comments</label>
-              <Textarea
-                value={feedback?.summary?.comments}
-                onChange={(e) => upd('summary', 'comments', e.target.value)}
-                rows={2}
+              <label className="text-sm font-medium block mb-1" htmlFor="summary-comments">
+                Summary Comments
+              </label>
+              <textarea
+                id="summary-comments"
+                value={feedback?.summary?.comments ?? ''}
+                onChange={(e) =>
+                  upd('summary' as keyof Solve['feedback'], 'comments', e.target.value)
+                }
+                className="w-full rounded-md border px-3 py-2 text-sm bg-background"
               />
             </div>
           </div>
@@ -463,10 +560,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setCode(solve.code ?? '');
-                        setCodeEdit(false);
-                      }}
+                      onClick={cancelCodeEdit}
                       className="gap-2 bg-transparent"
                     >
                       <X className="h-4 w-4" />
@@ -541,14 +635,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setTimeMinutes(
-                          solve.timeUsed ? Math.round(solve.timeUsed / 60).toString() : '',
-                        );
-                        setUsedHints((solve.usedHints as HintType) ?? 'none');
-                        setNotes(solve.notes ?? '');
-                        setDetailsEdit(false);
-                      }}
+                      onClick={cancelDetailsEdit}
                       className="gap-2 bg-transparent"
                     >
                       <X className="h-4 w-4" />
@@ -586,10 +673,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setFeedback(solve.feedback ?? feedback);
-                        setFbEdit(false);
-                      }}
+                      onClick={cancelFeedbackEdit}
                       className="gap-2 bg-transparent"
                     >
                       <X className="h-4 w-4" />
