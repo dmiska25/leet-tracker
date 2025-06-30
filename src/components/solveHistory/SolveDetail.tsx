@@ -121,13 +121,13 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
   /* ---------- persist helpers ---------- */
   const saveCode = async () => {
-    await db.updateSolve({ ...solve, code });
+    await db.saveSolve({ ...solve, code });
     setCodeEdit(false);
     onSaved();
   };
 
   const saveDetails = async () => {
-    await db.updateSolve({
+    await db.saveSolve({
       ...solve,
       timeUsed: timeMinutes ? parseInt(timeMinutes, 10) * 60 : undefined,
       usedHints: usedHints as HintType,
@@ -138,7 +138,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   };
 
   const saveFeedback = async () => {
-    await db.updateSolve({ ...solve, feedback });
+    await db.saveSolve({ ...solve, feedback });
     setFbEdit(false);
     onSaved();
   };

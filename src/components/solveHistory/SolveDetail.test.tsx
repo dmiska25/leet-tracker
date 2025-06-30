@@ -21,15 +21,15 @@ const baseSolve: Solve = {
 describe('<SolveDetail>', () => {
   const onSaved = vi.fn();
   const onShowList = vi.fn();
-  let updateSpy: ReturnType<typeof vi.spyOn>;
+  let saveSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    updateSpy = vi.spyOn(db, 'updateSolve').mockResolvedValue('') as any;
+    saveSpy = vi.spyOn(db, 'saveSolve').mockResolvedValue('') as any;
     onSaved.mockClear();
   });
 
   afterEach(() => {
-    updateSpy.mockRestore();
+    saveSpy.mockRestore();
   });
 
   it('allows editing and saving submission code', async () => {
@@ -55,7 +55,7 @@ describe('<SolveDetail>', () => {
     await user.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
-      expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({ code: 'new code' }));
+      expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ code: 'new code' }));
       expect(onSaved).toHaveBeenCalled();
     });
   });
@@ -81,7 +81,7 @@ describe('<SolveDetail>', () => {
     await user.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
-      expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({ timeUsed: 600 }));
+      expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ timeUsed: 600 }));
       expect(onSaved).toHaveBeenCalled();
     });
   });
@@ -107,7 +107,7 @@ describe('<SolveDetail>', () => {
     await user.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
-      expect(updateSpy).toHaveBeenCalledWith(
+      expect(saveSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           feedback: expect.objectContaining({
             summary: expect.objectContaining({ final_score: 85 }),
