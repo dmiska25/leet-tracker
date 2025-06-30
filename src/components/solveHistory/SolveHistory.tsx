@@ -27,9 +27,11 @@ export default function SolveHistory() {
   }, [solves]);
 
   /* Select most-recent solve on first successful load */
-  if (!loading && !selected && solves.length) {
-    setSelected(solves[0]);
-  }
+  useEffect(() => {
+    if (!loading && !selected && solves.length) {
+      setSelected(solves[0]);
+    }
+  }, [loading, solves, selected]);
 
   if (loading) return <p className="p-6">Loading…</p>;
   if (!solves.length) return <p className="p-6">No solves found.</p>;
