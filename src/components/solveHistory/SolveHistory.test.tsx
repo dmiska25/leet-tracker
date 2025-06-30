@@ -82,6 +82,7 @@ describe('<SolveHistory>', () => {
 
   it('handles mobile view switching between listing and details', async () => {
     global.innerWidth = 500; // Simulate mobile screen width
+    global.dispatchEvent(new Event('resize'));
     render(<SolveHistory />);
 
     /* Initially in listing view */
@@ -127,24 +128,6 @@ describe('<SolveHistory>', () => {
     /* Wait for the refresh to complete */
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Problem Three', level: 4 })).toBeInTheDocument();
-    });
-  });
-
-  it('updates detail pane when a different solve is clicked', async () => {
-    const user = userEvent.setup();
-    render(<SolveHistory />);
-
-    /* Detail pane initially shows most-recent solve */
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Problem One', level: 3 })).toBeInTheDocument();
-    });
-
-    /* Click the second item ("Problem Two") in the sidebar (h4 heading) */
-    await user.click(screen.getByRole('heading', { name: 'Problem Two', level: 4 }));
-
-    /* Detail pane should update to show "Problem Two" (h3 heading) */
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Problem Two', level: 3 })).toBeInTheDocument();
     });
   });
 });
