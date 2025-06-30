@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/storage/db';
 import type { Solve } from '@/types/types';
 
+// We aren't handling errors here, we let the error boundary catch them.
 interface State {
   loading: boolean;
   solves: Solve[];

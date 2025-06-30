@@ -31,11 +31,22 @@ export default function HeaderNav({ view, onChange }: Props) {
   const handleSignOut = async () => {
     if (!window.confirm('Are you sure you want to sign out? Your local progress will be cleared.'))
       return;
-    await db.setActiveGoalProfile('default');
-    await db.clearGoalProfiles();
-    await db.setUsername('');
-    await db.clearSolves();
-    await db.setExtensionLastTimestamp(0);
+    try {
+      await db.withTransaction(
+        ['solves', 'goal-profiles', 'active-goal-profile', 'extension-sync', 'leetcode-username'],
+        async (_) => {
+          // Clear all user-related data
+          await db.setActiveGoalProfile('default');
+          await db.clearGoalProfiles();
+          await db.setUsername('');
+          await db.clearSolves();
+          await db.setExtensionLastTimestamp(0);
+        },
+      );
+    } catch (err) {
+      console.error('Failed to clear user data:', err);
+      alert('An error occurred while signing out. Please try again.');
+    }
     window.location.reload();
   };
 
