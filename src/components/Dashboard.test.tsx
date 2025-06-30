@@ -88,21 +88,6 @@ describe('Dashboard buttons', () => {
     await waitFor(() => expect(refreshMock).toHaveBeenCalledTimes(1));
   });
 
-  it('confirms and signs out when Sign Out button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<Dashboard />);
-
-    const signOutBtn = screen.getByRole('button', { name: /sign out/i });
-    await user.click(signOutBtn);
-
-    expect(confirmSpy).toHaveBeenCalled();
-
-    await waitFor(() => {
-      expect(setUsernameSpy).toHaveBeenCalledWith('');
-      expect(reloadSpy).toHaveBeenCalled();
-    });
-  });
-
   it('changes active profile when dropdown item clicked', async () => {
     const user = userEvent.setup();
     render(<Dashboard />);

@@ -83,6 +83,10 @@ export const db = {
   async getAllSolves(): Promise<Solve[]> {
     return (await dbPromise).getAll('solves');
   },
+  async getAllSolvesSorted(): Promise<Solve[]> {
+    const solves = await (await dbPromise).getAll('solves');
+    return solves.sort((a, b) => b.timestamp - a.timestamp);
+  },
   async getSolve(slug: string, timestamp: number): Promise<Solve | undefined> {
     const key = `${slug}|${timestamp}`;
     return (await dbPromise).get('solves', key);
