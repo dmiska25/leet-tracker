@@ -69,6 +69,13 @@ async function updateSolves(username: string): Promise<string[]> {
         solve.difficulty = problem.difficulty;
 
         const key = `${solve.slug}|${solve.timestamp}`;
+
+        // if the solve already exists, skip it
+        const existing = await tx.objectStore('solves').get(key);
+        if (existing) {
+          continue;
+        }
+
         await tx.objectStore('solves').put(solve, key);
       }
     });

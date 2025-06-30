@@ -96,6 +96,7 @@ export interface Problem {
 }
 
 // Single user solve attempt
+export type HintType = 'none' | 'leetcode_hint' | 'solution_peek' | 'gpt_help';
 export interface Solve {
   slug: string;
   title: string;
@@ -105,9 +106,30 @@ export interface Solve {
   code?: string; // full source code
   difficulty?: Difficulty; // ← optional at first, inferred from Problem DB
   tags?: Category[]; // ← optional at first, inferred from Problem DB
-  timeUsed?: number; // Optional: user input later
-  hintUsed?: boolean; // Optional: if user flags this
+  timeUsed?: number; // time used in seconds
+  usedHints?: HintType;
   qualityScore?: number; // Optional: manual or GPT
+  notes?: string; // Optional: user notes
+
+  /** Structured feedback (manual or AI-generated) */
+  feedback?: {
+    performance: {
+      time_to_solve: number; // 1-5
+      time_complexity: string;
+      space_complexity: string;
+      comments: string;
+    };
+    code_quality: {
+      readability: number; // 1-5
+      correctness: number; // 1-5
+      maintainability: number; // 1-5
+      comments: string;
+    };
+    summary: {
+      final_score: number; // 0-100
+      comments: string;
+    };
+  };
 }
 
 // Scoring summary for a category
