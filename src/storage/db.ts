@@ -140,6 +140,17 @@ export const db = {
     return (await dbPromise).put('extension-sync', ts, 'lastTimestamp');
   },
 
+  /** Upsert a solve record by its composite key (slug|timestamp). */
+  async updateSolve(solve: Solve): Promise<string> {
+    const key = `${solve.slug}|${solve.timestamp}`;
+    return (await dbPromise).put('solves', solve, key);
+  },
+
+  /** Return all solves sorted by most-recent first. */
+  async getAllSolvesSorted(): Promise<Solve[]> {
+    const solves = await (await dbPromise).getAll('solves');
+    return solves.sort((a, b) => b.timestamp - a.timestamp);
+  },
   // Transaction support
   async transaction(
     storeNames: ValidStoreName | ValidStoreName[],
