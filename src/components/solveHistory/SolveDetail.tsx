@@ -188,8 +188,8 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       fb.code_quality.correctness,
       fb.code_quality.maintainability,
     ];
-    const ratingsValid = ratings.every((r) => r >= 1 && r <= 5);
-    const finalValid = fb.summary.final_score > 0 && fb.summary.final_score <= 100;
+    const ratingsValid = ratings.every((r) => r >= 0 && r <= 5);
+    const finalValid = fb.summary.final_score >= 0 && fb.summary.final_score <= 100;
     if (!ratingsValid || !finalValid) {
       toast('Numeric ratings are out of range.', 'error');
       return;
@@ -282,11 +282,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
   const renderFeedback = () => {
     if (!fbEdit) {
-      if (
-        !solve.feedback ||
-        solve.feedback.summary?.final_score === 0 ||
-        solve.feedback.summary?.final_score === undefined
-      ) {
+      if (!solve.feedback || solve.feedback.summary?.final_score === undefined) {
         return (
           <div className="text-center text-muted-foreground py-8">
             <p>No feedback available.</p>
@@ -376,12 +372,12 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium block mb-1" htmlFor="time-to-solve">
-                  Time to Solve (1-5)
+                  Time to Solve (0-5)
                 </label>
                 <input
                   id="time-to-solve"
                   type="number"
-                  min={1}
+                  min={0}
                   max={5}
                   value={feedback?.performance?.time_to_solve ?? ''}
                   onChange={(e) =>
@@ -451,12 +447,12 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
               {(['readability', 'correctness', 'maintainability'] as const).map((f) => (
                 <div key={f}>
                   <label className="text-sm font-medium block mb-1" htmlFor={f}>
-                    {f.charAt(0).toUpperCase() + f.slice(1)} (1-5)
+                    {f.charAt(0).toUpperCase() + f.slice(1)} (0-5)
                   </label>
                   <input
                     id={f}
                     type="number"
-                    min={1}
+                    min={0}
                     max={5}
                     value={feedback?.code_quality[f]}
                     onChange={(e) => upd('code_quality', f, Number.parseInt(e.target.value, 10))}
@@ -487,12 +483,12 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
           <div className="grid gap-4">
             <div className="max-w-xs">
               <label className="text-sm font-medium block mb-1" htmlFor="final-score">
-                Final Score (1-100)
+                Final Score (0-100)
               </label>
               <input
                 id="final-score"
                 type="number"
-                min={1}
+                min={0}
                 max={100}
                 value={feedback?.summary?.final_score ?? ''}
                 onChange={(e) =>

@@ -114,15 +114,15 @@ export interface Solve {
   /** Structured feedback (manual or AI-generated) */
   feedback?: {
     performance: {
-      time_to_solve: number; // 1-5
+      time_to_solve: number; // 0-5
       time_complexity: string;
       space_complexity: string;
       comments: string;
     };
     code_quality: {
-      readability: number; // 1-5
-      correctness: number; // 1-5
-      maintainability: number; // 1-5
+      readability: number; // 0-5
+      correctness: number; // 0-5
+      maintainability: number; // 0-5
       comments: string;
     };
     summary: {

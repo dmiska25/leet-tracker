@@ -228,7 +228,7 @@ describe('<SolveDetail>', () => {
     await user.click(screen.getByRole('button', { name: /add feedback/i }));
 
     // Set performance feedback
-    const timeToSolveInput = screen.getByLabelText(/time to solve \(1-5\)/i);
+    const timeToSolveInput = screen.getByLabelText(/time to solve \(0-5\)/i);
     await user.clear(timeToSolveInput);
     await user.type(timeToSolveInput, '3'); // Valid value
 
@@ -245,15 +245,15 @@ describe('<SolveDetail>', () => {
     await user.type(performanceCommentsInput, 'Good performance overall.');
 
     // Set code quality feedback
-    const readabilityInput = screen.getByLabelText(/readability \(1-5\)/i);
+    const readabilityInput = screen.getByLabelText(/readability \(0-5\)/i);
     await user.clear(readabilityInput);
     await user.type(readabilityInput, '4'); // Valid value
 
-    const correctnessInput = screen.getByLabelText(/correctness \(1-5\)/i);
+    const correctnessInput = screen.getByLabelText(/correctness \(0-5\)/i);
     await user.clear(correctnessInput);
     await user.type(correctnessInput, '5'); // Valid value
 
-    const maintainabilityInput = screen.getByLabelText(/maintainability \(1-5\)/i);
+    const maintainabilityInput = screen.getByLabelText(/maintainability \(0-5\)/i);
     await user.clear(maintainabilityInput);
     await user.type(maintainabilityInput, '3'); // Valid value
 
@@ -262,7 +262,7 @@ describe('<SolveDetail>', () => {
     await user.type(codeQualityCommentsInput, 'Code is clean and maintainable.');
 
     // Set summary feedback
-    const finalScoreInput = screen.getByLabelText(/final score \(1-100\)/i);
+    const finalScoreInput = screen.getByLabelText(/final score \(0-100\)/i);
     await user.clear(finalScoreInput);
     await user.type(finalScoreInput, '85'); // Valid value
 

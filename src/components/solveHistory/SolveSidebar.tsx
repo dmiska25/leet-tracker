@@ -17,10 +17,7 @@ interface Props {
 const solveId = (s: Solve) => `${s.slug}|${s.timestamp}`;
 
 /** Determine if a solve has feedback filled out */
-const needsFeedback = (s: Solve) =>
-  !s.feedback ||
-  s.feedback.summary?.final_score === 0 ||
-  s.feedback.summary?.final_score === undefined;
+const needsFeedback = (s: Solve) => s.feedback?.summary?.final_score === undefined;
 
 export default function SolveSidebar({ solves, selectedId, onSelect, onHide }: Props) {
   return (
@@ -54,8 +51,7 @@ export default function SolveSidebar({ solves, selectedId, onSelect, onHide }: P
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{s.title}</h4>
                         <div className="flex items-center gap-2 mt-1">
-                          {s.feedback?.summary?.final_score !== undefined &&
-                          s.feedback.summary.final_score > 0 ? (
+                          {s.feedback?.summary?.final_score !== undefined ? (
                             <Badge
                               variant="outline"
                               className={`text-[11px] px-1.5 py-0.5 ${
