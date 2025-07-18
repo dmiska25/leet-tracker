@@ -40,16 +40,16 @@ export async function syncFromExtension(username: string): Promise<number> {
 
       // Build Solve
       const solve: Solve = {
-        ...existingSolve, // preserve existing solve data if available
+        ...existingSolve, // preserve existing solve data if available and don't override timeUsed, code, or tags.
         slug: raw.titleSlug,
         title: raw.titleSlug.replace(/-/g, ' '),
         timestamp: Number(raw.timestamp),
         status: raw.statusDisplay,
         lang: raw.lang,
-        timeUsed: raw.solveTime ?? undefined,
-        code: raw.codeDetail?.code ?? undefined,
+        timeUsed: existingSolve?.timeUsed ?? raw.solveTime ?? undefined,
+        code: existingSolve?.code ?? raw.codeDetail?.code ?? undefined,
         difficulty: p.difficulty,
-        tags: p.tags,
+        tags: existingSolve?.tags ?? p.tags,
       };
 
       await db.saveSolve(solve);

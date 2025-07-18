@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
 import { syncFromExtension } from './extensionSync';
-import { Difficulty, Problem } from '../types/types';
+import { Difficulty, Problem, Solve } from '../types/types';
 
 vi.mock('../storage/db');
 vi.mock('../api/extensionBridge');
@@ -104,5 +104,36 @@ describe('syncFromExtension', () => {
     expect(getManifestSince).toHaveBeenCalledWith('testuser', 0);
     expect(getChunk).not.toHaveBeenCalled();
     expect(db.saveSolve).not.toHaveBeenCalled();
+  });
+
+  it('preserves existing timeUsed, code, and tags', async () => {
+    const existingSolve: Solve = {
+      slug: 'p1',
+      title: 'Problem 1',
+      timestamp: 1234567890,
+      status: 'Accepted',
+      lang: 'ts',
+      timeUsed: 300, // Existing timeUsed
+      code: 'console.log("existing solution");', // Existing code
+      difficulty: Difficulty.Easy,
+      tags: ['Greedy'], // Existing tags
+    };
+
+    vi.mocked(db.getSolve).mockResolvedValue(existingSolve);
+
+    const added = await syncFromExtension('testuser');
+
+    expect(added).toBe(1); // One solve added
+    expect(db.saveSolve).toHaveBeenCalledWith({
+      slug: 'p1',
+      title: 'p1',
+      timestamp: 1234567890,
+      status: 'Accepted',
+      lang: 'ts',
+      timeUsed: 300, // Preserved timeUsed
+      code: 'console.log("existing solution");', // Preserved code
+      difficulty: Difficulty.Easy,
+      tags: ['Greedy'], // Preserved tags
+    });
   });
 });

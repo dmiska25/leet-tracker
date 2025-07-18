@@ -7,14 +7,10 @@ import { ProfileManager } from '@/components/ProfileManager';
 import { getCategorySuggestions, getRandomSuggestions } from '@/domain/recommendations';
 import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
-import { Tooltip } from 'react-tooltip';
-import 'react-tooltip/dist/react-tooltip.css';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { ModeBadge } from '@/components/ModeBadge';
 import { ExtensionWarning } from '@/components/ExtensionWarning';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
@@ -23,8 +19,6 @@ import type { Category } from '@/types/types';
 
 export const RANDOM_TAG: Category = 'Random';
 const initialSuggestions = {} as Record<Category, CategoryRecommendation>;
-
-/* ---------- Main Component ---------- */
 
 export default function Dashboard() {
   const { loading, username, progress, refresh, criticalError, extensionInstalled } = useInitApp();
@@ -41,7 +35,7 @@ export default function Dashboard() {
   const [profileOpen, setProfileOpen] = useState(false);
   const timeAgo = useTimeAgo(lastSynced);
 
-  /* update the last‑synced timestamp once initial data is ready */
+  /* update the last-synced timestamp once initial data is ready */
   useEffect(() => {
     if (!loading) setLastSynced(new Date());
   }, [loading]);
@@ -109,56 +103,10 @@ export default function Dashboard() {
     setLastSynced(new Date());
   };
 
-  const handleSignOut = async () => {
-    if (!window.confirm('Are you sure you want to sign out? Your local progress will be cleared.'))
-      return;
-    await db.setActiveGoalProfile('default');
-    await db.clearGoalProfiles();
-    await db.setUsername('');
-    await db.clearSolves();
-    await db.setExtensionLastTimestamp(0);
-    window.location.reload();
-  };
-
   /* ---------- render ---------- */
-
   return (
     <div className="min-h-screen bg-background">
-      {/* ───────── Nav Bar ───────── */}
-      <nav className="border-b bg-card">
-        <div className="max-w-6xl mx-auto flex h-16 items-center px-4 sm:px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold">LeetTracker</h1>
-            <ModeBadge />
-          </div>
-          <div className="ml-auto flex items-center gap-4">
-            {/* top‑level tabs (placeholder – navigation not wired yet) */}
-            <Tabs defaultValue="dashboard" className="mr-4 hidden sm:block">
-              <TabsList>
-                <TabsTrigger value="dashboard" disabled>
-                  Dashboard
-                </TabsTrigger>
-                <div id="solveHistoryTooltip">
-                  <TabsTrigger value="history" disabled>
-                    Solve History
-                  </TabsTrigger>
-                </div>
-                <Tooltip
-                  anchorId="solveHistoryTooltip"
-                  content="Work in progress"
-                  place="top"
-                  className="rounded-md bg-black text-white px-2 py-1 text-sm shadow-md"
-                />
-              </TabsList>
-            </Tabs>
-
-            <ThemeToggle />
-            <Button variant="ghost" onClick={handleSignOut}>
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </nav>
+      {/* Profile manager modal */}
       {profileManagerOpen && (
         <ProfileManager
           onDone={async () => {
@@ -229,15 +177,17 @@ export default function Dashboard() {
           </CardHeader>
 
           <CardContent className="divide-y px-4">
+            {/* Error banner */}
             {criticalError && (
               <div className="p-6 text-sm text-destructive">
                 Progress data could not be loaded. Try syncing again using the&nbsp;
                 <strong>&quot;Sync&nbsp;Now&quot;</strong> button above.
               </div>
             )}
+
             {!criticalError && (
               <>
-                {/* Random category */}
+                {/* Random category row */}
                 <div key="random" className="py-4 space-y-3">
                   <button
                     className="w-full text-left space-y-2"
@@ -278,6 +228,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                {/* Category rows */}
                 {sorted.map((cat) => {
                   const percent = Math.round(cat.adjustedScore * 100);
                   const goalPercent = Math.round(cat.goal * 100);
