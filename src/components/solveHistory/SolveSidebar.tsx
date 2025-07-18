@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Solve } from '@/types/types';
+import { StatusBadge } from './statusBadge';
 import clsx from 'clsx';
 
 interface Props {
@@ -51,6 +52,7 @@ export default function SolveSidebar({ solves, selectedId, onSelect, onHide }: P
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{s.title}</h4>
                         <div className="flex items-center gap-2 mt-1">
+                          <StatusBadge status={s.status} />
                           {s.feedback?.summary?.final_score !== undefined ? (
                             <Badge
                               variant="outline"

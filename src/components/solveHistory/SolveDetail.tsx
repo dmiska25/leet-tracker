@@ -10,6 +10,7 @@ import { db } from '@/storage/db';
 import type { Solve } from '@/types/types';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import type { HintType } from '@/types/types';
+import { StatusBadge } from './statusBadge';
 
 /* ---------------------------------------------------------- */
 /*  Helpers                                                   */
@@ -530,9 +531,10 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-xl">{solve.title}</CardTitle>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">{timeText}</span>
+              <StatusBadge status={solve.status} />
             </div>
           </div>
           {showListButton && (
