@@ -12,7 +12,7 @@ export const Textarea = forwardRef<
     ref={ref}
     className={clsx(
       'w-full rounded-md border px-3 py-2 text-sm bg-background',
-      'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
+      'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset',
       'disabled:opacity-50 disabled:pointer-events-none',
       className,
     )}
