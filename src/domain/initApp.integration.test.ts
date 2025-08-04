@@ -31,20 +31,25 @@ describe('initApp (integration with fake‑indexeddb)', () => {
           headers: { 'Content-Type': 'application/json' },
         });
       } else if (input === 'test.com/testuser/submission') {
+        // Use recent timestamps (within last 30 days) to ensure progress calculation works
+        const now = Math.floor(Date.now() / 1000);
+        const recentTimestamp1 = now - 24 * 60 * 60; // 1 day ago
+        const recentTimestamp2 = now - 2 * 24 * 60 * 60; // 2 days ago
+
         return new Response(
           JSON.stringify({
             submission: [
               {
                 titleSlug: 'two-sum',
                 title: 'Two Sum',
-                timestamp: '1746032384',
+                timestamp: recentTimestamp1.toString(),
                 statusDisplay: 'Accepted',
                 lang: 'Python',
               },
               {
                 titleSlug: 'add-two-numbers',
                 title: 'Add Two Numbers',
-                timestamp: '1746032385',
+                timestamp: recentTimestamp2.toString(),
                 statusDisplay: 'Accepted',
                 lang: 'Python',
               },
@@ -195,10 +200,15 @@ describe('initApp (integration with fake‑indexeddb)', () => {
   });
 
   it('merges solves from multiple extension chunks', async () => {
+    // Use recent timestamps (within last 30 days) to ensure progress calculation works
+    const now = Math.floor(Date.now() / 1000);
+    const recentTimestamp1 = now - 24 * 60 * 60; // 1 day ago
+    const recentTimestamp2 = now - 2 * 24 * 60 * 60; // 2 days ago
+
     const chunk0 = [
       {
         titleSlug: 'two-sum',
-        timestamp: 1746032384,
+        timestamp: recentTimestamp1,
         statusDisplay: 'Accepted',
         lang: 'Python',
       },
@@ -206,15 +216,15 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     const chunk1 = [
       {
         titleSlug: 'add-two-numbers',
-        timestamp: 1746032390,
+        timestamp: recentTimestamp2,
         statusDisplay: 'Accepted',
         lang: 'TypeScript',
       },
     ];
 
     vi.mocked(getManifestSince).mockResolvedValue([
-      { index: 0, from: 0, to: 1746032384 },
-      { index: 1, from: 1746032385, to: 1746032390 },
+      { index: 0, from: 0, to: recentTimestamp1 },
+      { index: 1, from: recentTimestamp1 + 1, to: recentTimestamp2 },
     ]);
 
     vi.mocked(getChunk).mockImplementation(async (_username: string, idx: number) => {

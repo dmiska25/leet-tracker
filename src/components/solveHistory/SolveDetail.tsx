@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Edit, Save, X, Eye, EyeOff } from 'lucide-react';
+import { Calendar, Edit, Save, X, Eye, EyeOff, Copy, Upload, HelpCircle } from 'lucide-react';
+import { Tooltip } from 'react-tooltip';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,6 +38,52 @@ const hintOptions = [
 
 const hintLabel = (v: string | undefined) =>
   hintOptions.find((h) => h.value === v)?.label ?? 'None';
+
+/* ---------------------------------------------------------- */
+/*  Validation                                                */
+/* ---------------------------------------------------------- */
+
+interface FeedbackValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+const validateFeedback = (feedback: NonNullable<Solve['feedback']>): FeedbackValidationResult => {
+  const errors: string[] = [];
+
+  // Validate numeric ranges - required for both manual and XML input
+  const ratings = [
+    { field: 'time_to_solve', value: feedback.performance.time_to_solve, min: 0, max: 5 },
+    { field: 'readability', value: feedback.code_quality.readability, min: 0, max: 5 },
+    { field: 'correctness', value: feedback.code_quality.correctness, min: 0, max: 5 },
+    { field: 'maintainability', value: feedback.code_quality.maintainability, min: 0, max: 5 },
+  ];
+
+  for (const rating of ratings) {
+    if (typeof rating.value !== 'number' || isNaN(rating.value)) {
+      errors.push(`${rating.field} must be a valid number`);
+    } else if (rating.value < rating.min || rating.value > rating.max) {
+      errors.push(
+        `${rating.field} must be between ${rating.min} and ${rating.max}, got ${rating.value}`,
+      );
+    }
+  }
+
+  // Validate final score - required for both manual and XML input
+  if (typeof feedback.summary.final_score !== 'number' || isNaN(feedback.summary.final_score)) {
+    errors.push('final_score must be a valid number');
+  } else if (feedback.summary.final_score < 0 || feedback.summary.final_score > 100) {
+    errors.push(`final_score must be between 0 and 100, got ${feedback.summary.final_score}`);
+  }
+
+  // Text fields are optional for both manual and XML input
+  // They can be missing or empty - we just require the numeric values
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
 
 /* ---------------------------------------------------------- */
 /*  Component                                                 */
@@ -87,6 +134,183 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
   /* ---------- feedback edit state ---------- */
   const [fbEdit, setFbEdit] = useState(false);
+
+  /* ---------- XML import helpers ---------- */
+  const [xmlInputOpen, setXmlInputOpen] = useState(false);
+  const [xmlText, setXmlText] = useState('');
+  const [xmlError, setXmlError] = useState(false);
+
+  /** Check if we have clipboard read access */
+  const canReadClipboard = async (): Promise<boolean> => {
+    try {
+      // Check if the API exists and if we have permission
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        return false;
+      }
+      // Try to read clipboard to test permissions
+      await navigator.clipboard.readText();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  /** Smart import: auto-paste if possible, otherwise open manual input */
+  const handleSmartImport = async () => {
+    const hasClipboardAccess = await canReadClipboard();
+
+    if (hasClipboardAccess) {
+      try {
+        const clipboardText = await navigator.clipboard.readText();
+        if (!clipboardText.trim()) {
+          toast('Clipboard is empty', 'error');
+          setXmlInputOpen(true);
+          return;
+        }
+        setXmlText(clipboardText);
+        const success = parseXmlFeedback(clipboardText);
+        if (success) {
+          setXmlInputOpen(false);
+          setXmlText('');
+        }
+      } catch (_) {
+        toast('Unable to read from clipboard', 'error');
+        setXmlInputOpen(true);
+      }
+    } else {
+      // No clipboard access, open manual input
+      setXmlInputOpen(true);
+    }
+  };
+
+  /** Build an LLM prompt containing all solve context + desired XML schema */
+  const buildLLMPrompt = async () => {
+    const status = solve.status ?? 'Unknown';
+    const timeUsedText = formatTimeUsed(solve.timeUsed);
+    const hints = hintLabel(solve.usedHints);
+    const notesVal = solve.notes ?? '';
+    const codeSnippet = solve.code ?? '';
+
+    // get problem description from problem db
+    const problem = await db.getProblem(solve.slug).catch(() => null);
+    const problemDescription = problem?.description ?? 'No problem description available';
+
+    // Escape backticks in code to prevent breaking the template literal
+    const escapedCode = codeSnippet.replace(/`/g, '\\`');
+    return `You are an expert coding-interview reviewer for leetcode problems.\nPlease analyse the submission below and return ONLY the following XML (wrapped in one \`code\` block):\n\n<feedback>\n  <performance time_to_solve="" time_complexity="" space_complexity="">\n    <comments></comments>\n  </performance>\n  <code_quality readability="" correctness="" maintainability="">\n    <comments></comments>\n  </code_quality>\n  <summary final_score="">\n    <comments></comments>\n  </summary>\n</feedback>\n\nField Formats:\n- time_to_solve: integer 0-5 (how efficiently solved)\n- readability: integer 0-5 (code clarity and style)\n- correctness: integer 0-5 (solution accuracy)\n- maintainability: integer 0-5 (code organization and extensibility)\n- time_complexity: string (e.g., "O(n)", "O(log n)", "O(n²)")\n- space_complexity: string (e.g., "O(1)", "O(n)", "O(n log n)")\n- final_score: integer 0-100 (overall performance)\n\nProblem Title: ${solve.title}\nStatus: ${status}\nSolve Time: ${timeUsedText}\nUsed Hints: ${hints}\nNotes: ${notesVal}\n\nSubmission Code:\n\`\`\`\n${escapedCode}\n\`\`\`\n\nProblem Description:\n${problemDescription}\n\nRemember to ONLY return the XML in a single \`code\` block, with no additional text or explanation.`;
+  };
+
+  /** Copy prompt to clipboard and conditionally open XML input */
+  const handleCopyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(await buildLLMPrompt());
+      const hasClipboardAccess = await canReadClipboard();
+
+      if (hasClipboardAccess) {
+        // If we can read clipboard, don't auto-open - user can use smart import
+        toast('Prompt copied - use "Import Feedback" to paste XML response.', 'success');
+      } else {
+        // No clipboard read access, auto-open for manual paste
+        setXmlInputOpen(true);
+        toast('Prompt copied - paste the XML reply in the box below.', 'success');
+      }
+    } catch {
+      toast('Failed to copy prompt', 'error');
+    }
+  };
+
+  /** Parse XML from textarea and populate feedback state */
+  const parseXmlFeedback = (xmlStr: string): boolean => {
+    try {
+      const doc = new DOMParser().parseFromString(xmlStr, 'application/xml');
+      const perf = doc.querySelector('performance');
+      const cq = doc.querySelector('code_quality');
+      const sum = doc.querySelector('summary');
+      if (!perf || !cq || !sum) {
+        throw new Error(
+          'Invalid XML: missing required sections (performance, code_quality, summary)',
+        );
+      }
+
+      const getNumAttr = (el: Element, attr: string) => {
+        const val = el.getAttribute(attr);
+        if (!val) throw new Error(`Missing required attribute: ${attr}`);
+        const parsed = Number.parseInt(val, 10);
+        if (Number.isNaN(parsed)) throw new Error(`Invalid number for attribute: ${attr}`);
+        return parsed;
+      };
+
+      const getTextContent = (el: Element, selector: string) => {
+        const textEl = el.querySelector(selector);
+        // Allow empty or missing text content - return empty string if not found
+        return textEl?.textContent || '';
+      };
+
+      const getStrAttr = (el: Element, attr: string) => {
+        // Allow empty string attributes - return empty if not found
+        return el.getAttribute(attr) || '';
+      };
+
+      // Clean up text fields: trim and normalize whitespace
+      const cleanText = (text: string) => text.trim().replace(/\s+/g, ' ');
+
+      const newFb: NonNullable<Solve['feedback']> = {
+        performance: {
+          time_to_solve: getNumAttr(perf, 'time_to_solve'),
+          time_complexity: cleanText(getStrAttr(perf, 'time_complexity')),
+          space_complexity: cleanText(getStrAttr(perf, 'space_complexity')),
+          comments: cleanText(getTextContent(perf, 'comments')),
+        },
+        code_quality: {
+          readability: getNumAttr(cq, 'readability'),
+          correctness: getNumAttr(cq, 'correctness'),
+          maintainability: getNumAttr(cq, 'maintainability'),
+          comments: cleanText(getTextContent(cq, 'comments')),
+        },
+        summary: {
+          final_score: getNumAttr(sum, 'final_score'),
+          comments: cleanText(getTextContent(sum, 'comments')),
+        },
+      };
+
+      // Use consistent validation for both XML and manual input
+      const validation = validateFeedback(newFb);
+      if (!validation.isValid) {
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
+
+      // Store original feedback state for potential rollback
+      const originalFeedback = feedback;
+      setFeedback(newFb);
+      setXmlError(false); // Clear any previous errors
+
+      // If not in edit mode, persist the changes immediately
+      if (!fbEdit) {
+        db.saveSolve({ ...solve, feedback: newFb })
+          .then(() => {
+            onSaved();
+            toast('Feedback imported and saved!', 'success');
+          })
+          .catch((err) => {
+            console.error('[XML-import-save]', err);
+            // Restore original feedback state on save failure
+            setFeedback(originalFeedback);
+            toast('Feedback imported but failed to save. Please try again.', 'error');
+          });
+      } else {
+        toast('Feedback imported!', 'success');
+      }
+
+      return true; // Success
+    } catch (err) {
+      console.error('[XML-import]', err);
+      const errorMsg = err instanceof Error ? err.message : 'Invalid XML format';
+      toast(`Import failed: ${errorMsg}`, 'error');
+      setXmlError(true);
+      return false; // Failure
+    }
+  };
+
   const [feedback, setFeedback] = useState<Solve['feedback']>(
     solve.feedback ?? {
       performance: {
@@ -181,22 +405,24 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   };
 
   const saveFeedback = async () => {
-    /* ----- basic validation ----- */
+    /* ----- centralized validation ----- */
     const fb = feedback!;
-    const ratings = [
-      fb.performance.time_to_solve,
-      fb.code_quality.readability,
-      fb.code_quality.correctness,
-      fb.code_quality.maintainability,
-    ];
-    const ratingsValid = ratings.every((r) => r >= 0 && r <= 5);
-    const finalValid = fb.summary.final_score >= 0 && fb.summary.final_score <= 100;
-    if (!ratingsValid || !finalValid) {
-      toast('Numeric ratings are out of range.', 'error');
+    const validation = validateFeedback(fb);
+    if (!validation.isValid) {
+      // Provide backward-compatible error message for manual input
+      const hasNumericError = validation.errors.some(
+        (err) => err.includes('must be between') || err.includes('must be a valid number'),
+      );
+      const errorMessage = hasNumericError
+        ? 'Numeric ratings are out of range.'
+        : `Validation failed: ${validation.errors[0]}`;
+      toast(errorMessage, 'error');
       return;
     }
+
     try {
       await db.saveSolve({ ...solve, feedback });
+      toast('Feedback saved!', 'success');
       onSaved();
     } catch (err) {
       cancelFeedbackEdit();
@@ -666,35 +892,133 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
             <section>
               <header className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">Feedback</h3>
-                {fbEdit ? (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={cancelFeedbackEdit}
-                      className="gap-2 bg-transparent"
-                    >
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={saveFeedback} className="gap-2">
-                      <Save className="h-4 w-4" />
-                      Save
-                    </Button>
-                  </div>
-                ) : (
+                <div className="flex flex-wrap gap-2 justify-end">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setFbEdit(true)}
-                    className="gap-2"
+                    className="gap-2 px-2"
+                    data-tooltip-id="feedback-help"
+                    data-tooltip-html="How to use AI feedback generation:<br/>1) Copy Prompt → paste into ChatGPT<br/>2) Copy XML response from ChatGPT<br/>3) Import Feedback → auto-pastes from clipboard or opens manual input"
                   >
-                    <Edit className="h-4 w-4" />
-                    {solve.feedback ? 'Edit' : 'Add'} Feedback
+                    <HelpCircle className="h-4 w-4" />
                   </Button>
-                )}
+                  <Tooltip
+                    id="feedback-help"
+                    place="bottom-start"
+                    style={{
+                      backgroundColor: '#1f2937',
+                      color: '#f9fafb',
+                      borderRadius: '6px',
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      maxWidth: '300px',
+                      zIndex: 9999,
+                    }}
+                    events={['hover', 'click']}
+                    delayShow={100}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyPrompt}
+                    className="gap-2"
+                    title="Copy a prompt to paste into ChatGPT for AI feedback generation"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy Prompt
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSmartImport}
+                    className="gap-2"
+                    title="Import XML feedback - auto-paste from clipboard or open manual input"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Import Feedback
+                  </Button>
+                  {fbEdit ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={cancelFeedbackEdit}
+                        className="gap-2 bg-transparent"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={saveFeedback} className="gap-2">
+                        <Save className="h-4 w-4" />
+                        Save
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFbEdit(true)}
+                      className="gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      {solve.feedback ? 'Edit' : 'Add'} Feedback
+                    </Button>
+                  )}
+                </div>
               </header>
 
+              {xmlInputOpen && (
+                <div className="mb-4">
+                  <Textarea
+                    value={xmlText}
+                    onChange={(e) => {
+                      setXmlText(e.target.value);
+                      setXmlError(false); // Clear error when user starts typing
+                    }}
+                    rows={6}
+                    className={`font-mono text-xs ${xmlError ? 'border-red-500 border-2' : ''}`}
+                    placeholder={`Paste LLM XML response here…
+
+Expected format:
+<feedback>
+  <performance time_to_solve="3" time_complexity="O(n)" space_complexity="O(1)">
+    <comments>Good performance analysis...</comments>
+  </performance>
+  <code_quality readability="4" correctness="5" maintainability="3">
+    <comments>Code quality feedback...</comments>
+  </code_quality>
+  <summary final_score="85">
+    <comments>Overall summary...</comments>
+  </summary>
+</feedback>`}
+                  />
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setXmlInputOpen(false);
+                        setXmlText('');
+                        setXmlError(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const success = parseXmlFeedback(xmlText);
+                        if (success) {
+                          setXmlInputOpen(false);
+                          setXmlText('');
+                        }
+                      }}
+                    >
+                      Import
+                    </Button>
+                  </div>
+                </div>
+              )}
               {renderFeedback()}
             </section>
           </div>
