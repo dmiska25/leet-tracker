@@ -168,8 +168,8 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
           return;
         }
         setXmlText(clipboardText);
-        parseXmlFeedback(clipboardText);
-        if (!xmlError) {
+        const success = parseXmlFeedback(clipboardText);
+        if (success) {
           setXmlInputOpen(false);
           setXmlText('');
         }
@@ -191,7 +191,9 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     const notesVal = solve.notes ?? '';
     const codeSnippet = solve.code ?? '';
 
-    return `You are an expert coding-interview reviewer.\nPlease analyse the submission below and return ONLY the following XML (wrapped in one \`code\` block):\n\n<feedback>\n  <performance time_to_solve="" time_complexity="" space_complexity="">\n    <comments></comments>\n  </performance>\n  <code_quality readability="" correctness="" maintainability="">\n    <comments></comments>\n  </code_quality>\n  <summary final_score="">\n    <comments></comments>\n  </summary>\n</feedback>\n\nField Formats:\n- time_to_solve: integer 0-5 (how efficiently solved)\n- readability: integer 0-5 (code clarity and style)\n- correctness: integer 0-5 (solution accuracy)\n- maintainability: integer 0-5 (code organization and extensibility)\n- time_complexity: string (e.g., "O(n)", "O(log n)", "O(n²)")\n- space_complexity: string (e.g., "O(1)", "O(n)", "O(n log n)")\n- final_score: integer 0-100 (overall performance)\n\nProblem Title: ${solve.title}\nStatus: ${status}\nSolve Time: ${timeUsedText}\nUsed Hints: ${hints}\nNotes: ${notesVal}\n\nSubmission Code:\n\`\`\`\n${codeSnippet}\n\`\`\``;
+    // Escape backticks in code to prevent breaking the template literal
+    const escapedCode = codeSnippet.replace(/`/g, '\\`');
+    return `You are an expert coding-interview reviewer.\nPlease analyse the submission below and return ONLY the following XML (wrapped in one \`code\` block):\n\n<feedback>\n  <performance time_to_solve="" time_complexity="" space_complexity="">\n    <comments></comments>\n  </performance>\n  <code_quality readability="" correctness="" maintainability="">\n    <comments></comments>\n  </code_quality>\n  <summary final_score="">\n    <comments></comments>\n  </summary>\n</feedback>\n\nField Formats:\n- time_to_solve: integer 0-5 (how efficiently solved)\n- readability: integer 0-5 (code clarity and style)\n- correctness: integer 0-5 (solution accuracy)\n- maintainability: integer 0-5 (code organization and extensibility)\n- time_complexity: string (e.g., "O(n)", "O(log n)", "O(n²)")\n- space_complexity: string (e.g., "O(1)", "O(n)", "O(n log n)")\n- final_score: integer 0-100 (overall performance)\n\nProblem Title: ${solve.title}\nStatus: ${status}\nSolve Time: ${timeUsedText}\nUsed Hints: ${hints}\nNotes: ${notesVal}\n\nSubmission Code:\n\`\`\`\n${escapedCode}\n\`\`\``;
   };
 
   /** Copy prompt to clipboard and conditionally open XML input */
@@ -202,11 +204,11 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
       if (hasClipboardAccess) {
         // If we can read clipboard, don't auto-open - user can use smart import
-        toast('Prompt copied – use "Import Feedback" to paste XML response.', 'success');
+        toast('Prompt copied - use "Import Feedback" to paste XML response.', 'success');
       } else {
         // No clipboard read access, auto-open for manual paste
         setXmlInputOpen(true);
-        toast('Prompt copied – paste the XML reply in the box below.', 'success');
+        toast('Prompt copied - paste the XML reply in the box below.', 'success');
       }
     } catch {
       toast('Failed to copy prompt', 'error');
@@ -214,7 +216,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   };
 
   /** Parse XML from textarea and populate feedback state */
-  const parseXmlFeedback = (xmlStr: string) => {
+  const parseXmlFeedback = (xmlStr: string): boolean => {
     try {
       const doc = new DOMParser().parseFromString(xmlStr, 'application/xml');
       const perf = doc.querySelector('performance');
@@ -294,11 +296,14 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       } else {
         toast('Feedback imported!', 'success');
       }
+
+      return true; // Success
     } catch (err) {
       console.error('[XML-import]', err);
       const errorMsg = err instanceof Error ? err.message : 'Invalid XML format';
       toast(`Import failed: ${errorMsg}`, 'error');
       setXmlError(true);
+      return false; // Failure
     }
   };
 
@@ -998,8 +1003,8 @@ Expected format:
                     <Button
                       size="sm"
                       onClick={() => {
-                        parseXmlFeedback(xmlText);
-                        if (!xmlError) {
+                        const success = parseXmlFeedback(xmlText);
+                        if (success) {
                           setXmlInputOpen(false);
                           setXmlText('');
                         }
