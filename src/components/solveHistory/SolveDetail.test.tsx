@@ -368,4 +368,463 @@ describe('<SolveDetail>', () => {
       expect(onSaved).not.toHaveBeenCalled();
     });
   });
+
+  describe('ChatGPT prompt copy/paste flow', () => {
+    // Mock clipboard API
+    const mockWriteText = vi.fn();
+    const mockReadText = vi.fn();
+
+    beforeEach(() => {
+      // Setup clipboard mocks using defineProperty
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
+          writeText: mockWriteText,
+          readText: mockReadText,
+        },
+        writable: true,
+        configurable: true,
+      });
+      mockWriteText.mockClear();
+      mockReadText.mockClear();
+    });
+
+    afterEach(() => {
+      vi.resetAllMocks();
+    });
+
+    describe('ChatGPT prompt copy/paste flow', () => {
+      it('generates and displays prompt content with solve details', async () => {
+        const user = userEvent.setup();
+        const testSolve = {
+          ...baseSolve,
+          timeUsed: 1800, // 30 minutes
+          usedHints: 'leetcode_hint' as const,
+          notes: 'Had to think about edge cases',
+          code: 'function twoSum(nums, target) {\n  // solution here\n  return result;\n}',
+        };
+
+        // Mock clipboard writeText to track what would be copied
+        const mockWriteText = vi.fn().mockResolvedValue(undefined);
+        Object.defineProperty(navigator, 'clipboard', {
+          value: { writeText: mockWriteText },
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={testSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /copy prompt/i }));
+
+        // Check that the prompt contains all expected content
+        await waitFor(() => {
+          expect(mockWriteText).toHaveBeenCalledWith(
+            expect.stringContaining('You are an expert coding-interview reviewer'),
+          );
+          expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('Two Sum'));
+          expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('30 min'));
+          expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('LeetCode Hint'));
+          expect(mockWriteText).toHaveBeenCalledWith(
+            expect.stringContaining('Had to think about edge cases'),
+          );
+          expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('function twoSum'));
+        });
+      });
+
+      it('opens XML input for manual paste when Import Feedback is clicked', async () => {
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        await waitFor(() => {
+          expect(screen.getByPlaceholderText(/paste llm xml response here/i)).toBeInTheDocument();
+        });
+      });
+
+      it('allows manual XML input and import when textarea is used', async () => {
+        const validXML = `<feedback>
+        <performance time_to_solve="3" time_complexity="O(n log n)" space_complexity="O(n)">
+          <comments>Decent approach with sorting</comments>
+        </performance>
+        <code_quality readability="4" correctness="5" maintainability="4">
+          <comments>Well structured code</comments>
+        </code_quality>
+        <summary final_score="78">
+          <comments>Good overall performance</comments>
+        </summary>
+      </feedback>`;
+
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // Open XML input manually
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        const textarea = screen.getByPlaceholderText(/paste llm xml response here/i);
+        await user.type(textarea, validXML);
+
+        await user.click(screen.getByRole('button', { name: /^import$/i }));
+
+        await waitFor(() => {
+          expect(toastMock).toHaveBeenCalledWith('Feedback imported and saved!', 'success');
+          expect(saveSolve).toHaveBeenCalledWith(
+            expect.objectContaining({
+              feedback: expect.objectContaining({
+                performance: expect.objectContaining({
+                  time_to_solve: 3,
+                  time_complexity: 'O(n log n)',
+                  space_complexity: 'O(n)',
+                  comments: 'Decent approach with sorting',
+                }),
+                summary: expect.objectContaining({
+                  final_score: 78,
+                }),
+              }),
+            }),
+          );
+        });
+      });
+
+      it('shows error for invalid XML format', async () => {
+        const invalidXML = 'not valid xml';
+
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // Open XML input manually
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        const textarea = screen.getByPlaceholderText(/paste llm xml response here/i);
+        await user.type(textarea, invalidXML);
+
+        await user.click(screen.getByRole('button', { name: /^import$/i }));
+
+        await waitFor(() => {
+          expect(toastMock).toHaveBeenCalledWith(
+            expect.stringContaining('Import failed:'),
+            'error',
+          );
+        });
+      });
+
+      it('shows error for XML with invalid numeric values', async () => {
+        const invalidXML = `<feedback>
+        <performance time_to_solve="invalid" time_complexity="O(n)" space_complexity="O(1)">
+          <comments>Good solution approach</comments>
+        </performance>
+        <code_quality readability="5" correctness="4" maintainability="3">
+          <comments>Clean and readable code</comments>
+        </code_quality>
+        <summary final_score="85">
+          <comments>Overall excellent work</comments>
+        </summary>
+      </feedback>`;
+
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // Open XML input manually
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        const textarea = screen.getByPlaceholderText(/paste llm xml response here/i);
+        await user.type(textarea, invalidXML);
+
+        await user.click(screen.getByRole('button', { name: /^import$/i }));
+
+        await waitFor(() => {
+          expect(toastMock).toHaveBeenCalledWith(
+            expect.stringContaining('Import failed:'),
+            'error',
+          );
+        });
+      });
+
+      it('cancels XML input and clears state when cancel is clicked', async () => {
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // Open XML input
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        const textarea = screen.getByPlaceholderText(/paste llm xml response here/i);
+        await user.type(textarea, 'some text');
+
+        await user.click(screen.getByRole('button', { name: /cancel/i }));
+
+        await waitFor(() => {
+          expect(
+            screen.queryByPlaceholderText(/paste llm xml response here/i),
+          ).not.toBeInTheDocument();
+        });
+      });
+
+      it('imports feedback in edit mode without auto-saving', async () => {
+        const validXML = `<feedback>
+        <performance time_to_solve="3" time_complexity="O(n)" space_complexity="O(1)">
+          <comments>Good approach</comments>
+        </performance>
+        <code_quality readability="4" correctness="5" maintainability="4">
+          <comments>Clean code</comments>
+        </code_quality>
+        <summary final_score="80">
+          <comments>Good work</comments>
+        </summary>
+      </feedback>`;
+
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // First enter edit mode
+        await user.click(screen.getByRole('button', { name: /add feedback/i }));
+
+        // Then import XML
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        const textarea = screen.getByPlaceholderText(/paste llm xml response here/i);
+        await user.type(textarea, validXML);
+
+        await user.click(screen.getByRole('button', { name: /^import$/i }));
+
+        await waitFor(() => {
+          expect(toastMock).toHaveBeenCalledWith('Feedback imported!', 'success');
+          expect(saveSolve).not.toHaveBeenCalled(); // Should not auto-save in edit mode
+        });
+      });
+      it('trims and normalizes whitespace in XML text fields during import', async () => {
+        const xmlWithExtraSpaces = `<feedback>
+        <performance time_to_solve="4" time_complexity="  O(n)  " space_complexity=" O(1) ">
+          <comments>   Good   solution   approach   </comments>
+        </performance>
+        <code_quality readability="5" correctness="4" maintainability="3">
+          <comments>Clean    and    readable    code</comments>
+        </code_quality>
+        <summary final_score="85">
+          <comments>  Overall   excellent   work  </comments>
+        </summary>
+      </feedback>`;
+
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // Open XML input manually
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        const textarea = screen.getByPlaceholderText(/paste llm xml response here/i);
+        await user.type(textarea, xmlWithExtraSpaces);
+
+        await user.click(screen.getByRole('button', { name: /^import$/i }));
+
+        await waitFor(() => {
+          expect(saveSolve).toHaveBeenCalledWith(
+            expect.objectContaining({
+              feedback: expect.objectContaining({
+                performance: expect.objectContaining({
+                  time_complexity: 'O(n)', // trimmed and normalized
+                  space_complexity: 'O(1)', // trimmed and normalized
+                  comments: 'Good solution approach', // multiple spaces normalized
+                }),
+                code_quality: expect.objectContaining({
+                  comments: 'Clean and readable code', // multiple spaces normalized
+                }),
+                summary: expect.objectContaining({
+                  comments: 'Overall excellent work', // trimmed and normalized
+                }),
+              }),
+            }),
+          );
+        });
+      });
+
+      it('imports feedback in edit mode without auto-saving', async () => {
+        const validXML = `<feedback>
+        <performance time_to_solve="3" time_complexity="O(n)" space_complexity="O(1)">
+          <comments>Good approach</comments>
+        </performance>
+        <code_quality readability="4" correctness="5" maintainability="4">
+          <comments>Clean code</comments>
+        </code_quality>
+        <summary final_score="80">
+          <comments>Good work</comments>
+        </summary>
+      </feedback>`;
+
+        const user = userEvent.setup();
+
+        // Mock clipboard to simulate no access
+        Object.defineProperty(navigator, 'clipboard', {
+          value: undefined,
+          writable: true,
+        });
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // First enter edit mode
+        await user.click(screen.getByRole('button', { name: /add feedback/i }));
+
+        // Then import XML
+        await user.click(screen.getByRole('button', { name: /import feedback/i }));
+
+        const textarea = screen.getByPlaceholderText(/paste llm xml response here/i);
+        await user.type(textarea, validXML);
+
+        await user.click(screen.getByRole('button', { name: /^import$/i }));
+
+        await waitFor(() => {
+          expect(toastMock).toHaveBeenCalledWith('Feedback imported!', 'success');
+          expect(saveSolve).not.toHaveBeenCalled(); // Should not auto-save in edit mode
+        });
+      });
+
+      it('validates manual feedback entry with consistent requirements', async () => {
+        const user = userEvent.setup();
+
+        render(
+          <SolveDetail
+            solve={baseSolve}
+            onSaved={onSaved}
+            onShowList={onShowList}
+            showListButton={false}
+          />,
+        );
+
+        // Enter edit mode
+        await user.click(screen.getByRole('button', { name: /add feedback/i }));
+
+        // Default values (all 0) should be valid - save should succeed
+        await user.click(screen.getByRole('button', { name: /save/i }));
+
+        await waitFor(() => {
+          expect(toastMock).toHaveBeenCalledWith('Feedback saved!', 'success');
+          expect(saveSolve).toHaveBeenCalled();
+        });
+
+        // Reset mocks for next test
+        toastMock.mockClear();
+        saveSolve.mockClear();
+
+        // Test with invalid values
+        const finalScoreInput = screen.getByLabelText(/final score/i);
+        await user.clear(finalScoreInput);
+        await user.type(finalScoreInput, '150'); // Invalid score > 100
+
+        await user.click(screen.getByRole('button', { name: /save/i }));
+
+        await waitFor(() => {
+          expect(toastMock).toHaveBeenCalledWith('Numeric ratings are out of range.', 'error');
+          expect(saveSolve).toHaveBeenCalledTimes(0); // Should not save invalid data
+        });
+      });
+    });
+  });
 });
