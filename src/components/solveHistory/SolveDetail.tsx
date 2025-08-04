@@ -184,22 +184,26 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   };
 
   /** Build an LLM prompt containing all solve context + desired XML schema */
-  const buildLLMPrompt = () => {
+  const buildLLMPrompt = async () => {
     const status = solve.status ?? 'Unknown';
     const timeUsedText = formatTimeUsed(solve.timeUsed);
     const hints = hintLabel(solve.usedHints);
     const notesVal = solve.notes ?? '';
     const codeSnippet = solve.code ?? '';
 
+    // get problem description from problem db
+    const problem = await db.getProblem(solve.slug).catch(() => null);
+    const problemDescription = problem?.description ?? 'No problem description available';
+
     // Escape backticks in code to prevent breaking the template literal
     const escapedCode = codeSnippet.replace(/`/g, '\\`');
-    return `You are an expert coding-interview reviewer.\nPlease analyse the submission below and return ONLY the following XML (wrapped in one \`code\` block):\n\n<feedback>\n  <performance time_to_solve="" time_complexity="" space_complexity="">\n    <comments></comments>\n  </performance>\n  <code_quality readability="" correctness="" maintainability="">\n    <comments></comments>\n  </code_quality>\n  <summary final_score="">\n    <comments></comments>\n  </summary>\n</feedback>\n\nField Formats:\n- time_to_solve: integer 0-5 (how efficiently solved)\n- readability: integer 0-5 (code clarity and style)\n- correctness: integer 0-5 (solution accuracy)\n- maintainability: integer 0-5 (code organization and extensibility)\n- time_complexity: string (e.g., "O(n)", "O(log n)", "O(n²)")\n- space_complexity: string (e.g., "O(1)", "O(n)", "O(n log n)")\n- final_score: integer 0-100 (overall performance)\n\nProblem Title: ${solve.title}\nStatus: ${status}\nSolve Time: ${timeUsedText}\nUsed Hints: ${hints}\nNotes: ${notesVal}\n\nSubmission Code:\n\`\`\`\n${escapedCode}\n\`\`\``;
+    return `You are an expert coding-interview reviewer for leetcode problems.\nPlease analyse the submission below and return ONLY the following XML (wrapped in one \`code\` block):\n\n<feedback>\n  <performance time_to_solve="" time_complexity="" space_complexity="">\n    <comments></comments>\n  </performance>\n  <code_quality readability="" correctness="" maintainability="">\n    <comments></comments>\n  </code_quality>\n  <summary final_score="">\n    <comments></comments>\n  </summary>\n</feedback>\n\nField Formats:\n- time_to_solve: integer 0-5 (how efficiently solved)\n- readability: integer 0-5 (code clarity and style)\n- correctness: integer 0-5 (solution accuracy)\n- maintainability: integer 0-5 (code organization and extensibility)\n- time_complexity: string (e.g., "O(n)", "O(log n)", "O(n²)")\n- space_complexity: string (e.g., "O(1)", "O(n)", "O(n log n)")\n- final_score: integer 0-100 (overall performance)\n\nProblem Title: ${solve.title}\nStatus: ${status}\nSolve Time: ${timeUsedText}\nUsed Hints: ${hints}\nNotes: ${notesVal}\n\nSubmission Code:\n\`\`\`\n${escapedCode}\n\`\`\`\n\nProblem Description:\n${problemDescription}\n\nRemember to ONLY return the XML in a single \`code\` block, with no additional text or explanation.`;
   };
 
   /** Copy prompt to clipboard and conditionally open XML input */
   const handleCopyPrompt = async () => {
     try {
-      await navigator.clipboard.writeText(buildLLMPrompt());
+      await navigator.clipboard.writeText(await buildLLMPrompt());
       const hasClipboardAccess = await canReadClipboard();
 
       if (hasClipboardAccess) {

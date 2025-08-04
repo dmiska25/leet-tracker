@@ -17,9 +17,10 @@ vi.mock('@/components/ui/toast', () => ({
   useToast: () => toastMock,
 }));
 
-// Mock database saveSolve function
+// Mock database functions
 vi.mock('@/storage/db');
 const saveSolve = vi.mocked(db.saveSolve);
+const getProblem = vi.mocked(db.getProblem);
 
 const baseSolve: Solve = {
   slug: 'two-sum',
@@ -38,6 +39,18 @@ describe('<SolveDetail>', () => {
 
   beforeEach(() => {
     saveSolve.mockResolvedValue('');
+    getProblem.mockResolvedValue({
+      slug: 'two-sum',
+      title: 'Two Sum',
+      tags: ['Array'] as Category[],
+      description:
+        'Given an array of integers, return indices of the two numbers that add up to a specific target.',
+      difficulty: Difficulty.Easy,
+      popularity: 0.9,
+      isPaid: false,
+      isFundamental: true,
+      createdAt: Math.floor(Date.now() / 1000),
+    });
     onSaved.mockClear();
     toastMock.mockClear();
   });
@@ -432,6 +445,11 @@ describe('<SolveDetail>', () => {
           expect.stringContaining('Had to think about edge cases'),
         );
         expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('function twoSum'));
+        expect(mockWriteText).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'Given an array of integers, return indices of the two numbers that add up to a specific target.',
+          ),
+        );
       });
     });
 
