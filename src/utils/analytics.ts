@@ -1,5 +1,7 @@
 import posthog from 'posthog-js';
 
+const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
+
 /**
  * SHA-256 helper to hash the LeetCode username before sending to PostHog.
  * Returns a lowercase hex string.
@@ -21,10 +23,10 @@ export async function identifyUser(
   username: string,
   props: { extensionInstalled: boolean; profileId: string; lastSync: number },
 ) {
-  if (!username || identified) return;
+  if (!username || identified || username == DEMO_USERNAME) return;
   try {
     const distinctId = await sha256(username);
-    posthog.identify(distinctId);
+    posthog.identify(distinctId, { username: username });
     posthog.people.set(props);
     identified = true;
     posthog.capture('app_opened', props);
@@ -35,6 +37,7 @@ export async function identifyUser(
 }
 
 export async function resetUser() {
+  if (!identified) return;
   try {
     posthog.reset();
     identified = false;
