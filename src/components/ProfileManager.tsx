@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Plus, X } from 'lucide-react';
 import clsx from 'clsx';
+import { trackProfileChanged } from '@/utils/analytics';
 
 interface Props {
   onDone: () => void;
@@ -81,6 +82,7 @@ export function ProfileManager({ onDone }: Props) {
   const handleSetActive = async (id: string) => {
     await db.setActiveGoalProfile(id);
     setActiveId(id);
+    trackProfileChanged(id);
   };
 
   /* ---------------- ui helpers ---------------- */

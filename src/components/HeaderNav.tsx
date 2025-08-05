@@ -3,6 +3,7 @@ import { ModeBadge } from '@/components/ModeBadge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { db } from '@/storage/db';
+import { resetUser } from '@/utils/analytics';
 
 type View = 'dashboard' | 'history';
 
@@ -43,6 +44,7 @@ export default function HeaderNav({ view, onChange }: Props) {
           await db.setExtensionLastTimestamp(0);
         },
       );
+      resetUser();
     } catch (err) {
       console.error('Failed to clear user data:', err);
       alert('An error occurred while signing out. Please try again.');

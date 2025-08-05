@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { trackErrorBoundary } from '@/utils/analytics';
 
 /**
  * Catches unrecoverable rendering/runtime errors anywhere below it and shows
@@ -26,6 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // You could send this to Sentry / LogRocket etc.
     console.error('[ErrorBoundary] Unhandled app error:', error, info);
+    trackErrorBoundary(error.message, error.stack);
   }
 
   render() {
