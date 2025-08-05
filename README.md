@@ -19,6 +19,8 @@ LeetCode and other platforms are great for improving algorithm skills and learni
 - 🔁 **Re-attempt logic** with diminishing returns
 - 🔐 **Fully local-first** (data stored in IndexedDB)
 - 🌙 **Dark mode** supported
+- 🗂️ **Solve History & Detail view** with code, notes, hints, solve time, & timestamps
+- 🤖 **One-click AI feedback**: copy a ChatGPT prompt, paste XML back, auto-parses & stores solve feedback
 
 ## Live App
 
@@ -39,6 +41,19 @@ Once installed, the extension runs in the background while you're signed in to L
 - ✅ **Problems:** Pulled from a daily-updated S3 file with likes/dislikes, tags, and popularity
 - ✅ **Solves:** Pulled from `alfa-leetcode-api` (most recent 20 solves) + Full history can optionally be pulled via the companion Chrome extension
 - ✅ **Local Storage:** IndexedDB for user progress, settings, and sync timestamps
+- ✅ **AI Feedback:** XML pasted from ChatGPT is parsed & stored alongside each solve
+
+## Solve History & AI Feedback
+
+Every submission appears in **Solve History** with rich details:
+
+| Capability               | What it means                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Code viewer / editor** | Expand or edit your submission inline.                                                                                                      |
+| **Solve metadata**       | Store time-to-solve, hints used, personal notes. These are automatically captured and stored if the extension is installed.                 |
+| **AI Feedback workflow** | 1. _Copy Prompt_ → paste into ChatGPT<br>2. Copy the XML it returns<br>3. _Import Feedback_ to auto-fill performance & code-quality scores. |
+
+The feedback is validated client-side (range-checking 0-5 / 0-100) and immediately affects your category scores.
 
 ### Scoring Algorithm
 
@@ -53,7 +68,7 @@ adjustedScore = estimatedScore * confidenceLevel;
 - **Decay:** Older solves contribute less (90-day half-life)
 - **Difficulty weighting:** Easy < Medium < Hard
 - **Attempt Penalty:** Diminishes score if multiple failed attempts before success.
-- **Quality: Manualy entered or GPT Calculated (Planned factor)**
+- **Quality: Manually entered or GPT Calculated (Planned factor)**
 - **Confidence:** Measures how much relevant recent evidence you have in a category. Maxes out at ~20 weighted solves.
 - **Grouped Attempts:** Multiple attempts on the same problem within one day are grouped to avoid inflation.
 
@@ -86,9 +101,10 @@ npm run dev
 ## Future Plans
 
 - ✅ ~~Chrome extension now supports full solve history syncing~~
-- Visual timeline of solves across categories and problem tags
+- ✅ ~~Visual timeline of solves across categories and problem tags~~
 - Support for **exporting** solve history data (JSON format)
 - Support for **importing** past solve history manually (upload-based or paste-in)
+- General pattern feedback from multiple solves (e.g. "You tend to struggle with DP problems because of X" from GPT)
 
 ## Acknowledgments
 
@@ -102,7 +118,15 @@ Overview:
 
 Recommendations:
 
-![Dashboard](./public/screenshots/refresh.png)
+![Dashboard](./public/screenshots/recommendation.png)
+
+Solve History:
+
+![Dashboard](./public/screenshots/solve_screen.png)
+
+Feedback:
+
+![Dashboard](./public/screenshots/feedback.png)
 
 ## Contact Me
 
