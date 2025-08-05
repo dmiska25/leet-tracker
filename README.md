@@ -68,7 +68,7 @@ adjustedScore = estimatedScore * confidenceLevel;
 - **Decay:** Older solves contribute less (90-day half-life)
 - **Difficulty weighting:** Easy < Medium < Hard
 - **Attempt Penalty:** Diminishes score if multiple failed attempts before success.
-- **Quality: Manualy entered or GPT Calculated (Planned factor)**
+- **Quality: Manually entered or GPT Calculated (Planned factor)**
 - **Confidence:** Measures how much relevant recent evidence you have in a category. Maxes out at ~20 weighted solves.
 - **Grouped Attempts:** Multiple attempts on the same problem within one day are grouped to avoid inflation.
 
