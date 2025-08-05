@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { GoalProfile } from '@/types/types';
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 import { useInitApp } from '@/hooks/useInitApp';
 import { ProfileManager } from '@/components/ProfileManager';
@@ -200,7 +200,12 @@ export default function Dashboard() {
                     onClick={() => handleToggle(RANDOM_TAG)}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2">
-                      <div className="min-w-[180px]">
+                      <div className="w-[180px] flex items-center gap-2 pl-1 whitespace-normal break-words">
+                        <ChevronDown
+                          className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
+                            open === RANDOM_TAG ? 'rotate-180' : 'rotate-0'
+                          }`}
+                        />
                         <span>{RANDOM_TAG}</span>
                       </div>
                     </div>
@@ -249,7 +254,12 @@ export default function Dashboard() {
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2">
                           {/* Category name – fixed width so bars align */}
-                          <div className="min-w-[180px]">
+                          <div className="w-[180px] flex items-center gap-2 pl-1 whitespace-normal break-words">
+                            <ChevronDown
+                              className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
+                                isOpen ? 'rotate-180' : 'rotate-0'
+                              }`}
+                            />
                             <span>{cat.tag}</span>
                           </div>
 
