@@ -4,279 +4,651 @@
     "title": "Two Sum",
     "timestamp": 1745646660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        num_map = {}\n        for i, num in enumerate(nums):\n            complement = target - num\n            if complement in num_map:\n                return [num_map[complement], i]\n            num_map[num] = i\n        return []",
+    "timeUsed": 720,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)",
+        "comments": "Good use of hash map for optimal time complexity. Solved efficiently."
+      },
+      "code_quality": {
+        "readability": 4,
+        "correctness": 5,
+        "maintainability": 4,
+        "comments": "Clean implementation with descriptive variable names. Could benefit from comments."
+      },
+      "summary": {
+        "final_score": 85,
+        "comments": "Solid solution demonstrating understanding of hash tables. Well-optimized approach."
+      }
+    }
   },
   {
     "slug": "reverse-linked-list",
     "title": "Reverse Linked List",
     "timestamp": 1745676660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:\n        prev = None\n        current = head\n        while current:\n            next_temp = current.next\n            current.next = prev\n            prev = current\n            current = next_temp\n        return prev",
+    "timeUsed": 480,
+    "usedHints": "none"
   },
   {
     "slug": "best-time-to-buy-and-sell-stock",
     "title": "Best Time to Buy and Sell Stock",
     "timestamp": 1745706660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def maxProfit(self, prices: List[int]) -> int:\n        min_price = float('inf')\n        max_profit = 0\n        for price in prices:\n            if price < min_price:\n                min_price = price\n            elif price - min_price > max_profit:\n                max_profit = price - min_price\n        return max_profit",
+    "timeUsed": 600,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 4,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)",
+        "comments": "Excellent single-pass solution with optimal space usage."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Very clean and readable code with proper variable naming."
+      },
+      "summary": {
+        "final_score": 92,
+        "comments": "Outstanding solution showing mastery of dynamic programming concepts."
+      }
+    }
   },
   {
     "slug": "merge-intervals",
     "title": "Merge Intervals",
     "timestamp": 1745736660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def merge(self, intervals: List[List[int]]) -> List[List[int]]:\n        if not intervals:\n            return []\n        \n        intervals.sort(key=lambda x: x[0])\n        merged = [intervals[0]]\n        \n        for current in intervals[1:]:\n            if current[0] <= merged[-1][1]:\n                merged[-1][1] = max(merged[-1][1], current[1])\n            else:\n                merged.append(current)\n        \n        return merged",
+    "timeUsed": 900,
+    "usedHints": "leetcode_hint"
   },
   {
     "slug": "3sum",
     "title": "3Sum",
     "timestamp": 1745766660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def threeSum(self, nums: List[int]) -> List[List[int]]:\n        nums.sort()\n        result = []\n        \n        for i in range(len(nums) - 2):\n            if i > 0 and nums[i] == nums[i-1]:\n                continue\n            \n            left, right = i + 1, len(nums) - 1\n            while left < right:\n                total = nums[i] + nums[left] + nums[right]\n                if total < 0:\n                    left += 1\n                elif total > 0:\n                    right -= 1\n                else:\n                    result.append([nums[i], nums[left], nums[right]])\n                    while left < right and nums[left] == nums[left + 1]:\n                        left += 1\n                    while left < right and nums[right] == nums[right - 1]:\n                        right -= 1\n                    left += 1\n                    right -= 1\n        \n        return result",
+    "timeUsed": 1440,
+    "usedHints": "solution_peek",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 2,
+        "time_complexity": "O(n²)",
+        "space_complexity": "O(1)",
+        "comments": "Used hints but implemented correctly. Two-pointer approach is optimal."
+      },
+      "code_quality": {
+        "readability": 3,
+        "correctness": 5,
+        "maintainability": 3,
+        "comments": "Correct implementation but could be more readable with better variable names."
+      },
+      "summary": {
+        "final_score": 72,
+        "comments": "Good understanding shown despite needing hints. Complex problem handled well."
+      }
+    }
   },
   {
     "slug": "climbing-stairs",
     "title": "Climbing Stairs",
     "timestamp": 1745796660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def climbStairs(self, n: int) -> int:\n        if n <= 2:\n            return n\n        \n        prev2, prev1 = 1, 2\n        for i in range(3, n + 1):\n            current = prev1 + prev2\n            prev2 = prev1\n            prev1 = current\n        \n        return prev1",
+    "timeUsed": 300,
+    "usedHints": "none"
   },
   {
     "slug": "longest-substring-without-repeating-characters",
     "title": "Longest Substring Without Repeating Characters",
     "timestamp": 1745826660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        char_map = {}\n        left = 0\n        max_length = 0\n        \n        for right in range(len(s)):\n            if s[right] in char_map and char_map[s[right]] >= left:\n                left = char_map[s[right]] + 1\n            char_map[s[right]] = right\n            max_length = max(max_length, right - left + 1)\n        \n        return max_length",
+    "timeUsed": 840,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(min(m,n))",
+        "comments": "Efficient sliding window approach with optimal time complexity."
+      },
+      "code_quality": {
+        "readability": 4,
+        "correctness": 5,
+        "maintainability": 4,
+        "comments": "Clean sliding window implementation. Good variable naming."
+      },
+      "summary": {
+        "final_score": 88,
+        "comments": "Excellent understanding of sliding window technique. Well-implemented solution."
+      }
+    }
   },
   {
     "slug": "binary-tree-level-order-traversal",
     "title": "Binary Tree Level Order Traversal",
     "timestamp": 1745856660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "from collections import deque\n\nclass Solution:\n    def levelOrder(self, root: Optional[TreeNode]) -> List[List[int]]:\n        if not root:\n            return []\n        \n        result = []\n        queue = deque([root])\n        \n        while queue:\n            level_size = len(queue)\n            level_nodes = []\n            \n            for _ in range(level_size):\n                node = queue.popleft()\n                level_nodes.append(node.val)\n                \n                if node.left:\n                    queue.append(node.left)\n                if node.right:\n                    queue.append(node.right)\n            \n            result.append(level_nodes)\n        \n        return result",
+    "timeUsed": 660,
+    "usedHints": "none"
   },
   {
     "slug": "valid-parentheses",
     "title": "Valid Parentheses",
     "timestamp": 1745886660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def isValid(self, s: str) -> bool:\n        stack = []\n        mapping = {')': '(', '}': '{', ']': '['}\n        \n        for char in s:\n            if char in mapping:\n                if not stack or stack.pop() != mapping[char]:\n                    return False\n            else:\n                stack.append(char)\n        \n        return not stack",
+    "timeUsed": 360,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 4,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)",
+        "comments": "Classic stack problem solved efficiently. Good understanding of data structures."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Excellent code quality with clear logic and proper use of dictionary mapping."
+      },
+      "summary": {
+        "final_score": 95,
+        "comments": "Perfect implementation demonstrating mastery of stack data structure."
+      }
+    }
   },
   {
     "slug": "coin-change",
     "title": "Coin Change",
     "timestamp": 1745916660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def coinChange(self, coins: List[int], amount: int) -> int:\n        dp = [float('inf')] * (amount + 1)\n        dp[0] = 0\n        \n        for coin in coins:\n            for i in range(coin, amount + 1):\n                dp[i] = min(dp[i], dp[i - coin] + 1)\n        \n        return dp[amount] if dp[amount] != float('inf') else -1",
+    "timeUsed": 1200,
+    "usedHints": "leetcode_hint"
   },
   {
     "slug": "maximum-subarray",
     "title": "Maximum Subarray",
     "timestamp": 1745946660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def maxSubArray(self, nums: List[int]) -> int:\n        current_sum = max_sum = nums[0]\n        \n        for num in nums[1:]:\n            current_sum = max(num, current_sum + num)\n            max_sum = max(max_sum, current_sum)\n        \n        return max_sum",
+    "timeUsed": 420,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 4,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)",
+        "comments": "Kadane's algorithm implemented perfectly. Optimal solution."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Concise and elegant implementation of classic algorithm."
+      },
+      "summary": {
+        "final_score": 94,
+        "comments": "Excellent demonstration of dynamic programming principles."
+      }
+    }
   },
   {
     "slug": "palindrome-number",
     "title": "Palindrome Number",
     "timestamp": 1745976660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        if x < 0:\n            return False\n        \n        original = x\n        reversed_num = 0\n        \n        while x > 0:\n            reversed_num = reversed_num * 10 + x % 10\n            x //= 10\n        \n        return original == reversed_num",
+    "timeUsed": 240,
+    "usedHints": "none"
   },
   {
     "slug": "valid-anagram",
     "title": "Valid Anagram",
     "timestamp": 1746006660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def isAnagram(self, s: str, t: str) -> bool:\n        if len(s) != len(t):\n            return False\n        \n        char_count = {}\n        \n        for char in s:\n            char_count[char] = char_count.get(char, 0) + 1\n        \n        for char in t:\n            if char not in char_count:\n                return False\n            char_count[char] -= 1\n            if char_count[char] == 0:\n                del char_count[char]\n        \n        return len(char_count) == 0",
+    "timeUsed": 300,
+    "usedHints": "none"
   },
   {
     "slug": "contains-duplicate",
     "title": "Contains Duplicate",
     "timestamp": 1746036660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def containsDuplicate(self, nums: List[int]) -> bool:\n        seen = set()\n        for num in nums:\n            if num in seen:\n                return True\n            seen.add(num)\n        return False",
+    "timeUsed": 180,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 5,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)",
+        "comments": "Very quick solve with optimal approach using set data structure."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Simple, clean, and efficient implementation."
+      },
+      "summary": {
+        "final_score": 96,
+        "comments": "Perfect solution demonstrating efficient use of hash set."
+      }
+    }
   },
   {
     "slug": "maximum-depth-of-binary-tree",
     "title": "Maximum Depth of Binary Tree",
     "timestamp": 1746066660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def maxDepth(self, root: Optional[TreeNode]) -> int:\n        if not root:\n            return 0\n        \n        left_depth = self.maxDepth(root.left)\n        right_depth = self.maxDepth(root.right)\n        \n        return 1 + max(left_depth, right_depth)",
+    "timeUsed": 240,
+    "usedHints": "none"
   },
   {
     "slug": "invert-binary-tree",
     "title": "Invert Binary Tree",
     "timestamp": 1746096660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def invertTree(self, root: Optional[TreeNode]) -> Optional[TreeNode]:\n        if not root:\n            return None\n        \n        root.left, root.right = root.right, root.left\n        \n        self.invertTree(root.left)\n        self.invertTree(root.right)\n        \n        return root",
+    "timeUsed": 180,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 5,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h)",
+        "comments": "Quick and elegant recursive solution. Good understanding of tree traversal."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Clean recursive implementation with proper base case handling."
+      },
+      "summary": {
+        "final_score": 93,
+        "comments": "Excellent solution showing strong grasp of recursion and tree manipulation."
+      }
+    }
   },
   {
     "slug": "valid-palindrome",
     "title": "Valid Palindrome",
     "timestamp": 1746126660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def isPalindrome(self, s: str) -> bool:\n        left, right = 0, len(s) - 1\n        \n        while left < right:\n            while left < right and not s[left].isalnum():\n                left += 1\n            while left < right and not s[right].isalnum():\n                right -= 1\n            \n            if s[left].lower() != s[right].lower():\n                return False\n            \n            left += 1\n            right -= 1\n        \n        return True",
+    "timeUsed": 480,
+    "usedHints": "none"
   },
   {
     "slug": "merge-two-sorted-lists",
     "title": "Merge Two Sorted Lists",
     "timestamp": 1746156660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def mergeTwoLists(self, list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:\n        dummy = ListNode(0)\n        current = dummy\n        \n        while list1 and list2:\n            if list1.val <= list2.val:\n                current.next = list1\n                list1 = list1.next\n            else:\n                current.next = list2\n                list2 = list2.next\n            current = current.next\n        \n        current.next = list1 or list2\n        \n        return dummy.next",
+    "timeUsed": 420,
+    "usedHints": "none"
   },
   {
     "slug": "binary-search",
     "title": "Binary Search",
     "timestamp": 1746186660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        left, right = 0, len(nums) - 1\n        \n        while left <= right:\n            mid = (left + right) // 2\n            if nums[mid] == target:\n                return mid\n            elif nums[mid] < target:\n                left = mid + 1\n            else:\n                right = mid - 1\n        \n        return -1",
+    "timeUsed": 300,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 4,
+        "time_complexity": "O(log n)",
+        "space_complexity": "O(1)",
+        "comments": "Classic binary search implemented correctly with optimal complexity."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Textbook implementation of binary search. Very clean code."
+      },
+      "summary": {
+        "final_score": 90,
+        "comments": "Perfect understanding of binary search algorithm fundamentals."
+      }
+    }
   },
   {
     "slug": "fibonacci-number",
     "title": "Fibonacci Number",
     "timestamp": 1746216660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def fib(self, n: int) -> int:\n        if n <= 1:\n            return n\n        \n        a, b = 0, 1\n        for i in range(2, n + 1):\n            a, b = b, a + b\n        \n        return b",
+    "timeUsed": 240,
+    "usedHints": "none"
   },
   {
     "slug": "majority-element",
     "title": "Majority Element",
     "timestamp": 1746246660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def majorityElement(self, nums: List[int]) -> int:\n        count = 0\n        candidate = None\n        \n        for num in nums:\n            if count == 0:\n                candidate = num\n            count += (1 if num == candidate else -1)\n        \n        return candidate",
+    "timeUsed": 600,
+    "usedHints": "gpt_help"
   },
   {
     "slug": "symmetric-tree",
     "title": "Symmetric Tree",
     "timestamp": 1746276660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def isSymmetric(self, root: Optional[TreeNode]) -> bool:\n        def isMirror(left: Optional[TreeNode], right: Optional[TreeNode]) -> bool:\n            if not left and not right:\n                return True\n            if not left or not right:\n                return False\n            return (left.val == right.val and \n                    isMirror(left.left, right.right) and \n                    isMirror(left.right, right.left))\n        \n        return isMirror(root.left, root.right) if root else True",
+    "timeUsed": 720,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h)",
+        "comments": "Good recursive approach with helper function. Efficient solution."
+      },
+      "code_quality": {
+        "readability": 4,
+        "correctness": 5,
+        "maintainability": 4,
+        "comments": "Well-structured code with clear helper function. Good edge case handling."
+      },
+      "summary": {
+        "final_score": 87,
+        "comments": "Strong understanding of tree recursion and symmetric properties."
+      }
+    }
   },
   {
     "slug": "merge-sorted-array",
     "title": "Merge Sorted Array",
     "timestamp": 1746306660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def merge(self, nums1: List[int], m: int, nums2: List[int], n: int) -> None:\n        i, j, k = m - 1, n - 1, m + n - 1\n        \n        while j >= 0:\n            if i >= 0 and nums1[i] > nums2[j]:\n                nums1[k] = nums1[i]\n                i -= 1\n            else:\n                nums1[k] = nums2[j]\n                j -= 1\n            k -= 1",
+    "timeUsed": 540,
+    "usedHints": "leetcode_hint"
   },
   {
     "slug": "climbing-stairs",
     "title": "Climbing Stairs",
     "timestamp": 1746336660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def climbStairs(self, n: int) -> int:\n        if n <= 2:\n            return n\n        \n        prev2, prev1 = 1, 2\n        for i in range(3, n + 1):\n            current = prev1 + prev2\n            prev2 = prev1\n            prev1 = current\n        \n        return prev1",
+    "timeUsed": 300,
+    "usedHints": "none"
   },
   {
     "slug": "best-time-to-buy-and-sell-stock-ii",
     "title": "Best Time to Buy and Sell Stock II",
     "timestamp": 1746366660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def maxProfit(self, prices: List[int]) -> int:\n        total_profit = 0\n        for i in range(1, len(prices)):\n            if prices[i] > prices[i-1]:\n                total_profit += prices[i] - prices[i-1]\n        return total_profit",
+    "timeUsed": 360,
+    "usedHints": "none"
   },
   {
     "slug": "single-number",
     "title": "Single Number",
     "timestamp": 1746396660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def singleNumber(self, nums: List[int]) -> int:\n        result = 0\n        for num in nums:\n            result ^= num\n        return result",
+    "timeUsed": 420,
+    "usedHints": "solution_peek",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)",
+        "comments": "Elegant bit manipulation solution. Needed hints but understood the concept."
+      },
+      "code_quality": {
+        "readability": 4,
+        "correctness": 5,
+        "maintainability": 4,
+        "comments": "Very concise implementation using XOR properties effectively."
+      },
+      "summary": {
+        "final_score": 78,
+        "comments": "Good learning moment for bit manipulation techniques."
+      }
+    }
   },
   {
     "slug": "linked-list-cycle",
     "title": "Linked List Cycle",
     "timestamp": 1746426660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def hasCycle(self, head: Optional[ListNode]) -> bool:\n        if not head or not head.next:\n            return False\n        \n        slow = head\n        fast = head.next\n        \n        while fast and fast.next:\n            if slow == fast:\n                return True\n            slow = slow.next\n            fast = fast.next.next\n        \n        return False",
+    "timeUsed": 480,
+    "usedHints": "none"
   },
   {
     "slug": "intersection-of-two-linked-lists",
     "title": "Intersection of Two Linked Lists",
     "timestamp": 1746456660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> Optional[ListNode]:\n        if not headA or not headB:\n            return None\n        \n        pA, pB = headA, headB\n        \n        while pA != pB:\n            pA = pA.next if pA else headB\n            pB = pB.next if pB else headA\n        \n        return pA",
+    "timeUsed": 900,
+    "usedHints": "gpt_help"
   },
   {
     "slug": "remove-duplicates-from-sorted-array",
     "title": "Remove Duplicates from Sorted Array",
     "timestamp": 1746486660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def removeDuplicates(self, nums: List[int]) -> int:\n        if not nums:\n            return 0\n        \n        i = 0\n        for j in range(1, len(nums)):\n            if nums[j] != nums[i]:\n                i += 1\n                nums[i] = nums[j]\n        \n        return i + 1",
+    "timeUsed": 360,
+    "usedHints": "none"
   },
   {
     "slug": "move-zeroes",
     "title": "Move Zeroes",
     "timestamp": 1746516660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def moveZeroes(self, nums: List[int]) -> None:\n        left = 0\n        for right in range(len(nums)):\n            if nums[right] != 0:\n                nums[left], nums[right] = nums[right], nums[left]\n                left += 1",
+    "timeUsed": 300,
+    "usedHints": "none"
   },
   {
     "slug": "two-sum-ii-input-array-is-sorted",
     "title": "Two Sum II - Input Array Is Sorted",
     "timestamp": 1746546660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def twoSum(self, numbers: List[int], target: int) -> List[int]:\n        left, right = 0, len(numbers) - 1\n        \n        while left < right:\n            current_sum = numbers[left] + numbers[right]\n            if current_sum == target:\n                return [left + 1, right + 1]\n            elif current_sum < target:\n                left += 1\n            else:\n                right -= 1\n        \n        return []",
+    "timeUsed": 240,
+    "usedHints": "none"
   },
   {
     "slug": "minimum-depth-of-binary-tree",
     "title": "Minimum Depth of Binary Tree",
     "timestamp": 1746576660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def minDepth(self, root: Optional[TreeNode]) -> int:\n        if not root:\n            return 0\n        \n        if not root.left and not root.right:\n            return 1\n        \n        left_depth = float('inf') if not root.left else self.minDepth(root.left)\n        right_depth = float('inf') if not root.right else self.minDepth(root.right)\n        \n        return 1 + min(left_depth, right_depth)",
+    "timeUsed": 600,
+    "usedHints": "none"
   },
   {
     "slug": "path-sum",
     "title": "Path Sum",
     "timestamp": 1746606660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def hasPathSum(self, root: Optional[TreeNode], targetSum: int) -> bool:\n        if not root:\n            return False\n        \n        if not root.left and not root.right:\n            return root.val == targetSum\n        \n        return (self.hasPathSum(root.left, targetSum - root.val) or \n                self.hasPathSum(root.right, targetSum - root.val))",
+    "timeUsed": 420,
+    "usedHints": "none"
   },
   {
     "slug": "same-tree",
     "title": "Same Tree",
     "timestamp": 1746636660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def isSameTree(self, p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:\n        if not p and not q:\n            return True\n        if not p or not q:\n            return False\n        return (p.val == q.val and \n                self.isSameTree(p.left, q.left) and \n                self.isSameTree(p.right, q.right))",
+    "timeUsed": 180,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h)",
+        "comments": "Good recursive solution. Efficient and clear logic."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Well-structured code with clear base cases."
+      },
+      "summary": {
+        "final_score": 78,
+        "comments": "Excellent understanding of tree structure and recursion."
+      }
+    }
   },
   {
     "slug": "maximum-binary-tree",
     "title": "Maximum Binary Tree",
     "timestamp": 1746666660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def constructMaximumBinaryTree(self, nums: List[int]) -> Optional[TreeNode]:\n        if not nums:\n            return None\n        \n        max_val = max(nums)\n        max_idx = nums.index(max_val)\n        \n        root = TreeNode(max_val)\n        root.left = self.constructMaximumBinaryTree(nums[:max_idx])\n        root.right = self.constructMaximumBinaryTree(nums[max_idx + 1:])\n        \n        return root",
+    "timeUsed": 720,
+    "usedHints": "none"
   },
   {
     "slug": "lowest-common-ancestor-of-a-binary-search-tree",
     "title": "Lowest Common Ancestor of a Binary Search Tree",
     "timestamp": 1746696660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n                return root\n        return None",
+    "timeUsed": 540,
+    "usedHints": "none"
   },
   {
     "slug": "binary-tree-inorder-traversal",
     "title": "Binary Tree Inorder Traversal",
     "timestamp": 1746726660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def inorder(node):\n            if node:\n                inorder(node.left)\n                result.append(node.val)\n                inorder(node.right)\n        \n        inorder(root)\n        return result",
+    "timeUsed": 300,
+    "usedHints": "none"
   },
   {
     "slug": "binary-tree-postorder-traversal",
     "title": "Binary Tree Postorder Traversal",
     "timestamp": 1746756660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def postorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def postorder(node):\n            if node:\n                postorder(node.left)\n                postorder(node.right)\n                result.append(node.val)\n        \n        postorder(root)\n        return result",
+    "timeUsed": 300,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 2,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h)",
+        "comments": "Correct implementation of postorder traversal using recursion."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Well-structured code with clear recursive logic."
+      },
+      "summary": {
+        "final_score": 90,
+        "comments": "Excellent understanding of tree traversal techniques."
+      }
+    }
   },
   {
     "slug": "binary-tree-preorder-traversal",
     "title": "Binary Tree Preorder Traversal",
     "timestamp": 1746786660,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def preorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+    "timeUsed": 300,
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 2,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h)",
+        "comments": "Standard tree traversal implemented correctly. Good understanding of recursion."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Well-structured code with clear recursive logic."
+      },
+      "summary": {
+        "final_score": 90,
+        "comments": "Excellent implementation of tree traversal techniques."
+      }
+    }
   },
   {
     "slug": "implement-strstr",
     "title": "Implement strStr()",
     "timestamp": 1746878400,
     "status": "Accepted",
-    "lang": "python3"
+    "lang": "python3",
+    "code": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        \n        return -1",
+    "timeUsed": 360,
+    "usedHints": "none"
   }
 ]

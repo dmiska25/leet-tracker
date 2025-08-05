@@ -48,9 +48,9 @@ export function ExtensionWarning({ extensionInstalled, className }: ExtensionWar
         <div className="flex items-center gap-2 flex-1">
           <Chrome className="h-5 w-5 text-leetcode-orange flex-shrink-0" />
           <span className="text-sm flex-1">
-            <strong>LeetTracker Chrome extension not detected.</strong>&nbsp; Your submission
-            history may be incomplete. This app works best with the extension to provide accurate
-            progress tracking and recommendations.
+            <strong>LeetTracker Chrome extension not detected.</strong>&nbsp; Get the extension for
+            complete solve history, auto recording of submission code/solve time/solution viewing,
+            and more.
           </span>
         </div>
 

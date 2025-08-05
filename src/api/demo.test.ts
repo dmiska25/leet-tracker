@@ -27,8 +27,11 @@ describe('loadDemoSolves', () => {
 
     // compute expected range (same algorithm as in loadDemoSolves)
     const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
     const endDate = new Date(now);
-    endDate.setDate(now.getDate() - now.getDay() - 1); // last Saturday
+    endDate.setDate(now.getDate() - dayOfWeek - 1); // last Saturday
+    endDate.setHours(0, 0, 0, 0); // Set to midnight for consistency
+
     const startDate = new Date(endDate);
     startDate.setDate(endDate.getDate() - 13);
 
