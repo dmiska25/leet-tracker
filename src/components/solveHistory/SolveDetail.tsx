@@ -518,7 +518,10 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       if (!solve.feedback || solve.feedback.summary?.final_score === undefined) {
         return (
           <div className="text-center text-muted-foreground py-8">
-            <p>No feedback available.</p>
+            <p>
+              No feedback available. Use the &apos;copy prompt&apos; and &apos;import feedback&apos;
+              buttons to import feedback from your favorite LLM.
+            </p>
           </div>
         );
       }
