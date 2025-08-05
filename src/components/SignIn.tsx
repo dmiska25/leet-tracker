@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { db } from '@/storage/db';
 import { Button } from '@/components/ui/button';
 import { verifyUser } from '@/api/leetcode';
+import { trackUserSignedIn } from '@/utils/analytics';
 import { useToast } from './ui/toast';
 
 const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
@@ -49,6 +50,7 @@ export default function SignIn() {
 
       // Save the username to the database
       await db.setUsername(trimmed);
+      trackUserSignedIn(false);
       // A full reload is simplest to re‑run initApp with the new username
       window.location.reload();
     } catch (err) {
@@ -91,6 +93,7 @@ export default function SignIn() {
             onClick={async () => {
               setSaving(true);
               await db.setUsername(DEMO_USERNAME);
+              trackUserSignedIn(true);
               setSaving(false);
               window.location.reload();
             }}

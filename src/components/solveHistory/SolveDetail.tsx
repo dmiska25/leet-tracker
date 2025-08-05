@@ -12,6 +12,7 @@ import type { Solve } from '@/types/types';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import type { HintType } from '@/types/types';
 import { StatusBadge } from './statusBadge';
+import { trackSolveSaved, trackPromptCopied, trackFeedbackImported } from '@/utils/analytics';
 
 /* ---------------------------------------------------------- */
 /*  Helpers                                                   */
@@ -160,6 +161,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     const hasClipboardAccess = await canReadClipboard();
 
     if (hasClipboardAccess) {
+      trackPromptCopied(solve.slug);
       try {
         const clipboardText = await navigator.clipboard.readText();
         if (!clipboardText.trim()) {
@@ -289,7 +291,9 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
         db.saveSolve({ ...solve, feedback: newFb })
           .then(() => {
             onSaved();
+            trackSolveSaved(solve.slug, solve.status, !!solve.feedback);
             toast('Feedback imported and saved!', 'success');
+            trackFeedbackImported(solve.slug, newFb.summary.final_score);
           })
           .catch((err) => {
             console.error('[XML-import-save]', err);
@@ -373,6 +377,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     try {
       await db.saveSolve({ ...solve, code });
       onSaved();
+      trackSolveSaved(solve.slug, solve.status, !!solve.feedback);
     } catch (err) {
       cancelCodeEdit();
       console.error(err);
@@ -423,6 +428,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     try {
       await db.saveSolve({ ...solve, feedback });
       toast('Feedback saved!', 'success');
+      trackSolveSaved(solve.slug, solve.status, true);
       onSaved();
     } catch (err) {
       cancelFeedbackEdit();

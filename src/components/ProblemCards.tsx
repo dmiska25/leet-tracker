@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { trackRecommendationClicked } from '@/utils/analytics';
 import { Button } from '@/components/ui/button';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import type { ProblemLite } from '@/types/recommendation';
@@ -73,7 +74,10 @@ export default function ProblemCards({ problems, bucket, showTags = true }: Prob
               variant="outline"
               size="sm"
               className="gap-1"
-              onClick={() => window.open(`https://leetcode.com/problems/${p.slug}`, '_blank')}
+              onClick={() => {
+                trackRecommendationClicked(p.slug, bucket, (p.tags && p.tags[0]) || 'unknown');
+                window.open(`https://leetcode.com/problems/${p.slug}`, '_blank');
+              }}
             >
               <ExternalLink className="h-4 w-4" />
               Solve on LeetCode

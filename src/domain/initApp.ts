@@ -2,6 +2,7 @@ import { db } from '../storage/db';
 import { fetchProblemCatalog, fetchRecentSolves } from '../api/leetcode';
 import { Category, GoalProfile } from '../types/types';
 import { evaluateCategoryProgress } from './progress';
+import { identifyUser, trackExtensionDetected } from '@/utils/analytics';
 import { CategoryProgress } from '../types/progress';
 import { clearCache, primeData, setSolves } from './recommendations';
 import { getActiveOrInitProfile } from './goalProfiles';
@@ -143,6 +144,14 @@ export async function initApp(): Promise<{
   // Load (or seed) active goal profile
   const profile: GoalProfile = await getActiveOrInitProfile();
   const goals = profile.goals;
+
+  // Identify user & track app open
+  await identifyUser(username, {
+    extensionInstalled,
+    profileId: profile.id,
+    lastSync: Date.now(),
+  });
+  if (extensionInstalled) trackExtensionDetected();
 
   // 4. Compute progress only for the categories present in the profile
   const profileTags = Object.keys(goals) as Category[];

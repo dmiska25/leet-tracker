@@ -7,6 +7,7 @@ import { ProfileManager } from '@/components/ProfileManager';
 import { getCategorySuggestions, getRandomSuggestions } from '@/domain/recommendations';
 import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
+import { trackSyncCompleted } from '@/utils/analytics';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress';
@@ -81,8 +82,13 @@ export default function Dashboard() {
 
   const handleSync = async () => {
     setSyncing(true);
+    const beforeCount = (await db.getAllSolves()).length;
+    const start = performance.now();
     try {
       await refresh();
+      const afterCount = (await db.getAllSolves()).length;
+      const durationMs = performance.now() - start;
+      trackSyncCompleted(afterCount - beforeCount, durationMs, extensionInstalled);
       setLastSynced(new Date());
     } finally {
       setSyncing(false);

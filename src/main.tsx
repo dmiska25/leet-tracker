@@ -1,33 +1,41 @@
-import { StrictMode, useEffect } from 'react';
+import { StrictMode } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import App from './App.tsx';
 import { ToastProvider } from '@/components/ui/toast';
+import { PostHogProvider } from 'posthog-js/react';
 
-// inject Umami script
-function UmamiScript() {
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.async = true;
-    script.defer = true;
-    script.dataset.websiteId = '2e4a1523-576e-4fcb-a665-231032b8632e';
-    script.src = 'https://analytics.umami.is/script.js';
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
-  return null;
+function ConditionalPostHogProvider({ children }: { children: React.ReactNode }) {
+  const isProduction = import.meta.env.PROD;
+
+  if (!isProduction) {
+    return <>{children}</>;
+  }
+
+  return (
+    <PostHogProvider
+      apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
+      options={{
+        api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+        defaults: '2025-05-24',
+        capture_exceptions: true,
+      }}
+    >
+      {children}
+    </PostHogProvider>
+  );
 }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <UmamiScript />
-    <ErrorBoundary>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
-    </ErrorBoundary>
+    <ConditionalPostHogProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </ErrorBoundary>
+    </ConditionalPostHogProvider>
   </StrictMode>,
 );
