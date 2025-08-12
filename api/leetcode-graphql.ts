@@ -9,8 +9,6 @@ function cors(origin: string | null) {
     'Access-Control-Allow-Origin': origin ?? '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    // Add if you later need cookies:
-    // 'Access-Control-Allow-Credentials': 'true',
   };
 }
 
@@ -39,27 +37,53 @@ export default async function handler(req: Request): Promise<Response> {
   try {
     const body = await req.text(); // raw JSON passthrough
 
-    const upstreamResp = await fetch(UPSTREAM, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        // harmless; may help if upstream looks at Referer
-        Referer: 'https://leetcode.com',
-      },
-      body,
-    });
+    const controller = new AbortController();
+    const timeoutMs = 9000; // 9 seconds
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
 
-    const text = await upstreamResp.text();
+    let upstreamResp: Response;
+    try {
+      upstreamResp = await fetch(UPSTREAM, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Referer: 'https://leetcode.com',
+        },
+        body,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
-    return new Response(text, {
+    const contentType = upstreamResp.headers.get('content-type') || 'application/json';
+
+    return new Response(upstreamResp.body, {
       status: upstreamResp.status,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': contentType,
+        'Cache-Control': 'no-store',
         ...cors(origin),
       },
     });
   } catch (err: any) {
+    // Handle abort/timeout errors
+    if (err.name === 'AbortError') {
+      const payload = {
+        error: 'Upstream request timeout',
+        detail: 'Request to LeetCode API timed out',
+      };
+      return new Response(JSON.stringify(payload), {
+        status: 504,
+        headers: {
+          'Content-Type': 'application/json',
+          ...cors(origin),
+        },
+      });
+    }
     const payload = { error: 'Upstream fetch failed', detail: String(err?.message ?? err) };
     return new Response(JSON.stringify(payload), {
       status: 502,
