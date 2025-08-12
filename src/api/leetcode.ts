@@ -3,8 +3,8 @@ import { loadDemoSolves } from './demo';
 
 const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
 
-/** LeetCode GraphQL endpoint (public) */
-const GRAPHQL_URL = import.meta.env.VITE_LEETCODE_GRAPHQL_URL ?? '/api/leetcode-graphql';
+/** LeetCode GraphQL proxy endpoint (serverless function) see: api/leetcode-graphql.ts */
+const GRAPHQL_URL = '/api/leetcode-graphql';
 
 /* ----------------------------- Types (problems) ----------------------------- */
 // Raw problem data shape from your external JSON file
@@ -110,27 +110,13 @@ query getUserProfile($username: String!) {
 /* ------------------------------- Public API -------------------------------- */
 /**
  * Verify a LeetCode username exists using a minimal GraphQL query.
- * Returns { exists: false } if matchedUser is null or GraphQL returns errors.
- * Throws only on transport/HTTP errors (non-OK).
  */
 export async function verifyUser(username: string): Promise<{ exists: boolean }> {
-  const res = await fetch(GRAPHQL_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query: DOES_USER_EXIST, variables: { username } }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
-
-  const json = (await res.json()) as GraphQLResponse<{ matchedUser: { username: string } | null }>;
-  if (json.errors) {
-    return { exists: false };
-  }
-  return { exists: Boolean(json.data?.matchedUser) };
+  const data = await leetcodeGraphQL<{ matchedUser: { username: string } | null }>(
+    DOES_USER_EXIST,
+    { username },
+  );
+  return { exists: Boolean(data?.matchedUser) };
 }
 
 /**
