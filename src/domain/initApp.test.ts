@@ -187,8 +187,13 @@ describe('initApp', () => {
   });
 
   it('skips recent solves fetch when cache is exactly 30 minutes old', async () => {
-    // Mock timestamp slightly less than 30 minutes ago (boundary case)
-    const boundaryTimestamp = Date.now() - 29.9 * 60 * 1000; // 29.9 minutes ago
+    // Use fake timers for deterministic testing
+    vi.useFakeTimers();
+    const now = 1723456789000; // Fixed timestamp for deterministic tests
+    vi.setSystemTime(now);
+
+    // Mock timestamp exactly 30 minutes ago (boundary case)
+    const boundaryTimestamp = now - 30 * 60 * 1000; // Exactly 30 minutes ago
     vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(boundaryTimestamp);
 
     // Mock the transaction to capture put calls (should not be called)
@@ -199,11 +204,14 @@ describe('initApp', () => {
 
     const res = await initApp();
 
-    // Should NOT call fetchRecentSolves (29.9 minutes is not stale yet)
+    // Should NOT call fetchRecentSolves (exactly 30 minutes is not stale yet)
     expect(fetchRecentSolves).not.toHaveBeenCalled();
-    // Should NOT persist timestamp since we didn't fetch
+    // Should NOT persist recent solves timestamp since we didn't fetch
     expect(mockPut).not.toHaveBeenCalledWith(expect.any(Number), 'recentSolvesLastUpdated');
     expect(res.errors).toEqual([]);
     expect(res.username).toBe('user');
+
+    // Restore real timers
+    vi.useRealTimers();
   });
 });
