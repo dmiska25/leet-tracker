@@ -33,28 +33,49 @@ function getAllowedOrigins(): string[] {
   return origins;
 }
 
-function cors(origin: string | null) {
+function cors(req: Request) {
   // Get the allowed origins from environment or infer from deployment
   const allowedOrigins = getAllowedOrigins();
+  const origin = req.headers.get('origin');
 
-  // Check if origin is allowed
-  const isAllowed = origin && allowedOrigins.includes(origin);
+  // Type guard to ensure origin is a string before calling includes
+  const isAllowed = typeof origin === 'string' && allowedOrigins.includes(origin);
 
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : 'null',
+  // Base headers that are always included
+  const headers: Record<string, string> = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    Vary: 'Origin',
+    'Access-Control-Max-Age': '86400', // 24 hours to reduce preflight frequency
   };
+
+  // Only include Access-Control-Allow-Origin if origin is allowed
+  if (isAllowed && origin) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
+  // Handle preflight requests - echo back requested headers and methods
+  const requestedHeaders = req.headers.get('access-control-request-headers');
+  const requestedMethod = req.headers.get('access-control-request-method');
+
+  if (requestedHeaders) {
+    headers['Access-Control-Allow-Headers'] = requestedHeaders;
+  } else {
+    headers['Access-Control-Allow-Headers'] = 'Content-Type';
+  }
+
+  if (requestedMethod) {
+    headers['Access-Control-Allow-Methods'] = `${requestedMethod}, OPTIONS`;
+  }
+
+  return headers;
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  const origin = req.headers.get('origin');
-
   // Preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: cors(origin),
+      headers: cors(req),
     });
   }
 
@@ -64,7 +85,7 @@ export default async function handler(req: Request): Promise<Response> {
       headers: {
         'Content-Type': 'application/json',
         Allow: 'POST, OPTIONS',
-        ...cors(origin),
+        ...cors(req),
       },
     });
   }
@@ -101,7 +122,8 @@ export default async function handler(req: Request): Promise<Response> {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'no-store',
-        ...cors(origin),
+        Vary: 'Origin',
+        ...cors(req),
       },
     });
   } catch (err: any) {
@@ -115,7 +137,8 @@ export default async function handler(req: Request): Promise<Response> {
         status: 504,
         headers: {
           'Content-Type': 'application/json',
-          ...cors(origin),
+          'Cache-Control': 'no-store',
+          ...cors(req),
         },
       });
     }
@@ -124,7 +147,11 @@ export default async function handler(req: Request): Promise<Response> {
       status: 502,
       headers: {
         'Content-Type': 'application/json',
-        ...cors(origin),
+        'Cache-Control': 'no-store',
+        Pragma: 'no-cache',
+        Expires: '0',
+        Vary: 'Origin',
+        ...cors(req),
       },
     });
   }

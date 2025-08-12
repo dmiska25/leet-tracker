@@ -50,7 +50,7 @@ export function useInitApp() {
   /* Public helper – used by the "Sync Now” button */
   const refresh = async () => {
     setState((s) => ({ ...s, loading: true, criticalError: false }));
-    resetRecentSolvesCache();
+    await resetRecentSolvesCache();
     await load();
   };
 

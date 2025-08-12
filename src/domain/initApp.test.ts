@@ -163,10 +163,46 @@ describe('initApp', () => {
     const staleTimestamp = Date.now() - 45 * 60 * 1000; // 45 minutes ago
     vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(staleTimestamp);
 
+    // Mock the transaction to capture put calls
+    const mockPut = vi.fn();
+    vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
+      cb({ objectStore: () => ({ put: mockPut, get: vi.fn() }) } as any),
+    );
+
     const res = await initApp();
 
     // Should have called fetchRecentSolves due to stale cache
     expect(fetchRecentSolves).toHaveBeenCalledWith('user');
+    expect(res.errors).toEqual([]);
+    expect(res.username).toBe('user');
+
+    // Should persist the new timestamp after a stale fetch
+    const timestampPutCall = mockPut.mock.calls.find(
+      ([, key]) => key === 'recentSolvesLastUpdated',
+    );
+    expect(timestampPutCall).toBeDefined();
+    const [persistedTimestamp] = timestampPutCall!;
+    expect(typeof persistedTimestamp).toBe('number');
+    expect(persistedTimestamp).toBeGreaterThan(staleTimestamp);
+  });
+
+  it('skips recent solves fetch when cache is exactly 30 minutes old', async () => {
+    // Mock timestamp slightly less than 30 minutes ago (boundary case)
+    const boundaryTimestamp = Date.now() - 29.9 * 60 * 1000; // 29.9 minutes ago
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(boundaryTimestamp);
+
+    // Mock the transaction to capture put calls (should not be called)
+    const mockPut = vi.fn();
+    vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
+      cb({ objectStore: () => ({ put: mockPut, get: vi.fn() }) } as any),
+    );
+
+    const res = await initApp();
+
+    // Should NOT call fetchRecentSolves (29.9 minutes is not stale yet)
+    expect(fetchRecentSolves).not.toHaveBeenCalled();
+    // Should NOT persist timestamp since we didn't fetch
+    expect(mockPut).not.toHaveBeenCalledWith(expect.any(Number), 'recentSolvesLastUpdated');
     expect(res.errors).toEqual([]);
     expect(res.username).toBe('user');
   });

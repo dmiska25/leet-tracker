@@ -122,6 +122,12 @@ describe('useInitApp', () => {
     // Verify resetRecentSolvesCache was called before initApp
     expect(resetRecentSolvesCache).toHaveBeenCalledTimes(1);
     expect(initApp).toHaveBeenCalledTimes(1);
+
+    // Assert that resetRecentSolvesCache was invoked before initApp
+    expect(resetRecentSolvesCache.mock.invocationCallOrder[0]).toBeLessThan(
+      initApp.mock.invocationCallOrder[0],
+    );
+
     expect(result.current.loading).toBe(false);
   });
 });
