@@ -42,6 +42,8 @@ describe('initApp', () => {
     /* db mocks */
     vi.mocked(db.getUsername).mockResolvedValue('user');
     vi.mocked(db.getProblemListLastUpdated).mockResolvedValue(undefined);
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(undefined);
+    vi.mocked(db.setRecentSolvesLastUpdated).mockResolvedValue('');
     vi.mocked(db.saveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.setActiveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.getAllSolves).mockResolvedValue(mockSolves);
@@ -141,5 +143,31 @@ describe('initApp', () => {
     const res = await initApp();
     expect(res.extensionInstalled).toBe(false);
     expect(res.errors).toContain('An unexpected error occurred while syncing with the extension.');
+  });
+
+  it('skips recent solves fetch when cache is fresh', async () => {
+    // Mock fresh timestamp (within 30 minutes)
+    const recentTimestamp = Date.now() - 15 * 60 * 1000; // 15 minutes ago
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(recentTimestamp);
+
+    const res = await initApp();
+
+    // Should not have called fetchRecentSolves due to cache hit
+    expect(fetchRecentSolves).not.toHaveBeenCalled();
+    expect(res.errors).toEqual([]);
+    expect(res.username).toBe('user');
+  });
+
+  it('fetches recent solves when cache is stale', async () => {
+    // Mock stale timestamp (older than 30 minutes)
+    const staleTimestamp = Date.now() - 45 * 60 * 1000; // 45 minutes ago
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(staleTimestamp);
+
+    const res = await initApp();
+
+    // Should have called fetchRecentSolves due to stale cache
+    expect(fetchRecentSolves).toHaveBeenCalledWith('user');
+    expect(res.errors).toEqual([]);
+    expect(res.username).toBe('user');
   });
 });

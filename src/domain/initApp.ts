@@ -10,14 +10,13 @@ import { syncFromExtension } from './extensionSync';
 
 const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL;
 
-function isStale(epoch: number | undefined): boolean {
+function isStale(epoch: number | undefined, maxAgeMinutes: number): boolean {
   if (!epoch) return true;
-  // check if epoch is within the last 24 hours
   const now = new Date().getTime();
   const lastUpdated = new Date(epoch).getTime();
   const diff = now - lastUpdated;
-  const diffInHours = diff / (1000 * 60 * 60);
-  return diffInHours > 24;
+  const diffInMinutes = diff / (1000 * 60);
+  return diffInMinutes > maxAgeMinutes;
 }
 
 /**
@@ -26,7 +25,8 @@ function isStale(epoch: number | undefined): boolean {
  */
 async function updateProblemList(): Promise<string[]> {
   const lastUpdated = await db.getProblemListLastUpdated();
-  if (isStale(lastUpdated)) {
+  if (isStale(lastUpdated, 24 * 60)) {
+    // 24 hours in minutes
     console.log('[initApp] Fetching latest problem catalog...');
     try {
       const remoteProblems = await fetchProblemCatalog(PROBLEM_CATALOG_URL);
@@ -51,10 +51,20 @@ async function updateProblemList(): Promise<string[]> {
 }
 
 async function updateSolves(username: string): Promise<string[]> {
+  const lastSynced = await db.getRecentSolvesLastUpdated();
+
+  // Skip sync if recently updated
+  if (!isStale(lastSynced, 30)) {
+    // 30 minutes
+    console.log('[initApp] Recent solves are up to date, skipping API call');
+    return [];
+  }
+
   try {
+    console.log('[initApp] Fetching recent solves from LeetCode API...');
     const recent = await fetchRecentSolves(username);
 
-    await db.withTransaction(['solves', 'problem-list'], async (tx) => {
+    await db.withTransaction(['solves', 'problem-list', 'problem-metadata'], async (tx) => {
       for (const solve of recent) {
         // get the problem from the database
         const problem = await tx.objectStore('problem-list').get(solve.slug);
@@ -79,6 +89,9 @@ async function updateSolves(username: string): Promise<string[]> {
 
         await tx.objectStore('solves').put(solve, key);
       }
+
+      // Update the sync timestamp
+      await tx.objectStore('problem-metadata').put(Date.now(), 'recentSolvesLastUpdated');
     });
     console.log(`[initApp] Synced ${recent.length} recent solves`);
     return [];
@@ -166,4 +179,12 @@ export async function initApp(): Promise<{
   });
 
   return { username, progress, errors, extensionInstalled };
+}
+
+/**
+ * Reset the recent solves sync timestamp to force a fresh sync on next initApp call.
+ * Useful when user explicitly wants to sync fresh data.
+ */
+export async function resetRecentSolvesCache(): Promise<void> {
+  await db.setRecentSolvesLastUpdated(0);
 }
