@@ -97,12 +97,12 @@ git clone https://github.com/dmiska25/leet-tracker.git
 cd leet-tracker
 npm install
 
-# Leetcode GraphQL API is proxied through a local server
+# LeetCode GraphQL API is proxied through a local server
 # You'll need to sign in to vercel to run the local server and link your to the project
 npx vercel login
 npx vercel link
 # Start the local server in another terminal
-npx run dev:api
+npm run dev:api
 
 # Start the app
 npm run dev
