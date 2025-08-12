@@ -39,7 +39,7 @@ Once installed, the extension runs in the background while you're signed in to L
 ### Data Flow
 
 - ✅ **Problems:** Pulled from a daily-updated S3 file with likes/dislikes, tags, and popularity
-- ✅ **Solves:** Pulled from `alfa-leetcode-api` (most recent 20 solves) + Full history can optionally be pulled via the companion Chrome extension
+- ✅ **Solves:** Pulled from public graphql api (most recent 20 solves) + Full history can optionally be pulled via the companion Chrome extension
 - ✅ **Local Storage:** IndexedDB for user progress, settings, and sync timestamps
 - ✅ **AI Feedback:** XML pasted from ChatGPT is parsed & stored alongside each solve
 
@@ -92,9 +92,19 @@ For each problem category:
 ## Run Locally
 
 ```bash
+# Clone the repository and install dependencies
 git clone https://github.com/dmiska25/leet-tracker.git
 cd leet-tracker
 npm install
+
+# Leetcode GraphQL API is proxied through a local server
+# You'll need to sign in to vercel to run the local server and link your to the project
+npx vercel login
+npx vercel link
+# Start the local server in another terminal
+npx vercel dev
+
+# Start the app
 npm run dev
 ```
 
@@ -105,10 +115,6 @@ npm run dev
 - Support for **exporting** solve history data (JSON format)
 - Support for **importing** past solve history manually (upload-based or paste-in)
 - General pattern feedback from multiple solves (e.g. "You tend to struggle with DP problems because of X" from GPT)
-
-## Acknowledgments
-
-- API data provided by [alfa-leetcode-api](https://github.com/alfaarghya/alfa-leetcode-api)
 
 ## Screenshots
 
