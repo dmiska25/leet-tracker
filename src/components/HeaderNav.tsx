@@ -42,6 +42,7 @@ export default function HeaderNav({ view, onChange }: Props) {
           await db.setUsername('');
           await db.clearSolves();
           await db.setExtensionLastTimestamp(0);
+          await db.setRecentSolvesLastUpdated(0);
         },
       );
       resetUser();
