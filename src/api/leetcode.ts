@@ -1,9 +1,12 @@
 import { allCategories, Category, Difficulty, Problem, Solve } from '../types/types';
 import { loadDemoSolves } from './demo';
 
-const SOLVES_BASE_URL = import.meta.env.VITE_SOLVES_BASE_URL;
 const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
 
+/** LeetCode GraphQL endpoint (public) */
+const GRAPHQL_URL = import.meta.env.VITE_LEETCODE_GRAPHQL_URL ?? '/api/leetcode-graphql';
+
+/* ----------------------------- Types (problems) ----------------------------- */
 // Raw problem data shape from your external JSON file
 interface RawProblemData {
   slug: string;
@@ -15,23 +18,12 @@ interface RawProblemData {
   topicTags: string[];
   likes: number;
   dislikes: number;
-  /** optional in problems‑lite.json */
+  /** optional in problems-lite.json */
   description?: string;
-  createdAt: number; // epoch time
+  createdAt: number; // epoch time (seconds)
 }
 
-// Response from alfa-leetcode-api
-interface RawSubmissionResponse {
-  count: number;
-  submission: {
-    title: string;
-    titleSlug: string;
-    timestamp: string;
-    statusDisplay: string;
-    lang: string;
-  }[];
-}
-
+/* ------------------------------ Tag utilities ------------------------------ */
 const categorySet = new Set(allCategories);
 export function mapTagsToCategories(tags: string[]): Category[] {
   return tags.filter((tag): tag is (typeof allCategories)[number] =>
@@ -39,7 +31,7 @@ export function mapTagsToCategories(tags: string[]): Category[] {
   );
 }
 
-// Fetch full problem catalog from hosted JSON (URL configurable)
+/* ------------------------- Problem catalog (unchanged) ---------------------- */
 export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
   const res = await fetch(url);
   if (!res.ok) {
@@ -60,31 +52,18 @@ export async function fetchProblemCatalog(url: string): Promise<Problem[]> {
   }));
 }
 
-// Fetch user's info to verify if the user exists
-export async function verifyUser(username: string): Promise<{ exists: boolean }> {
-  const res = await fetch(`${SOLVES_BASE_URL}/${username}`);
+/* ----------------------------- GraphQL helper ------------------------------ */
+type GraphQLErrorShape = { message?: string };
+type GraphQLResponse<T> = { data?: T; errors?: GraphQLErrorShape[] };
 
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
-
-  // Check if the response contains errors or matchedUser is null
-  if (data.errors || data.data?.matchedUser === null) {
-    return { exists: false };
-  }
-
-  return { exists: true };
-}
-
-// Fetch recent solves for a given LeetCode username
-export async function fetchRecentSolves(username: string): Promise<Solve[]> {
-  if (username === DEMO_USERNAME) {
-    return loadDemoSolves();
-  }
-
-  const res = await fetch(`${SOLVES_BASE_URL}/${username}/submission`);
+async function leetcodeGraphQL<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+  const res = await fetch(GRAPHQL_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query, variables }),
+  });
 
   if (res.status === 429) {
     const err: any = new Error('Rate limited');
@@ -95,9 +74,92 @@ export async function fetchRecentSolves(username: string): Promise<Solve[]> {
     throw new Error(`HTTP ${res.status}`);
   }
 
-  const data: RawSubmissionResponse = await res.json();
+  const json = (await res.json()) as GraphQLResponse<T>;
+  if (json.errors && json.errors.length) {
+    // Let callers decide whether to swallow or interpret as "not found".
+    const msg = json.errors[0]?.message ?? 'GraphQL error';
+    throw new Error(msg);
+  }
+  if (!json.data) {
+    throw new Error('Empty GraphQL response');
+  }
+  return json.data;
+}
 
-  return data.submission.map((s) => ({
+/* --------------------------------- Queries --------------------------------- */
+const GET_RECENT_SUBMISSIONS = `#graphql
+query getRecentSubmissions($username: String!, $limit: Int) {
+  recentSubmissionList(username: $username, limit: $limit) {
+    title
+    titleSlug
+    timestamp
+    statusDisplay
+    lang
+  }
+}
+`;
+
+const DOES_USER_EXIST = `#graphql
+query getUserProfile($username: String!) {
+  matchedUser(username: $username) {
+    username
+  }
+}
+`;
+
+/* ------------------------------- Public API -------------------------------- */
+/**
+ * Verify a LeetCode username exists using a minimal GraphQL query.
+ * Returns { exists: false } if matchedUser is null or GraphQL returns errors.
+ * Throws only on transport/HTTP errors (non-OK).
+ */
+export async function verifyUser(username: string): Promise<{ exists: boolean }> {
+  const res = await fetch(GRAPHQL_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: DOES_USER_EXIST, variables: { username } }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  const json = (await res.json()) as GraphQLResponse<{ matchedUser: { username: string } | null }>;
+  if (json.errors) {
+    return { exists: false };
+  }
+  return { exists: Boolean(json.data?.matchedUser) };
+}
+
+/**
+ * Fetch recent solves for a given LeetCode username (last 20 submissions).
+ * Preserves DEMO user override and RATE_LIMITED error signaling.
+ */
+export async function fetchRecentSolves(username: string): Promise<Solve[]> {
+  if (username === DEMO_USERNAME) {
+    return loadDemoSolves();
+  }
+
+  type RecentSub = {
+    title: string;
+    titleSlug: string;
+    timestamp: string | number;
+    statusDisplay: string;
+    lang: string;
+  };
+
+  const data = await leetcodeGraphQL<{ recentSubmissionList: RecentSub[] }>(
+    GET_RECENT_SUBMISSIONS,
+    {
+      username,
+      limit: 20,
+    },
+  );
+
+  const list = data.recentSubmissionList ?? [];
+  return list.map((s) => ({
     slug: s.titleSlug,
     title: s.title,
     timestamp: Number(s.timestamp),
