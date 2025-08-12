@@ -4,9 +4,44 @@ export const config = {
 
 const UPSTREAM = 'https://leetcode.com/graphql';
 
+function getAllowedOrigins(): string[] {
+  // For Vercel, you can use environment variables
+  const vercelUrl = process.env.VERCEL_URL;
+  const vercelBranchUrl = process.env.VERCEL_BRANCH_URL;
+  const customDomain = process.env.NEXT_PUBLIC_APP_URL;
+
+  const origins: string[] = [];
+
+  // Add production domain
+  if (customDomain) {
+    origins.push(customDomain);
+  }
+
+  // Add Vercel preview URLs
+  if (vercelUrl) {
+    origins.push(`https://${vercelUrl}`);
+  }
+  if (vercelBranchUrl) {
+    origins.push(`https://${vercelBranchUrl}`);
+  }
+
+  // Add localhost for development
+  if (process.env.NODE_ENV === 'development') {
+    origins.push('http://localhost:3000', 'http://localhost:5173');
+  }
+
+  return origins;
+}
+
 function cors(origin: string | null) {
+  // Get the allowed origins from environment or infer from deployment
+  const allowedOrigins = getAllowedOrigins();
+
+  // Check if origin is allowed
+  const isAllowed = origin && allowedOrigins.includes(origin);
+
   return {
-    'Access-Control-Allow-Origin': origin ?? '*',
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'null',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };

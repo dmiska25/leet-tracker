@@ -20,6 +20,7 @@ export default defineConfig([
         ...globals.browser,
         __dirname: 'readonly',
         IDBTransactionMode: 'readonly',
+        process: 'readonly',
       },
     },
     plugins: {
