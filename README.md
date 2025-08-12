@@ -102,7 +102,7 @@ npm install
 npx vercel login
 npx vercel link
 # Start the local server in another terminal
-npx vercel dev
+npx run dev:api
 
 # Start the app
 npm run dev
