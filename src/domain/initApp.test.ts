@@ -42,6 +42,8 @@ describe('initApp', () => {
     /* db mocks */
     vi.mocked(db.getUsername).mockResolvedValue('user');
     vi.mocked(db.getProblemListLastUpdated).mockResolvedValue(undefined);
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(undefined);
+    vi.mocked(db.setRecentSolvesLastUpdated).mockResolvedValue('');
     vi.mocked(db.saveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.setActiveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.getAllSolves).mockResolvedValue(mockSolves);
@@ -141,5 +143,75 @@ describe('initApp', () => {
     const res = await initApp();
     expect(res.extensionInstalled).toBe(false);
     expect(res.errors).toContain('An unexpected error occurred while syncing with the extension.');
+  });
+
+  it('skips recent solves fetch when cache is fresh', async () => {
+    // Mock fresh timestamp (within 30 minutes)
+    const recentTimestamp = Date.now() - 15 * 60 * 1000; // 15 minutes ago
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(recentTimestamp);
+
+    const res = await initApp();
+
+    // Should not have called fetchRecentSolves due to cache hit
+    expect(fetchRecentSolves).not.toHaveBeenCalled();
+    expect(res.errors).toEqual([]);
+    expect(res.username).toBe('user');
+  });
+
+  it('fetches recent solves when cache is stale', async () => {
+    // Mock stale timestamp (older than 30 minutes)
+    const staleTimestamp = Date.now() - 45 * 60 * 1000; // 45 minutes ago
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(staleTimestamp);
+
+    // Mock the transaction to capture put calls
+    const mockPut = vi.fn();
+    vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
+      cb({ objectStore: () => ({ put: mockPut, get: vi.fn() }) } as any),
+    );
+
+    const res = await initApp();
+
+    // Should have called fetchRecentSolves due to stale cache
+    expect(fetchRecentSolves).toHaveBeenCalledWith('user');
+    expect(res.errors).toEqual([]);
+    expect(res.username).toBe('user');
+
+    // Should persist the new timestamp after a stale fetch
+    const timestampPutCall = mockPut.mock.calls.find(
+      ([, key]) => key === 'recentSolvesLastUpdated',
+    );
+    expect(timestampPutCall).toBeDefined();
+    const [persistedTimestamp] = timestampPutCall!;
+    expect(typeof persistedTimestamp).toBe('number');
+    expect(persistedTimestamp).toBeGreaterThan(staleTimestamp);
+  });
+
+  it('skips recent solves fetch when cache is exactly 30 minutes old', async () => {
+    // Use fake timers for deterministic testing
+    vi.useFakeTimers();
+    const now = 1723456789000; // Fixed timestamp for deterministic tests
+    vi.setSystemTime(now);
+
+    // Mock timestamp exactly 30 minutes ago (boundary case)
+    const boundaryTimestamp = now - 30 * 60 * 1000; // Exactly 30 minutes ago
+    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(boundaryTimestamp);
+
+    // Mock the transaction to capture put calls (should not be called)
+    const mockPut = vi.fn();
+    vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
+      cb({ objectStore: () => ({ put: mockPut, get: vi.fn() }) } as any),
+    );
+
+    const res = await initApp();
+
+    // Should NOT call fetchRecentSolves (exactly 30 minutes is not stale yet)
+    expect(fetchRecentSolves).not.toHaveBeenCalled();
+    // Should NOT persist recent solves timestamp since we didn't fetch
+    expect(mockPut).not.toHaveBeenCalledWith(expect.any(Number), 'recentSolvesLastUpdated');
+    expect(res.errors).toEqual([]);
+    expect(res.username).toBe('user');
+
+    // Restore real timers
+    vi.useRealTimers();
   });
 });

@@ -11,7 +11,7 @@ export interface LeetTrackerDB extends DBSchema {
     value: Problem;
   };
   'problem-metadata': {
-    key: 'lastUpdated';
+    key: 'lastUpdated' | 'recentSolvesLastUpdated';
     value: number; // Epoch timestamp
   };
   solves: {
@@ -77,6 +77,12 @@ export const db = {
   },
   async getProblemListLastUpdated(): Promise<number | undefined> {
     return (await dbPromise).get('problem-metadata', 'lastUpdated');
+  },
+  async setRecentSolvesLastUpdated(epoch: number): Promise<string> {
+    return (await dbPromise).put('problem-metadata', epoch, 'recentSolvesLastUpdated');
+  },
+  async getRecentSolvesLastUpdated(): Promise<number | undefined> {
+    return (await dbPromise).get('problem-metadata', 'recentSolvesLastUpdated');
   },
 
   // Solves

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/ui/toast';
-import { initApp } from '@/domain/initApp';
+import { initApp, resetRecentSolvesCache } from '@/domain/initApp';
 import type { CategoryProgress } from '@/types/progress';
 
 interface InitState {
@@ -50,6 +50,7 @@ export function useInitApp() {
   /* Public helper – used by the "Sync Now” button */
   const refresh = async () => {
     setState((s) => ({ ...s, loading: true, criticalError: false }));
+    await resetRecentSolvesCache();
     await load();
   };
 

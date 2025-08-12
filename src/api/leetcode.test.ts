@@ -142,30 +142,31 @@ describe('fetchRecentSolves', () => {
   });
 
   it('maps raw submission data to Solve type', async () => {
-    const mockSubmission = {
-      count: 2,
-      submission: [
-        {
-          title: 'Minimum Window Substring',
-          titleSlug: 'minimum-window-substring',
-          timestamp: '1746032384',
-          statusDisplay: 'Accepted',
-          lang: 'python3',
-        },
-        {
-          title: 'Sliding Window Maximum',
-          titleSlug: 'sliding-window-maximum',
-          timestamp: '1746031189',
-          statusDisplay: 'Accepted',
-          lang: 'python3',
-        },
-      ],
+    const mockGraphQLResponse = {
+      data: {
+        recentSubmissionList: [
+          {
+            title: 'Minimum Window Substring',
+            titleSlug: 'minimum-window-substring',
+            timestamp: '1746032384',
+            statusDisplay: 'Accepted',
+            lang: 'python3',
+          },
+          {
+            title: 'Sliding Window Maximum',
+            titleSlug: 'sliding-window-maximum',
+            timestamp: '1746031189',
+            statusDisplay: 'Accepted',
+            lang: 'python3',
+          },
+        ],
+      },
     };
 
     (fetch as any).mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => mockSubmission,
+      json: async () => mockGraphQLResponse,
     });
 
     const result = await fetchRecentSolves('dmiska25');

@@ -15,7 +15,7 @@ describe('initApp (integration with fake‑indexeddb)', () => {
 
   beforeEach(async () => {
     // Mock the fetch function
-    vi.stubGlobal('fetch', async (input: string) => {
+    vi.stubGlobal('fetch', async (input: string, options?: { method?: string; body?: string }) => {
       if (input === '/sample-problems.json') {
         // Load sample-problems.json from the public folder
         const filePath = path.join(__dirname, '../../public/sample-problems.json');
@@ -30,35 +30,68 @@ describe('initApp (integration with fake‑indexeddb)', () => {
         return new Response(fileContents, {
           headers: { 'Content-Type': 'application/json' },
         });
-      } else if (input === 'test.com/testuser/submission') {
+      } else if (input === '/api/leetcode-graphql' && options?.method === 'POST') {
+        // Mock GraphQL endpoint for LeetCode data
+        const body = (options?.body as string) || '{}';
+        let parsedBody;
+        try {
+          parsedBody = JSON.parse(body);
+        } catch {
+          parsedBody = {};
+        }
+
         // Use recent timestamps (within last 30 days) to ensure progress calculation works
         const now = Math.floor(Date.now() / 1000);
         const recentTimestamp1 = now - 24 * 60 * 60; // 1 day ago
         const recentTimestamp2 = now - 2 * 24 * 60 * 60; // 2 days ago
 
-        return new Response(
-          JSON.stringify({
-            submission: [
-              {
-                titleSlug: 'two-sum',
-                title: 'Two Sum',
-                timestamp: recentTimestamp1.toString(),
-                statusDisplay: 'Accepted',
-                lang: 'Python',
+        // Check if this is a recent submissions query
+        if (parsedBody.query?.includes('recentSubmissionList')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                recentSubmissionList: [
+                  {
+                    titleSlug: 'two-sum',
+                    title: 'Two Sum',
+                    timestamp: recentTimestamp1.toString(),
+                    statusDisplay: 'Accepted',
+                    lang: 'Python',
+                  },
+                  {
+                    titleSlug: 'add-two-numbers',
+                    title: 'Add Two Numbers',
+                    timestamp: recentTimestamp2.toString(),
+                    statusDisplay: 'Accepted',
+                    lang: 'Python',
+                  },
+                ],
               },
-              {
-                titleSlug: 'add-two-numbers',
-                title: 'Add Two Numbers',
-                timestamp: recentTimestamp2.toString(),
-                statusDisplay: 'Accepted',
-                lang: 'Python',
+            }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        // For other GraphQL queries (like user verification), return appropriate responses
+        if (parsedBody.query?.includes('matchedUser')) {
+          return new Response(
+            JSON.stringify({
+              data: {
+                matchedUser: { username: 'testuser' },
               },
-            ],
-          }),
-          {
-            headers: { 'Content-Type': 'application/json' },
-          },
-        );
+            }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
+
+        // For other GraphQL queries, return empty response
+        return new Response(JSON.stringify({ data: {} }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
       } else {
         throw new Error(`Unhandled fetch path: ${input}`);
       }

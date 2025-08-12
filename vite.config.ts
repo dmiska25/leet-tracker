@@ -16,4 +16,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
   },
+  server: {
+    proxy: {
+      // Forward all API calls to Vercel's local serverless runtime
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
 });
