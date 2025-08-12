@@ -112,11 +112,20 @@ query getUserProfile($username: String!) {
  * Verify a LeetCode username exists using a minimal GraphQL query.
  */
 export async function verifyUser(username: string): Promise<{ exists: boolean }> {
-  const data = await leetcodeGraphQL<{ matchedUser: { username: string } | null }>(
-    DOES_USER_EXIST,
-    { username },
-  );
-  return { exists: Boolean(data?.matchedUser) };
+  try {
+    const data = await leetcodeGraphQL<{ matchedUser: { username: string } | null }>(
+      DOES_USER_EXIST,
+      { username },
+    );
+    return { exists: Boolean(data?.matchedUser) };
+  } catch (error) {
+    // Handle the specific "user doesn't exist" error
+    if (error instanceof Error && error.message === 'That user does not exist.') {
+      return { exists: false };
+    }
+    // Re-throw other errors (like rate limiting, network issues, etc.)
+    throw error;
+  }
 }
 
 /**

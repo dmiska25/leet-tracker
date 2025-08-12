@@ -122,10 +122,47 @@ describe('verifyUser', () => {
     expect(await verifyUser('bar')).toEqual({ exists: false });
   });
 
+  it('returns {exists:false} when GraphQL error says "That user does not exist."', async () => {
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        errors: [
+          {
+            message: 'That user does not exist.',
+            locations: [{ line: 3, column: 3 }],
+            path: ['matchedUser'],
+            extensions: { handled: true },
+          },
+        ],
+        data: { matchedUser: null },
+      }),
+    });
+
+    expect(await verifyUser('nonexistent')).toEqual({ exists: false });
+  });
+
   it('throws when HTTP status is not ok', async () => {
     (fetch as any).mockResolvedValueOnce({ ok: false, status: 500 });
 
     await expect(verifyUser('err')).rejects.toThrow('HTTP 500');
+  });
+
+  it('throws other GraphQL errors normally', async () => {
+    (fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        errors: [
+          {
+            message: 'Some other GraphQL error',
+            locations: [{ line: 1, column: 1 }],
+            path: ['matchedUser'],
+          },
+        ],
+        data: { matchedUser: null },
+      }),
+    });
+
+    await expect(verifyUser('erroruser')).rejects.toThrow('Some other GraphQL error');
   });
 });
 
