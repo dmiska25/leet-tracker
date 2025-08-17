@@ -3,6 +3,14 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import Dashboard from './Dashboard';
 
+// Mock the database to prevent unhandled promise rejections
+vi.mock('@/storage/db', () => ({
+  db: {
+    getAllGoalProfiles: vi.fn().mockResolvedValue([]),
+    getActiveGoalProfileId: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 vi.mock('@/hooks/useInitApp', () => ({
   useInitApp: () => ({
     loading: false,

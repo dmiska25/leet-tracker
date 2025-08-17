@@ -15,7 +15,7 @@ describe('<HeaderNav>', () => {
   /* ------------------------------------------------------------ */
   let confirmSpy: Mock;
   let reloadSpy: ReturnType<typeof vi.fn>;
-  let setUsernameSpy: Mock;
+  let clearUsernameSpy: Mock;
   let setActiveSpy: Mock;
   let clearProfilesSpy: Mock;
   let clearSolvesSpy: Mock;
@@ -34,7 +34,7 @@ describe('<HeaderNav>', () => {
     });
 
     /* db spies */
-    setUsernameSpy = vi.spyOn(db, 'setUsername').mockResolvedValue('') as Mock;
+    clearUsernameSpy = vi.spyOn(db, 'clearUsername').mockResolvedValue(undefined) as Mock;
     setActiveSpy = vi.spyOn(db, 'setActiveGoalProfile').mockResolvedValue('') as Mock;
     clearProfilesSpy = vi.spyOn(db, 'clearGoalProfiles').mockResolvedValue(undefined) as Mock;
     clearSolvesSpy = vi.spyOn(db, 'clearSolves').mockResolvedValue(undefined) as Mock;
@@ -43,7 +43,7 @@ describe('<HeaderNav>', () => {
 
   afterEach(() => {
     confirmSpy.mockRestore();
-    setUsernameSpy.mockRestore();
+    clearUsernameSpy.mockRestore();
     setActiveSpy.mockRestore();
     clearProfilesSpy.mockRestore();
     clearSolvesSpy.mockRestore();
@@ -91,7 +91,7 @@ describe('<HeaderNav>', () => {
     expect(confirmSpy).toHaveBeenCalled();
 
     await waitFor(() => {
-      expect(setUsernameSpy).toHaveBeenCalledWith('');
+      expect(clearUsernameSpy).toHaveBeenCalled();
       expect(reloadSpy).toHaveBeenCalled();
     });
   });
