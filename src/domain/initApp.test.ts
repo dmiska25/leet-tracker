@@ -162,12 +162,7 @@ describe('initApp', () => {
     // Mock stale timestamp (older than 30 minutes)
     const staleTimestamp = Date.now() - 45 * 60 * 1000; // 45 minutes ago
     vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(staleTimestamp);
-
-    // Mock the transaction to capture put calls
-    const mockPut = vi.fn();
-    vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
-      cb({ objectStore: () => ({ put: mockPut, get: vi.fn() }) } as any),
-    );
+    vi.mocked(db.setRecentSolvesLastUpdated).mockResolvedValue('key');
 
     const res = await initApp();
 
@@ -176,12 +171,11 @@ describe('initApp', () => {
     expect(res.errors).toEqual([]);
     expect(res.username).toBe('user');
 
-    // Should persist the new timestamp after a stale fetch
-    const timestampPutCall = mockPut.mock.calls.find(
-      ([, key]) => key === 'recentSolvesLastUpdated',
-    );
-    expect(timestampPutCall).toBeDefined();
-    const [persistedTimestamp] = timestampPutCall!;
+    // Should have updated the timestamp after a stale fetch
+    expect(db.setRecentSolvesLastUpdated).toHaveBeenCalled();
+    const setTimestampCall = vi.mocked(db.setRecentSolvesLastUpdated).mock.calls[0];
+    expect(setTimestampCall).toBeDefined();
+    const [persistedTimestamp] = setTimestampCall!;
     expect(typeof persistedTimestamp).toBe('number');
     expect(persistedTimestamp).toBeGreaterThan(staleTimestamp);
   });

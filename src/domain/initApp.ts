@@ -36,9 +36,9 @@ async function updateProblemList(): Promise<string[]> {
 
       await db.withTransaction(['problem-list', 'problem-metadata'], async (tx) => {
         for (const problem of newProblems) {
-          await tx.objectStore('problem-list').put(problem, problem.slug);
+          await tx.objectStore('problem-list').put!(problem, problem.slug);
         }
-        await tx.objectStore('problem-metadata').put(Date.now(), 'lastUpdated');
+        await tx.objectStore('problem-metadata').put!(Date.now(), 'lastUpdated');
         console.log(`[initApp] Catalog updated — ${newProblems.length} new problems added`);
       });
       return [];
@@ -64,35 +64,29 @@ async function updateSolves(username: string): Promise<string[]> {
     console.log('[initApp] Fetching recent solves from LeetCode API...');
     const recent = await fetchRecentSolves(username);
 
-    await db.withTransaction(['solves', 'problem-list', 'problem-metadata'], async (tx) => {
-      for (const solve of recent) {
-        // get the problem from the database
-        const problem = await tx.objectStore('problem-list').get(solve.slug);
-        if (!problem) {
-          console.warn(
-            `[initApp] Problem ${solve.slug} not found in local database, skipping solve`,
-          );
-          continue;
-        }
-
-        // update the tags and difficulty from the problem
-        solve.tags = problem.tags;
-        solve.difficulty = problem.difficulty;
-
-        const key = `${solve.slug}|${solve.timestamp}`;
-
-        // if the solve already exists, skip it
-        const existing = await tx.objectStore('solves').get(key);
-        if (existing) {
-          continue;
-        }
-
-        await tx.objectStore('solves').put(solve, key);
+    for (const solve of recent) {
+      // Fetch problem from DB to enrich tags/difficulty
+      const problem = await db.getProblem(solve.slug);
+      if (!problem) {
+        console.warn(`[initApp] Problem ${solve.slug} not found in local database, skipping solve`);
+        continue;
       }
 
-      // Update the sync timestamp
-      await tx.objectStore('problem-metadata').put(Date.now(), 'recentSolvesLastUpdated');
-    });
+      // Attach canonical tags & difficulty
+      solve.tags = problem.tags;
+      solve.difficulty = problem.difficulty;
+
+      // Skip if already present for this user
+      const existing = await db.getSolve(solve.slug, solve.timestamp);
+      if (existing) continue;
+
+      // Persist via centralized DB API (namespacing handled inside db.ts)
+      await db.saveSolve(solve);
+    }
+
+    // Set the per-user sync timestamp (namespacing handled inside db.ts)
+    await db.setRecentSolvesLastUpdated(Date.now());
+
     console.log(`[initApp] Synced ${recent.length} recent solves`);
     return [];
   } catch (err: any) {
