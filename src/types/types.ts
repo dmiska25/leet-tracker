@@ -100,6 +100,7 @@ export type HintType = 'none' | 'leetcode_hint' | 'solution_peek' | 'gpt_help';
 export interface Solve {
   slug: string;
   title: string;
+  username?: string; // Optional: added in v3 db migration, used for indexing
   timestamp: number; // epoch time in seconds
   status: string;
   lang: string; // e.g. "python3", "cpp", etc.
@@ -144,6 +145,7 @@ export type GoalMap = Partial<Record<Category, number>>;
 export interface GoalProfile {
   id: string; // Unique identifier
   name: string; // User-visible name (e.g. "My Custom Goals")
+  username?: string; // Optional: added in v3 db migration, used for indexing
   description?: string; // Optional details
   goals: GoalMap; // Goals by category
   createdAt: string; // epoch time in milliseconds

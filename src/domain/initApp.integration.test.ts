@@ -104,8 +104,10 @@ describe('initApp (integration with fake‑indexeddb)', () => {
         db.createObjectStore('problem-list');
         db.createObjectStore('problem-metadata');
         db.createObjectStore('solves');
+        db.createObjectStore('solves-metadata');
         db.createObjectStore('goal-profiles');
         db.createObjectStore('active-goal-profile');
+        db.createObjectStore('extension-sync');
       },
     });
     type StoreName =
@@ -113,23 +115,77 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       | 'problem-list'
       | 'problem-metadata'
       | 'solves'
+      | 'solves-metadata'
       | 'goal-profiles'
-      | 'active-goal-profile';
+      | 'active-goal-profile'
+      | 'extension-sync';
 
     // Set up the mock implementations after testDb is initialized
     vi.mocked(db.getUsername).mockImplementation(() => testDb.get('leetcode-username', 'username'));
     vi.mocked(db.getAllProblems).mockImplementation(() => testDb.getAll('problem-list'));
+    vi.mocked(db.getProblem).mockImplementation((slug) => testDb.get('problem-list', slug));
     vi.mocked(db.getProblemListLastUpdated).mockImplementation(() =>
       testDb.get('problem-metadata', 'lastUpdated'),
     );
-    vi.mocked(db.getAllSolves).mockImplementation(() => testDb.getAll('solves'));
-    vi.mocked(db.getSolve).mockImplementation((slug: string, timestamp: number) =>
-      testDb.get('solves', `${slug}|${timestamp}`),
+    vi.mocked(db.getRecentSolvesLastUpdated).mockImplementation(async () => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|recentSolvesLastUpdated`;
+      return testDb.get('solves-metadata', key);
+    });
+    vi.mocked(db.setRecentSolvesLastUpdated).mockImplementation(async (epochMs) => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|recentSolvesLastUpdated`;
+      return testDb.put('solves-metadata', epochMs, key);
+    });
+    vi.mocked(db.getExtensionLastTimestamp).mockImplementation(async () => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|lastTimestamp`;
+      const result = await testDb.get('extension-sync', key);
+      return result !== undefined ? result : 0;
+    });
+    vi.mocked(db.setExtensionLastTimestamp).mockImplementation(async (ts) => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|lastTimestamp`;
+      return testDb.put('extension-sync', ts, key);
+    });
+    vi.mocked(db.addOrUpdateProblem).mockImplementation((problem) =>
+      testDb.put('problem-list', problem, problem.slug),
     );
-    vi.mocked(db.saveGoalProfile).mockImplementation((p) => testDb.put('goal-profiles', p, p.id));
-    vi.mocked(db.setActiveGoalProfile).mockImplementation((id) =>
-      testDb.put('active-goal-profile', id, 'active'),
-    );
+    vi.mocked(db.getAllSolves).mockImplementation(async () => {
+      // Get all solve keys and filter by username prefix
+      const username = await testDb.get('leetcode-username', 'username');
+      const prefix = `${username}|`;
+
+      const allKeys = await testDb.getAllKeys('solves');
+      const userKeys = allKeys.filter((k) => typeof k === 'string' && k.startsWith(prefix));
+
+      const results = [];
+      for (const k of userKeys) {
+        const solve = await testDb.get('solves', k);
+        if (solve) results.push(solve);
+      }
+      return results;
+    });
+    vi.mocked(db.getSolve).mockImplementation(async (slug: string, timestamp: number) => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|${slug}|${timestamp}`;
+      return testDb.get('solves', key);
+    });
+    vi.mocked(db.saveSolve).mockImplementation(async (solve) => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|${solve.slug}|${solve.timestamp}`;
+      return testDb.put('solves', { ...solve, username }, key);
+    });
+    vi.mocked(db.saveGoalProfile).mockImplementation(async (p) => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|${p.id}`;
+      return testDb.put('goal-profiles', p, key);
+    });
+    vi.mocked(db.setActiveGoalProfile).mockImplementation(async (id) => {
+      const username = await testDb.get('leetcode-username', 'username');
+      const key = `${username}|active`;
+      return testDb.put('active-goal-profile', id, key);
+    });
 
     vi.mocked(db.withTransaction).mockImplementation(async (storeNames, callback) => {
       const tx = testDb.transaction(
