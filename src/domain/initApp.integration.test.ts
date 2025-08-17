@@ -103,9 +103,11 @@ describe('initApp (integration with fake‑indexeddb)', () => {
         db.createObjectStore('leetcode-username');
         db.createObjectStore('problem-list');
         db.createObjectStore('problem-metadata');
-        db.createObjectStore('solves');
+        const solves = db.createObjectStore('solves');
+        (solves as any).createIndex('username', 'username');
         db.createObjectStore('solves-metadata');
-        db.createObjectStore('goal-profiles');
+        const profiles = db.createObjectStore('goal-profiles');
+        (profiles as any).createIndex('username', 'username');
         db.createObjectStore('active-goal-profile');
         db.createObjectStore('extension-sync');
       },
@@ -179,7 +181,7 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     vi.mocked(db.saveGoalProfile).mockImplementation(async (p) => {
       const username = await testDb.get('leetcode-username', 'username');
       const key = `${username}|${p.id}`;
-      return testDb.put('goal-profiles', p, key);
+      return testDb.put('goal-profiles', { ...p, username }, key);
     });
     vi.mocked(db.setActiveGoalProfile).mockImplementation(async (id) => {
       const username = await testDb.get('leetcode-username', 'username');

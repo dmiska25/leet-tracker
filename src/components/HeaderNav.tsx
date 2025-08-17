@@ -32,8 +32,8 @@ export default function HeaderNav({ view, onChange }: Props) {
   const handleSignOut = async () => {
     if (!window.confirm('Are you sure you want to sign out?')) return;
     try {
-      await db.setUsername('');
-      resetUser();
+      await db.clearUsername();
+      await resetUser();
     } catch (err) {
       console.error('Failed to clear user data:', err);
       alert('An error occurred while signing out. Please try again.');

@@ -75,7 +75,7 @@ const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 3, {
       }
 
       // If no username exists, we assume signed-out state ⇒ no data to migrate.
-      const username = await (await dbPromise).get('leetcode-username', 'username');
+      const username = await (tx.objectStore('leetcode-username') as any).get('username');
       if (!username) {
         return; // nothing to migrate under your signed-out-clears-data model
       }
@@ -171,40 +171,43 @@ export const db = {
   // Cache for username to avoid repeated database calls
   _usernameCache: null as string | undefined | null, // null = not loaded, undefined = no username
 
-  async getUserPrefix(): Promise<string> {
+  async getUserPrefixOrThrow(): Promise<string> {
     const u = await this.getUsername();
     // In practice, operations occur post sign-in; prefix with username.
-    // We avoid "anonymous" now that v3 migration aligns data to a real user.
-    return (u ?? 'anonymous') + '|';
+    // We _should_ never hit this in practice, but handle it gracefully.
+    if (u === undefined) {
+      throw new Error('Username is not set, cannot build namespaced keys');
+    }
+    return u + '|';
   },
 
   /** Build namespaced solve key. */
   async nsSolveKey(slug: string, timestamp: number): Promise<string> {
-    const prefix = await this.getUserPrefix();
+    const prefix = await this.getUserPrefixOrThrow();
     return `${prefix}${slug}|${timestamp}`;
   },
 
   /** Build namespaced per-user metadata key (keep 'lastUpdated' global). */
   async nsRecentSolvesKey(): Promise<string> {
-    const prefix = await this.getUserPrefix();
+    const prefix = await this.getUserPrefixOrThrow();
     return `${prefix}recentSolvesLastUpdated`;
   },
 
   /** Build namespaced extension last-timestamp key. */
   async nsExtensionLastTsKey(): Promise<string> {
-    const prefix = await this.getUserPrefix();
+    const prefix = await this.getUserPrefixOrThrow();
     return `${prefix}lastTimestamp`;
   },
 
   /** Build namespaced profile key. */
   async nsProfileKey(profileId: string): Promise<string> {
-    const prefix = await this.getUserPrefix();
+    const prefix = await this.getUserPrefixOrThrow();
     return `${prefix}${profileId}`;
   },
 
   /** Build namespaced active-profile key. */
   async nsActiveProfileKey(): Promise<string> {
-    const prefix = await this.getUserPrefix();
+    const prefix = await this.getUserPrefixOrThrow();
     return `${prefix}active`;
   },
 
@@ -228,6 +231,10 @@ export const db = {
     // Update cache when setting new username
     this._usernameCache = username;
     return (await dbPromise).put('leetcode-username', username, 'username');
+  },
+  async clearUsername(): Promise<void> {
+    this._usernameCache = null; // Clear cache
+    return (await dbPromise).delete('leetcode-username', 'username');
   },
 
   // Problem catalog
@@ -403,6 +410,6 @@ export const db = {
     mode: IDBTransactionMode = 'readwrite',
   ): Promise<T> {
     const tx = await this.transaction(storeNames, mode);
-    return callback(tx as any);
+    return await callback(tx as any);
   },
 };

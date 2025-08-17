@@ -81,7 +81,8 @@ describe('evaluateCategoryProgress', () => {
     };
 
     const result = evaluateCategoryProgress([earlierSolve, laterSolve]);
-    expect(result.estimatedScore).toBeCloseTo(1, 1); // Adjusted to match actual behavior
+    const baseline = evaluateCategoryProgress([laterSolve]).estimatedScore;
+    expect(result.estimatedScore).toBeCloseTo(baseline, 3);
   });
 
   it('ignores groups that have no accepted solve', () => {

@@ -196,15 +196,17 @@ describe('db storage module', () => {
       expect(key).toBe('testuser|lastTimestamp');
     });
 
-    it('generates anonymous prefix when username is undefined', async () => {
+    it('throws error when username is undefined', async () => {
       // Test the getUserPrefix logic directly by setting cache to undefined
       db._usernameCache = undefined;
 
-      const prefix = await db.getUserPrefix();
-      expect(prefix).toBe('anonymous|');
+      await expect(db.getUserPrefixOrThrow()).rejects.toThrow(
+        'Username is not set, cannot build namespaced keys',
+      );
 
-      const key = await db.nsSolveKey('two-sum', 1234567890);
-      expect(key).toBe('anonymous|two-sum|1234567890');
+      await expect(db.nsSolveKey('two-sum', 1234567890)).rejects.toThrow(
+        'Username is not set, cannot build namespaced keys',
+      );
     });
   });
 
