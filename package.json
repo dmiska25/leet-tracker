@@ -24,7 +24,6 @@
     "posthog-js": "^1.258.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-joyride": "^3.0.0-7",
     "react-tooltip": "^5.28.1"
   },
   "devDependencies": {

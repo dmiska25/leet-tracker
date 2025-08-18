@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   getPrevUser,
@@ -21,8 +21,8 @@ export type Step = {
   body: string;
   /** CSS selector of the anchor element for highlight/position */
   anchor?: string;
-  /** 'top' | 'bottom' | 'left' | 'right' | 'center' */
-  placement?: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  /** 'top' | 'bottom' | 'left' | 'right' | 'center' | 'dynamic' */
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'center' | 'dynamic';
   /** If provided, wait until this selector appears before showing */
   waitFor?: string;
   /** Run before advancing to the next step (e.g., open a section or navigate) */
@@ -64,6 +64,29 @@ function useAnchorRect(selector?: string) {
     return () => cancelAnimationFrame(raf);
   }, [selector]);
   return rect;
+}
+
+function useCardDimensions() {
+  const [dimensions, setDimensions] = useState({ width: 384, height: 200 }); // reasonable defaults
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (ref.current) {
+        const rect = ref.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+      }
+    };
+
+    // Initial measurement
+    updateDimensions();
+
+    // Update on window resize
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  return { dimensions, ref };
 }
 
 export function TutorialProvider({ children }: { children: React.ReactNode }) {
@@ -202,11 +225,52 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+function calculateBestPlacement(
+  rect: DOMRect,
+  cardSize: { width: number; height: number },
+): 'top' | 'bottom' | 'left' | 'right' | 'center' {
+  const viewport = { width: window.innerWidth, height: window.innerHeight };
+  const padding = 16; // minimum distance from viewport edges
+
+  // Calculate available space in each direction
+  const spaces = {
+    top: rect.top - padding,
+    bottom: viewport.height - rect.bottom - padding,
+    left: rect.left - padding,
+    right: viewport.width - rect.right - padding,
+  };
+
+  // Check if card fits in each direction
+  const fits = {
+    top: spaces.top >= cardSize.height,
+    bottom: spaces.bottom >= cardSize.height,
+    left: spaces.left >= cardSize.width,
+    right: spaces.right >= cardSize.width,
+  };
+
+  // Priority order: prefer bottom, then top, then right, then left
+  if (fits.bottom) return 'bottom';
+  if (fits.top) return 'top';
+  if (fits.right) return 'right';
+  if (fits.left) return 'left';
+
+  // Fallback: pick direction with most space
+  const maxSpace = Math.max(spaces.top, spaces.bottom, spaces.left, spaces.right);
+  if (maxSpace === spaces.bottom) return 'bottom';
+  if (maxSpace === spaces.top) return 'top';
+  if (maxSpace === spaces.right) return 'right';
+  if (maxSpace === spaces.left) return 'left';
+
+  // Ultimate fallback
+  return 'center';
+}
+
 /** Overlay UI */
 function TutorialOverlay() {
   const { active, steps, stepIndex, next, stop } = useTutorial();
   const [username, setUsername] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const { dimensions: cardDimensions, ref: cardRef } = useCardDimensions();
 
   // Get current username
   useEffect(() => {
@@ -243,6 +307,14 @@ function TutorialOverlay() {
   }, [shouldShowOverlay, step]);
 
   const rect = useAnchorRect(ready ? anchor : undefined);
+
+  // Calculate dynamic placement if needed
+  const actualPlacement = useMemo(() => {
+    if (!step?.placement || step.placement !== 'dynamic' || !rect) {
+      return step?.placement;
+    }
+    return calculateBestPlacement(rect, cardDimensions);
+  }, [step?.placement, rect, cardDimensions]);
 
   if (!shouldShowOverlay || !step) return null;
 
@@ -316,8 +388,9 @@ function TutorialOverlay() {
 
       {/* card */}
       <div
+        ref={cardRef}
         className="absolute max-w-sm rounded-lg bg-card border p-4 shadow pointer-events-auto"
-        style={tooltipPos(rect, step?.placement)}
+        style={tooltipPos(rect, actualPlacement)}
       >
         <h4 className="font-semibold mb-1">{step.title}</h4>
         <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{step.body}</p>
@@ -356,5 +429,9 @@ function tooltipPos(rect: DOMRect | null, placement: Step['placement']) {
       transform: 'translateX(-50%)' as const,
     },
   };
-  return pos[placement ?? 'bottom'];
+
+  // Handle dynamic case - this should never happen since we resolve it before calling this function
+  const actualPlacement = placement === 'dynamic' ? 'bottom' : (placement ?? 'bottom');
+
+  return pos[actualPlacement as keyof typeof pos];
 }

@@ -12,14 +12,14 @@ export function buildSteps(opts: {
         'These category bars estimate skill by tag.\n' +
         'They combine quality, difficulty weighting, attempt penalties, and recency.',
       anchor: '[data-tour="category-row-0"]',
-      placement: 'bottom',
+      placement: 'dynamic',
     },
     {
       id: 'open-first-category',
       title: 'Auto-expanding category',
       body: "We'll automatically expand the first category to show your recommendations.",
       anchor: '[data-tour="category-row-0"]',
-      placement: 'bottom',
+      placement: 'dynamic',
       onNext: async () => {
         // Auto-click the first category to expand it
         const firstCategory = document.querySelector('[data-tour="category-row-0"] button');
@@ -37,7 +37,7 @@ export function buildSteps(opts: {
         '• Refresh: past solves that deserve another pass\n' +
         '• New: fresh unsolved picks',
       anchor: '[data-tour="category-row-0"]',
-      placement: 'top',
+      placement: 'dynamic',
     },
     {
       id: 'profile-selector',
@@ -46,7 +46,7 @@ export function buildSteps(opts: {
         'You can set goal percentages per category with Profiles.\n' +
         "We won't change anything now, just letting you know.",
       anchor: '[data-tour="profile-controls"]',
-      placement: 'bottom',
+      placement: 'dynamic',
     },
     {
       id: 'go-history',
@@ -55,7 +55,7 @@ export function buildSteps(opts: {
         "Let's jump to your Solve History to see code, notes, and feedback.\n" +
         "We'll automatically navigate there for you.",
       anchor: '[data-tour="nav-history"]',
-      placement: 'bottom',
+      placement: 'dynamic',
       onNext: () => {
         // Auto-navigate to history view
         opts.onNavigateToHistory();
@@ -67,7 +67,7 @@ export function buildSteps(opts: {
       body: "Solves appear here chronologically. We'll select the first one to view its details.",
       anchor: '[data-tour="solve-history-list"]',
       waitFor: '[data-tour="solve-history-list"]',
-      placement: 'right',
+      placement: 'dynamic',
     },
     {
       id: 'submission-details',
@@ -76,7 +76,7 @@ export function buildSteps(opts: {
         'Here you can see your code and analyze different submissions.\n' +
         'Compare your past approaches and learning notes.',
       anchor: '[data-tour="submission-details"]',
-      placement: 'bottom',
+      placement: 'dynamic',
     },
     {
       id: 'detail-feedback',
@@ -86,7 +86,7 @@ export function buildSteps(opts: {
         'The final score updates the category bars.',
       anchor: '[data-tour="detail-feedback"]',
       waitFor: '[data-tour="detail-feedback"]',
-      placement: 'top',
+      placement: 'dynamic',
     },
     {
       id: 'finish',
