@@ -1,3 +1,4 @@
+import React from 'react';
 import clsx from 'clsx';
 import { ModeBadge } from '@/components/ModeBadge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -18,11 +19,12 @@ export default function HeaderNav({ view, onChange }: Props) {
     value,
     label,
     className,
+    ...buttonProps
   }: {
     value: View;
     label: string;
     className?: string;
-  }) => (
+  } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button
       type="button"
       onClick={() => onChange(value)}
@@ -33,7 +35,7 @@ export default function HeaderNav({ view, onChange }: Props) {
           : 'text-muted-foreground hover:text-foreground',
         className,
       )}
-      {...(value === 'history' ? { 'data-tour': 'nav-history' } : {})}
+      {...buttonProps}
     >
       {label}
     </button>
@@ -66,7 +68,12 @@ export default function HeaderNav({ view, onChange }: Props) {
           {/* View selector */}
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 hidden sm:flex">
             <NavBtn value="dashboard" label="Dashboard" className="dashboard-nav" />
-            <NavBtn value="history" label="Solve History" className="solve-history-nav" />
+            <NavBtn
+              value="history"
+              label="Solve History"
+              className="solve-history-nav"
+              data-tour="nav-history"
+            />
           </div>
 
           <Button
