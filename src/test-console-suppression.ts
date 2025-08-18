@@ -43,16 +43,16 @@ console.warn = (...args: any[]) => {
 const originalUnhandledRejection = process.listeners('unhandledRejection');
 process.removeAllListeners('unhandledRejection');
 
-process.on('unhandledRejection', (reason: any) => {
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
   // Suppress expected test errors
-  if (reason && reason.message === 'DB Error') {
+  if (reason instanceof Error && reason.message === 'DB Error') {
     return; // This is an expected test error, ignore it
   }
 
   // For other rejections, call the original handlers
   originalUnhandledRejection.forEach((handler) => {
     if (typeof handler === 'function') {
-      handler(reason, Promise.resolve());
+      handler(reason, promise);
     }
   });
 });
