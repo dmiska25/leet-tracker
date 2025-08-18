@@ -327,8 +327,9 @@ function TutorialOverlay() {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] pointer-events-none"
+      className="fixed inset-0 z-[9999] pointer-events-auto"
       aria-label="tutorial-overlay"
+      aria-modal="true"
       role="dialog"
     >
       {/* Spotlight overlay: dim everything except highlighted area */}
@@ -380,18 +381,7 @@ function TutorialOverlay() {
         <div className="absolute inset-0 bg-black/50" />
       )}
 
-      {/* highlight box */}
-      {rect && (
-        <div
-          className="absolute border-2 border-orange-400 rounded-lg pointer-events-none transition-all shadow-lg"
-          style={{
-            left: rect.left - 6,
-            top: rect.top - 6,
-            width: rect.width + 12,
-            height: rect.height + 12,
-          }}
-        />
-      )}
+      {/* Spotlight effect without border - the spotlight itself provides the visual guidance */}
 
       {/* card */}
       <div

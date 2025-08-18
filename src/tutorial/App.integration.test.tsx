@@ -42,18 +42,12 @@ vi.mock('@/utils/analytics', () => ({
   trackTourStep: vi.fn(),
 }));
 
-// Mock environment variables
-const mockEnv = {
-  VITE_DEMO_USERNAME: 'test-demo-user',
-};
-Object.defineProperty(import.meta, 'env', {
-  value: mockEnv,
-  writable: true,
-});
-
 describe('App Tutorial Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock environment variables using vi.stubEnv
+    vi.stubEnv('VITE_DEMO_USERNAME', 'test-demo-user');
 
     // Default mock implementations
     (db.getTutorialActive as Mock).mockResolvedValue(false);
@@ -90,6 +84,10 @@ describe('App Tutorial Integration', () => {
       extensionInstalled: true,
       refresh: vi.fn(),
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   describe('Tutorial prompt display', () => {
@@ -158,9 +156,10 @@ describe('App Tutorial Integration', () => {
       });
 
       // Should switch to demo user and start tutorial
+      const demoUsername = import.meta.env.VITE_DEMO_USERNAME || 'leet-tracker-demo-user';
       await waitFor(() => {
         expect(db.setPrevUser).toHaveBeenCalledWith('testuser');
-        expect(db.db.setUsername).toHaveBeenCalledWith('leet-tracker-demo-user');
+        expect(db.db.setUsername).toHaveBeenCalledWith(demoUsername);
       });
     });
 

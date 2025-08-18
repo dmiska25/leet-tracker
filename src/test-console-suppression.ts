@@ -53,6 +53,16 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     return; // This is an expected test error, ignore it
   }
 
+  // Handle the case where there were zero original listeners
+  if (originalUnhandledRejection.length === 0) {
+    console.error('Unhandled Promise Rejection in test:', reason);
+    // Schedule async rethrow to surface the failure in tests
+    setTimeout(() => {
+      throw reason;
+    }, 0);
+    return;
+  }
+
   // For other rejections, call the original handlers
   originalUnhandledRejection.forEach((handler) => {
     if (typeof handler === 'function') {
