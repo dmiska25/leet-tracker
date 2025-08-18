@@ -761,7 +761,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   /* -------------------------------------------------- */
 
   return (
-    <Card className="h-full">
+    <Card className="h-full" data-tour="solve-detail">
       <CardHeader className="p-4 pb-2">
         <div className="flex items-start justify-between">
           <div>
@@ -784,121 +784,124 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       <CardContent className="p-4 pt-0">
         <ScrollArea className="h-[calc(100vh-16rem)]">
           <div className="space-y-6">
-            {/* -------- Code -------- */}
-            <section>
-              <header className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">Submission Code</h3>
-                {codeEdit ? (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={cancelCodeEdit}
-                      className="gap-2 bg-transparent"
-                    >
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={saveCode} className="gap-2">
-                      <Save className="h-4 w-4" />
-                      Save
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCodeEdit(true)}
-                      className="gap-2"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Button>
-                    {code && (
+            {/* -------- Code and Details Wrapper -------- */}
+            <div data-tour="submission-details">
+              {/* -------- Code -------- */}
+              <section>
+                <header className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Submission Code</h3>
+                  {codeEdit ? (
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setShowFullCode((v) => !v)}
+                        onClick={cancelCodeEdit}
+                        className="gap-2 bg-transparent"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={saveCode} className="gap-2">
+                        <Save className="h-4 w-4" />
+                        Save
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCodeEdit(true)}
                         className="gap-2"
                       >
-                        {showFullCode ? (
-                          <>
-                            <EyeOff className="h-4 w-4" /> Collapse
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="h-4 w-4" /> Expand
-                          </>
-                        )}
+                        <Edit className="h-4 w-4" />
+                        Edit
                       </Button>
+                      {code && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowFullCode((v) => !v)}
+                          className="gap-2"
+                        >
+                          {showFullCode ? (
+                            <>
+                              <EyeOff className="h-4 w-4" /> Collapse
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="h-4 w-4" /> Expand
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </header>
+
+                {codeEdit ? (
+                  <Textarea
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="min-h-[300px] font-mono text-sm"
+                  />
+                ) : (
+                  <div className="bg-muted rounded-lg p-4">
+                    <pre className="text-sm overflow-x-auto whitespace-pre">
+                      <code>{showFullCode ? code : truncateLines(code, 5)}</code>
+                    </pre>
+                    {!showFullCode && code.split('\n').length > 5 && (
+                      <p className="text-center text-xs text-muted-foreground mt-2">
+                        … {code.split('\n').length - 5} more lines
+                      </p>
                     )}
                   </div>
                 )}
-              </header>
+              </section>
 
-              {codeEdit ? (
-                <Textarea
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className="min-h-[300px] font-mono text-sm"
-                />
-              ) : (
-                <div className="bg-muted rounded-lg p-4">
-                  <pre className="text-sm overflow-x-auto whitespace-pre">
-                    <code>{showFullCode ? code : truncateLines(code, 5)}</code>
-                  </pre>
-                  {!showFullCode && code.split('\n').length > 5 && (
-                    <p className="text-center text-xs text-muted-foreground mt-2">
-                      … {code.split('\n').length - 5} more lines
-                    </p>
-                  )}
-                </div>
-              )}
-            </section>
+              <Separator />
 
-            <Separator />
-
-            {/* -------- Solve Details -------- */}
-            <section>
-              <header className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">Solve Details</h3>
-                {detailsEdit ? (
-                  <div className="flex gap-2">
+              {/* -------- Solve Details -------- */}
+              <section>
+                <header className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Solve Details</h3>
+                  {detailsEdit ? (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={cancelDetailsEdit}
+                        className="gap-2 bg-transparent"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button size="sm" onClick={saveDetails} className="gap-2">
+                        <Save className="h-4 w-4" />
+                        Save
+                      </Button>
+                    </div>
+                  ) : (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={cancelDetailsEdit}
-                      className="gap-2 bg-transparent"
+                      onClick={() => setDetailsEdit(true)}
+                      className="gap-2"
                     >
-                      <X className="h-4 w-4" />
-                      Cancel
+                      <Edit className="h-4 w-4" />
+                      {solve.timeUsed || solve.usedHints || solve.notes ? 'Edit' : 'Add'} Details
                     </Button>
-                    <Button size="sm" onClick={saveDetails} className="gap-2">
-                      <Save className="h-4 w-4" />
-                      Save
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDetailsEdit(true)}
-                    className="gap-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    {solve.timeUsed || solve.usedHints || solve.notes ? 'Edit' : 'Add'} Details
-                  </Button>
-                )}
-              </header>
+                  )}
+                </header>
 
-              {renderSolveDetails()}
-            </section>
+                {renderSolveDetails()}
+              </section>
+            </div>
 
             <Separator />
 
             {/* -------- Feedback -------- */}
-            <section>
+            <section data-tour="detail-feedback">
               <header className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">Feedback</h3>
                 <div className="flex flex-wrap gap-2 justify-end">

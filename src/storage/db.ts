@@ -34,15 +34,19 @@ export interface LeetTrackerDB extends DBSchema {
     key: string; // ${username}|lastTimestamp
     value: number; // epoch seconds of most-recent extension solve
   };
+  'app-prefs': {
+    key: string; // preference key
+    value: any; // preference value
+  };
 }
 
 // Create a union type of all valid store names
 type ValidStoreName = keyof LeetTrackerDB;
 
 /* ----------------------------------------------------------------------------
-   DB init (version 3) + one-time migration from legacy global keys
+   DB init (version 4) + one-time migration from legacy global keys
 ---------------------------------------------------------------------------- */
-const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 3, {
+const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 4, {
   async upgrade(db, oldVersion, _newVersion, tx) {
     if (oldVersion < 1) {
       // v1 schema
@@ -77,84 +81,91 @@ const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 3, {
       // If no username exists, we assume signed-out state ⇒ no data to migrate.
       const username = await (tx.objectStore('leetcode-username') as any).get('username');
       if (!username) {
-        return; // nothing to migrate under your signed-out-clears-data model
-      }
-      const prefix = `${username}|`;
+        // Skip the v3 migration logic but continue with other version upgrades
+        // Don't return here - we still need to process v4+ upgrades
+      } else {
+        const prefix = `${username}|`;
 
-      // ---- solves: `${slug}|${timestamp}` → `${username}|${slug}|${timestamp}`
-      const solveKeys = (await solvesStore.getAllKeys()) as string[];
-      for (const k of solveKeys) {
-        if (typeof k !== 'string') continue;
-        // legacy solve key has exactly one pipe
-        if (k.split('|').length === 2) {
-          const val = await solvesStore.get(k as any);
-          const target = `${prefix}${k}`;
-          const existing = await solvesStore.get(target as any);
-          if (val !== undefined && existing === undefined) {
-            // Add username field when migrating
-            const solveWithUsername = { ...val, username };
-            await solvesStore.put(solveWithUsername, target as any);
+        // ---- solves: `${slug}|${timestamp}` → `${username}|${slug}|${timestamp}`
+        const solveKeys = (await solvesStore.getAllKeys()) as string[];
+        for (const k of solveKeys) {
+          if (typeof k !== 'string') continue;
+          // legacy solve key has exactly one pipe
+          if (k.split('|').length === 2) {
+            const val = await solvesStore.get(k as any);
+            const target = `${prefix}${k}`;
+            const existing = await solvesStore.get(target as any);
+            if (val !== undefined && existing === undefined) {
+              // Add username field when migrating
+              const solveWithUsername = { ...val, username };
+              await solvesStore.put(solveWithUsername, target as any);
+            }
+            await solvesStore.delete(k as any);
           }
-          await solvesStore.delete(k as any);
         }
-      }
 
-      // ---- goal-profiles: `${profileId}` → `${username}|${profileId}`
-      const profStore = goalProfilesStore;
-      const profKeys = (await profStore.getAllKeys()) as string[];
-      for (const k of profKeys) {
-        if (typeof k !== 'string') continue;
-        // namespaced keys already start with `${username}|`
-        if (!k.startsWith(prefix)) {
-          const val = await profStore.get(k as any);
-          const target = `${prefix}${k}`;
-          const existing = await profStore.get(target as any);
-          if (val !== undefined && existing === undefined) {
-            // Add username field when migrating
-            const profileWithUsername = { ...val, username };
-            await profStore.put(profileWithUsername, target as any);
+        // ---- goal-profiles: `${profileId}` → `${username}|${profileId}`
+        const profStore = goalProfilesStore;
+        const profKeys = (await profStore.getAllKeys()) as string[];
+        for (const k of profKeys) {
+          if (typeof k !== 'string') continue;
+          // namespaced keys already start with `${username}|`
+          if (!k.startsWith(prefix)) {
+            const val = await profStore.get(k as any);
+            const target = `${prefix}${k}`;
+            const existing = await profStore.get(target as any);
+            if (val !== undefined && existing === undefined) {
+              // Add username field when migrating
+              const profileWithUsername = { ...val, username };
+              await profStore.put(profileWithUsername, target as any);
+            }
+            await profStore.delete(k as any);
           }
-          await profStore.delete(k as any);
         }
-      }
 
-      // ---- active-goal-profile: 'active' → `${username}|active`
-      const activeStore = tx.objectStore('active-goal-profile');
-      const legacyActiveVal = await activeStore.get('active');
-      if (legacyActiveVal !== undefined) {
-        const nsActiveKey = `${prefix}active`;
-        const existing = await activeStore.get(nsActiveKey as any);
-        if (existing === undefined) {
-          await activeStore.put(legacyActiveVal, nsActiveKey as any);
+        // ---- active-goal-profile: 'active' → `${username}|active`
+        const activeStore = tx.objectStore('active-goal-profile');
+        const legacyActiveVal = await activeStore.get('active');
+        if (legacyActiveVal !== undefined) {
+          const nsActiveKey = `${prefix}active`;
+          const existing = await activeStore.get(nsActiveKey as any);
+          if (existing === undefined) {
+            await activeStore.put(legacyActiveVal, nsActiveKey as any);
+          }
+          await activeStore.delete('active' as any);
         }
-        await activeStore.delete('active' as any);
-      }
 
-      // ---- extension-sync: 'lastTimestamp' → `${username}|lastTimestamp`
-      const extStore = tx.objectStore('extension-sync');
-      const legacyTs = await extStore.get('lastTimestamp');
-      if (legacyTs !== undefined) {
-        const nsTsKey = `${prefix}lastTimestamp`;
-        const existing = await extStore.get(nsTsKey as any);
-        if (existing === undefined) {
-          await extStore.put(legacyTs, nsTsKey as any);
+        // ---- extension-sync: 'lastTimestamp' → `${username}|lastTimestamp`
+        const extStore = tx.objectStore('extension-sync');
+        const legacyTs = await extStore.get('lastTimestamp');
+        if (legacyTs !== undefined) {
+          const nsTsKey = `${prefix}lastTimestamp`;
+          const existing = await extStore.get(nsTsKey as any);
+          if (existing === undefined) {
+            await extStore.put(legacyTs, nsTsKey as any);
+          }
+          await extStore.delete('lastTimestamp' as any);
         }
-        await extStore.delete('lastTimestamp' as any);
-      }
 
-      // ---- problem-metadata: 'recentSolvesLastUpdated' → solves-metadata: `${username}|recentSolvesLastUpdated`
-      // Keep 'lastUpdated' global in problem-metadata.
-      const metaStore = tx.objectStore('problem-metadata');
-      const solvesMetaStore = tx.objectStore('solves-metadata');
-      const legacyRecent = await metaStore.get('recentSolvesLastUpdated' as any);
-      if (legacyRecent !== undefined) {
-        const nsRecentKey = `${prefix}recentSolvesLastUpdated`;
-        const existing = await solvesMetaStore.get(nsRecentKey as any);
-        if (existing === undefined) {
-          await solvesMetaStore.put(legacyRecent, nsRecentKey as any);
+        // ---- problem-metadata: 'recentSolvesLastUpdated' → solves-metadata: `${username}|recentSolvesLastUpdated`
+        // Keep 'lastUpdated' global in problem-metadata.
+        const metaStore = tx.objectStore('problem-metadata');
+        const solvesMetaStore = tx.objectStore('solves-metadata');
+        const legacyRecent = await metaStore.get('recentSolvesLastUpdated' as any);
+        if (legacyRecent !== undefined) {
+          const nsRecentKey = `${prefix}recentSolvesLastUpdated`;
+          const existing = await solvesMetaStore.get(nsRecentKey as any);
+          if (existing === undefined) {
+            await solvesMetaStore.put(legacyRecent, nsRecentKey as any);
+          }
+          await metaStore.delete('recentSolvesLastUpdated' as any);
         }
-        await metaStore.delete('recentSolvesLastUpdated' as any);
-      }
+      } // End of else block for username-based v3 migration
+    }
+
+    if (oldVersion < 4) {
+      // v4 – add app-prefs store for tutorial and other preferences
+      db.createObjectStore('app-prefs');
     }
   },
 });
@@ -164,6 +175,20 @@ const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 3, {
 ---------------------------------------------------------------------------- */
 
 export const db = {
+  /* ----------------------------------------------------------------------------
+     Database initialization check
+  ---------------------------------------------------------------------------- */
+  async ensureInitialized(): Promise<void> {
+    // Ensure the database is initialized and verify critical stores exist
+    const idb = await dbPromise;
+
+    // Verify that the app-prefs store exists
+    if (!idb.objectStoreNames.contains('app-prefs')) {
+      console.warn('[db] app-prefs store missing, database may need manual refresh');
+      // The user should refresh the page to trigger the v4 upgrade
+    }
+  },
+
   /* ----------------------------------------------------------------------------
      Private helpers for namespacing
   ---------------------------------------------------------------------------- */
@@ -412,4 +437,115 @@ export const db = {
     const tx = await this.transaction(storeNames, mode);
     return await callback(tx as any);
   },
+
+  /* ----------------------------------------------------------------------------
+     App preferences for tutorial and other settings
+  ---------------------------------------------------------------------------- */
+  async getAppPref<T>(key: string): Promise<T | undefined> {
+    try {
+      const idb = await dbPromise;
+      return await idb.get('app-prefs', key);
+    } catch (error) {
+      // Handle case where app-prefs store doesn't exist yet
+      if (error instanceof Error && error.name === 'NotFoundError') {
+        console.warn('[db] app-prefs store not found, returning undefined for key:', key);
+        return undefined;
+      }
+      throw error;
+    }
+  },
+
+  async setAppPref<T>(key: string, val: T): Promise<void> {
+    try {
+      const idb = await dbPromise;
+      await idb.put('app-prefs', val, key);
+    } catch (error) {
+      // Handle case where app-prefs store doesn't exist yet
+      if (error instanceof Error && error.name === 'NotFoundError') {
+        console.warn('[db] app-prefs store not found, cannot set key:', key);
+        return;
+      }
+      throw error;
+    }
+  },
+
+  async deleteAppPref(key: string): Promise<void> {
+    try {
+      const idb = await dbPromise;
+      await idb.delete('app-prefs', key);
+    } catch (error) {
+      // Handle case where app-prefs store doesn't exist yet
+      if (error instanceof Error && error.name === 'NotFoundError') {
+        console.warn('[db] app-prefs store not found, cannot delete key:', key);
+        return;
+      }
+      throw error;
+    }
+  },
 };
+
+/* ----------------------------------------------------------------------------
+   Tutorial preference helpers
+---------------------------------------------------------------------------- */
+export const tutorialPrefs = {
+  async get<T>(key: string): Promise<T | undefined> {
+    await db.ensureInitialized();
+    return db.getAppPref(key);
+  },
+  async set<T>(key: string, val: T): Promise<void> {
+    await db.ensureInitialized();
+    return db.setAppPref(key, val);
+  },
+  async del(key: string): Promise<void> {
+    await db.ensureInitialized();
+    return db.deleteAppPref(key);
+  },
+};
+
+export async function markTutorialSeen() {
+  await tutorialPrefs.set('tutorial.seen', true);
+}
+
+export async function clearTutorialSeen() {
+  await tutorialPrefs.del('tutorial.seen');
+}
+
+export async function getTutorialSeen(): Promise<boolean> {
+  return (await tutorialPrefs.get<boolean>('tutorial.seen')) === true;
+}
+
+export async function setTutorialActive(active: boolean) {
+  await tutorialPrefs.set('tutorial.active', active);
+}
+
+export async function getTutorialActive(): Promise<boolean> {
+  return (await tutorialPrefs.get<boolean>('tutorial.active')) === true;
+}
+
+export async function setTutorialStep(step: number) {
+  await tutorialPrefs.set('tutorial.step', step);
+}
+
+export async function getTutorialStep(): Promise<number> {
+  return (await tutorialPrefs.get<number>('tutorial.step')) ?? 0;
+}
+
+export async function setTutorialStartedWithUser(kind: 'demo' | 'normal') {
+  await tutorialPrefs.set('tutorial.startedWithUser', kind);
+}
+
+export async function getTutorialStartedWithUser(): Promise<'demo' | 'normal' | undefined> {
+  return await tutorialPrefs.get<'demo' | 'normal'>('tutorial.startedWithUser');
+}
+
+export async function setPrevUser(username: string) {
+  await tutorialPrefs.set('tutorial.prevUser', username);
+}
+
+export async function getPrevUser(): Promise<string | undefined> {
+  return tutorialPrefs.get<string>('tutorial.prevUser');
+}
+
+export async function clearPrevUser() {
+  await tutorialPrefs.del('tutorial.prevUser');
+}
