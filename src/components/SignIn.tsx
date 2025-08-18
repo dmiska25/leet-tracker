@@ -87,6 +87,8 @@ export default function SignIn() {
               onChange={(e) => setUsername(e.target.value)}
               className="w-full rounded-md border px-3 py-2 outline-none bg-background"
               placeholder="e.g. johndoe"
+              autoComplete="username"
+              autoFocus
               disabled={saving}
             />
             <Button type="submit" className="w-full" disabled={saving || username.trim() === ''}>

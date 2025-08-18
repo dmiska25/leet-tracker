@@ -17,7 +17,7 @@ const suppressedWarnPatterns = [/Received NaN for the `value` attribute/];
 
 // Custom console.error that filters out known test warnings
 console.error = (...args: any[]) => {
-  const message = args.join(' ');
+  const message = args.filter((a) => typeof a === 'string').join(' ');
 
   // Check if this error should be suppressed
   const shouldSuppress = suppressedErrorPatterns.some((pattern) => pattern.test(message));
@@ -29,7 +29,7 @@ console.error = (...args: any[]) => {
 
 // Custom console.warn that filters out known test warnings
 console.warn = (...args: any[]) => {
-  const message = args.join(' ');
+  const message = args.filter((a) => typeof a === 'string').join(' ');
 
   // Check if this warning should be suppressed
   const shouldSuppress = suppressedWarnPatterns.some((pattern) => pattern.test(message));
@@ -40,6 +40,10 @@ console.warn = (...args: any[]) => {
 };
 
 // Handle unhandled promise rejections from tests
+// IMPORTANT: This replaces all existing 'unhandledRejection' listeners
+// and proxies them through our filter. This changes the execution order
+// and may cause surprises for test runners or libraries that add their own listeners.
+// This is only recommended in test environments where suppression is needed.
 const originalUnhandledRejection = process.listeners('unhandledRejection');
 process.removeAllListeners('unhandledRejection');
 

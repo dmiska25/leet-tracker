@@ -187,7 +187,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
     await setTutorialActive(false);
     await setTutorialStep(0);
 
-    // Mark tutorial as seen when completed
+    // Mark tutorial as seen complete or not
     await markTutorialSeen();
 
     // Track tutorial completion

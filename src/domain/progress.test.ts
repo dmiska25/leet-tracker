@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { evaluateCategoryProgress } from './progress';
 import { Difficulty, Solve } from '../types/types';
 
-const now = Math.floor(Date.now() / 1000);
+// Fixed timestamp for consistent test results
+const FIXED_NOW_MS = 1692360000000; // August 18, 2023 12:00:00 GMT
+const now = Math.floor(FIXED_NOW_MS / 1000);
 const makeSolve = (
   slug: string,
   status: string,
@@ -21,6 +23,15 @@ const makeSolve = (
 });
 
 describe('evaluateCategoryProgress', () => {
+  beforeAll(() => {
+    // Mock Date.now to return a fixed timestamp for consistent test results
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW_MS);
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
+  });
+
   it('returns zeros for empty solve list', () => {
     expect(evaluateCategoryProgress([])).toEqual({
       estimatedScore: 0,

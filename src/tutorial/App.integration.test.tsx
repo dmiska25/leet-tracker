@@ -1,6 +1,6 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi, describe, it, expect, beforeEach, Mock } from 'vitest';
 import App from '../App';
 import { TutorialProvider } from '../tutorial/TutorialContext';
@@ -281,8 +281,9 @@ describe('App Tutorial Integration', () => {
       });
 
       // Should switch to history view
-      // Note: This would need to be verified by checking if SolveHistory component is rendered
-      // The exact assertion would depend on how we can distinguish the views in the rendered output
+      await waitFor(() => {
+        expect(screen.getByText(/Solve History/i)).toBeInTheDocument();
+      });
     });
 
     it('should handle leet:show-tutorial-prompt event', async () => {

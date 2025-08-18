@@ -100,7 +100,7 @@ describe('Dashboard buttons', () => {
     // open dropdown
     await user.click(screen.getByRole('button', { name: /Default/i }));
     // select alternate profile
-    await user.click(screen.getByRole('button', { name: /Alt/i }));
+    await user.click(screen.getByRole('option', { name: /Alt/i }));
 
     await waitFor(() => {
       expect(setActiveProfileSpy).toHaveBeenCalledWith('alt');

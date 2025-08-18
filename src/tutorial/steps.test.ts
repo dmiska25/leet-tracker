@@ -26,6 +26,16 @@ describe('Tutorial Steps', () => {
       });
     });
 
+    it("should not set an anchor for the 'finish' step", () => {
+      const steps = buildSteps({
+        extensionInstalled: true,
+        onNavigateToHistory: mockOnNavigateToHistory,
+      });
+      const finish = steps.find((s) => s.id === 'finish');
+      expect(finish).toBeDefined();
+      expect(finish?.anchor).toBeUndefined();
+    });
+
     it('should have correct step IDs in order', () => {
       const steps = buildSteps({
         extensionInstalled: true,

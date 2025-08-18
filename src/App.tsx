@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useInitApp } from '@/hooks/useInitApp';
 import Dashboard from '@/components/Dashboard';
 import SignIn from '@/components/SignIn';
@@ -23,6 +23,15 @@ function App() {
   const tutorial = useTutorial();
   const [showPrompt, setShowPrompt] = useState(false);
   const [tutorialInitialized, setTutorialInitialized] = useState(false);
+
+  const steps = useMemo(
+    () =>
+      buildSteps({
+        extensionInstalled,
+        onNavigateToHistory: () => setView('history'),
+      }),
+    [extensionInstalled],
+  );
 
   // Handle navigation events from tutorial
   useEffect(() => {
@@ -53,13 +62,7 @@ function App() {
         // we need to restart with steps (happens after user switching + reload)
         if (username === demoUsername && tutorial.steps.length === 0) {
           const startedWithUser = await getTutorialStartedWithUser();
-          tutorial.start(
-            buildSteps({
-              extensionInstalled,
-              onNavigateToHistory: () => setView('history'),
-            }),
-            { startedWith: startedWithUser || 'normal' },
-          );
+          await tutorial.start(steps, { startedWith: startedWithUser || 'normal' });
         }
         setTutorialInitialized(true);
         return;
@@ -75,13 +78,7 @@ function App() {
       // start tutorial immediately without prompt
       const startedWithUser = await getTutorialStartedWithUser();
       if (username === demoUsername && startedWithUser === 'normal') {
-        tutorial.start(
-          buildSteps({
-            extensionInstalled,
-            onNavigateToHistory: () => setView('history'),
-          }),
-          { startedWith: 'normal' },
-        );
+        await tutorial.start(steps, { startedWith: 'normal' });
         setTutorialInitialized(true);
         return;
       }
@@ -98,13 +95,7 @@ function App() {
 
     // If the user is already demo, just start the tutorial
     if (username === demoUsername) {
-      tutorial.start(
-        buildSteps({
-          extensionInstalled,
-          onNavigateToHistory: () => setView('history'),
-        }),
-        { startedWith: 'demo' },
-      );
+      tutorial.start(steps, { startedWith: 'demo' });
       return;
     }
 
@@ -114,13 +105,7 @@ function App() {
     // We want the tutorial to autostart after reload:
     //   TutorialProvider resumes because tutorial.active stays true.
     // Set active now and reload.
-    await tutorial.start(
-      buildSteps({
-        extensionInstalled,
-        onNavigateToHistory: () => setView('history'),
-      }),
-      { startedWith: 'normal' },
-    );
+    await tutorial.start(steps, { startedWith: 'normal' });
 
     // Important: after setting state, reload to ensure demo data loads
     window.location.reload();

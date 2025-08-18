@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi, describe, it, expect, beforeEach, Mock } from 'vitest';
 import { TutorialProvider, useTutorial } from './TutorialContext';
 import * as db from '@/storage/db';
@@ -41,6 +41,12 @@ vi.mock('@/tutorial/steps', () => ({
       anchor: '[data-tour="finish"]',
     },
   ]),
+}));
+
+vi.mock('@/utils/analytics', () => ({
+  trackTourStarted: vi.fn(),
+  trackTourFinished: vi.fn(),
+  trackTourStep: vi.fn(),
 }));
 
 // Test component that uses the tutorial context
@@ -137,7 +143,7 @@ describe('TutorialContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('tutorial-active')).toHaveTextContent('true');
       expect(screen.getByTestId('current-step')).toHaveTextContent('0');
-      expect(screen.getByTestId('steps-count')).toHaveTextContent('1'); // Mock actually returns 1 step
+      expect(screen.getByTestId('steps-count')).toHaveTextContent('1'); // We start with 1 custom step
       expect(db.setTutorialActive).toHaveBeenCalledWith(true);
       expect(db.setTutorialStep).toHaveBeenCalledWith(0);
     });

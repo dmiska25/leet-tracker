@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GoalProfile } from '@/types/types';
 import { RefreshCcw, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
@@ -34,7 +34,36 @@ export default function Dashboard() {
   const [profiles, setProfiles] = useState<GoalProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | undefined>(undefined);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const timeAgo = useTimeAgo(lastSynced);
+
+  // Handle click outside and Escape key for profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setProfileOpen(false);
+      }
+    };
+
+    if (profileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [profileOpen]);
 
   /* update the last-synced timestamp once initial data is ready */
   useEffect(() => {
@@ -139,17 +168,23 @@ export default function Dashboard() {
             {/* Profile controls wrapper */}
             <div className="flex items-center gap-2" data-tour="profile-controls">
               {/* Profile selector */}
-              <div className="relative">
+              <div className="relative" ref={profileDropdownRef}>
                 <Button
                   variant="outline"
                   onClick={() => setProfileOpen((o) => !o)}
                   className="px-3 py-2"
+                  aria-expanded={profileOpen}
+                  aria-haspopup="listbox"
                 >
                   Profile:{' '}
                   {profiles.find((p) => p.id === activeProfileId)?.name ?? 'Select profile'}
                 </Button>
                 {profileOpen && (
-                  <div className="absolute right-0 z-20 mt-1 w-44 max-h-60 overflow-y-auto rounded-md border bg-card shadow">
+                  <div
+                    className="absolute right-0 z-20 mt-1 w-44 max-h-60 overflow-y-auto rounded-md border bg-card shadow"
+                    role="listbox"
+                    aria-label="Profile selection"
+                  >
                     {profiles.map((p) => (
                       <button
                         key={p.id}
@@ -158,6 +193,8 @@ export default function Dashboard() {
                         className={`block w-full text-left px-3 py-1.5 text-sm ${
                           p.id === activeProfileId ? 'bg-muted font-medium' : 'hover:bg-muted'
                         }`}
+                        role="option"
+                        aria-selected={p.id === activeProfileId}
                       >
                         {p.name}
                       </button>
@@ -221,7 +258,7 @@ export default function Dashboard() {
 
                   <div
                     className={clsx(
-                      'overflow-hidden transition-all duration-300 origin-top recommendations-tabs',
+                      'overflow-hidden transition-all duration-300 origin-top',
                       open === RANDOM_TAG ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0',
                     )}
                   >
@@ -301,10 +338,7 @@ export default function Dashboard() {
                       >
                         {suggestions[cat.tag] && (
                           <Tabs defaultValue="fundamentals" className="mt-4 w-full">
-                            <TabsList
-                              className="grid w-full grid-cols-3 recommendations-tabs"
-                              {...(index === 0 ? { 'data-tour': 'recommendations-tabs' } : {})}
-                            >
+                            <TabsList className="grid w-full grid-cols-3">
                               <TabsTrigger value="fundamentals">Fundamentals</TabsTrigger>
                               <TabsTrigger value="refresh">Refresh</TabsTrigger>
                               <TabsTrigger value="new">New</TabsTrigger>

@@ -11,8 +11,15 @@ export default function TutorialPrompt({ open, onStart, onLater, onNever }: Prop
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50">
-      <div className="max-w-md w-full rounded-lg border bg-card p-6 shadow-2xl">
-        <h3 className="text-lg font-semibold mb-2">Take a quick tutorial?</h3>
+      <div
+        className="max-w-md w-full rounded-lg border bg-card p-6 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tutorial-prompt-title"
+      >
+        <h3 id="tutorial-prompt-title" className="text-lg font-semibold mb-2">
+          Take a quick tutorial?
+        </h3>
         <p className="text-sm text-muted-foreground mb-4">
           Learn how LeetTracker estimates category progress, suggests problems, and records solves.
           You can exit at any time. We&apos;ll use the demo data so you can see everything
@@ -25,7 +32,9 @@ export default function TutorialPrompt({ open, onStart, onLater, onNever }: Prop
           <Button variant="outline" onClick={onNever}>
             Don&apos;t show again
           </Button>
-          <Button onClick={onStart}>Start tutorial</Button>
+          <Button onClick={onStart} autoFocus>
+            Start tutorial
+          </Button>
         </div>
       </div>
     </div>
