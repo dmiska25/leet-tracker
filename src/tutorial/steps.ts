@@ -68,6 +68,15 @@ export function buildSteps(opts: {
       anchor: '[data-tour="solve-history-list"]',
       waitFor: '[data-tour="solve-history-list"]',
       placement: 'dynamic',
+      onNext: async () => {
+        // Auto-click the first solve item (especially important for mobile)
+        const firstSolve = document.querySelector(
+          '[data-tour="solve-history-list"] .space-y-2 > div:first-child',
+        );
+        if (firstSolve instanceof HTMLElement) {
+          firstSolve.click();
+        }
+      },
     },
     {
       id: 'submission-details',

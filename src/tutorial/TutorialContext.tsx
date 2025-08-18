@@ -254,6 +254,13 @@ function calculateBestPlacement(
   if (fits.right) return 'right';
   if (fits.left) return 'left';
 
+  // On mobile screens (width < 768px), prefer center over sides that would go off-screen
+  if (viewport.width < 768) {
+    // If we're here, nothing fits perfectly, so pick the safest option
+    // Center is always guaranteed to be on screen
+    return 'center';
+  }
+
   // Fallback: pick direction with most space
   const maxSpace = Math.max(spaces.top, spaces.bottom, spaces.left, spaces.right);
   if (maxSpace === spaces.bottom) return 'bottom';
@@ -389,7 +396,7 @@ function TutorialOverlay() {
       {/* card */}
       <div
         ref={cardRef}
-        className="absolute max-w-sm rounded-lg bg-card border p-4 shadow pointer-events-auto"
+        className="absolute max-w-[calc(100vw-2rem)] sm:max-w-sm rounded-lg bg-card border p-4 shadow pointer-events-auto"
         style={tooltipPos(rect, actualPlacement)}
       >
         <h4 className="font-semibold mb-1">{step.title}</h4>
@@ -417,11 +424,20 @@ function TutorialOverlay() {
 function tooltipPos(rect: DOMRect | null, placement: Step['placement']) {
   // Fallback center if no rect
   if (!rect) return { left: '50%', top: '50%', transform: 'translate(-50%,-50%)' } as const;
+
+  const viewport = { width: window.innerWidth, height: window.innerHeight };
   const padding = 10;
+  const isMobile = viewport.width < 640; // sm breakpoint
+
+  // Calculate initial positions
+  const dynamicCardWidth = isMobile
+    ? Math.min(viewport.width - 32, 384) // Mobile: full width minus padding, capped at 384px
+    : 384; // Desktop: normal sizing
+
   const pos = {
     top: { left: rect.left, top: rect.top - 12 - 140 }, // approx card height
     bottom: { left: rect.left, top: rect.bottom + padding },
-    left: { left: rect.left - 320, top: rect.top },
+    left: { left: rect.left - dynamicCardWidth, top: rect.top },
     right: { left: rect.right + padding, top: rect.top },
     center: {
       left: rect.left + rect.width / 2,
@@ -433,5 +449,38 @@ function tooltipPos(rect: DOMRect | null, placement: Step['placement']) {
   // Handle dynamic case - this should never happen since we resolve it before calling this function
   const actualPlacement = placement === 'dynamic' ? 'bottom' : (placement ?? 'bottom');
 
-  return pos[actualPlacement as keyof typeof pos];
+  let position = pos[actualPlacement as keyof typeof pos];
+
+  // Ensure the tooltip stays on screen - clamp to viewport bounds
+  // This is critical for mobile where we must keep tooltips visible
+  const cardWidth = isMobile ? dynamicCardWidth : actualPlacement === 'center' ? 192 : 384; // Desktop: normal sizing
+  const cardHeight = 140; // approximate height
+
+  if (typeof position.left === 'number') {
+    // Special handling for center placement with transform
+    if (actualPlacement === 'center') {
+      // For center placement, we need to ensure the element (after transform) stays on screen
+      const halfCardWidth = cardWidth / 2;
+      position.left = Math.max(
+        halfCardWidth + padding,
+        Math.min(viewport.width - halfCardWidth - padding, position.left),
+      );
+    } else {
+      // Regular clamping for other placements
+      position.left = Math.max(
+        padding,
+        Math.min(viewport.width - cardWidth - padding, position.left),
+      );
+    }
+  }
+
+  if (typeof position.top === 'number') {
+    // Clamp vertical position
+    position.top = Math.max(
+      padding,
+      Math.min(viewport.height - cardHeight - padding, position.top),
+    );
+  }
+
+  return position;
 }
