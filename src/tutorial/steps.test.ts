@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { buildSteps } from './steps';
 
 describe('Tutorial Steps', () => {
@@ -6,7 +6,10 @@ describe('Tutorial Steps', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(document, 'querySelector').mockClear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Step Structure', () => {
