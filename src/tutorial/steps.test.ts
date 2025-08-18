@@ -16,7 +16,7 @@ describe('Tutorial Steps', () => {
         onNavigateToHistory: mockOnNavigateToHistory,
       });
 
-      expect(steps).toHaveLength(9);
+      expect(steps).toHaveLength(10);
 
       steps.forEach((step) => {
         expect(step).toHaveProperty('id');
@@ -47,6 +47,7 @@ describe('Tutorial Steps', () => {
         'open-first-category',
         'recommendations',
         'profile-selector',
+        'extension-info',
         'go-history',
         'history-list',
         'submission-details',

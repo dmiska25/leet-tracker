@@ -7,10 +7,10 @@ export function buildSteps(opts: {
   const steps: Step[] = [
     {
       id: 'intro-bars',
-      title: 'Welcome to LeetTracker',
+      title: 'Category Progress',
       body:
         'These category bars estimate skill by tag.\n' +
-        'They combine quality, difficulty weighting, attempt penalties, and recency.',
+        'They combine review score, difficulty weighting, attempt penalties, and recency.',
       anchor: '[data-tour="category-row-0"]',
       placement: 'dynamic',
     },
@@ -43,9 +43,20 @@ export function buildSteps(opts: {
       id: 'profile-selector',
       title: 'Profiles',
       body:
-        'You can set goal percentages per category with Profiles.\n' +
-        "We won't change anything now, just letting you know.",
+        'Profiles let you set custom goal weights for each category.\n' +
+        'Different companies emphasize different topics, so you can tailor your prep accordingly.',
       anchor: '[data-tour="profile-controls"]',
+      placement: 'dynamic',
+    },
+    {
+      id: 'extension-info',
+      title: 'Chrome Extension',
+      body:
+        'LeetTracker includes a Chrome extension for enhanced functionality.\n' +
+        'Without the extension, we can only retrieve your 20 most recent solves and have limited accuracy.\n' +
+        'The extension auto-captures solve details that will be shown shortly.\n' +
+        'Install it from the Chrome Web Store for the best experience.',
+      anchor: '[data-tour="extension-warning"]',
       placement: 'dynamic',
     },
     {
@@ -63,7 +74,7 @@ export function buildSteps(opts: {
     },
     {
       id: 'history-list',
-      title: 'Your submissions',
+      title: 'Your Submissions',
       body: "Solves appear here chronologically. We'll select the first one to view its details.",
       anchor: '[data-tour="solve-history-list"]',
       waitFor: '[data-tour="solve-history-list"]',
@@ -83,6 +94,7 @@ export function buildSteps(opts: {
       title: 'Submission Details',
       body:
         'Here you can see your code and analyze different submissions.\n' +
+        'These details can be entered manually or captured automatically with the extension.\n' +
         'Compare your past approaches and learning notes.',
       anchor: '[data-tour="submission-details"]',
       placement: 'dynamic',
@@ -91,6 +103,8 @@ export function buildSteps(opts: {
       id: 'detail-feedback',
       title: 'AI feedback',
       body:
+        'We store structured feedback for each solve - entered manually or imported from an LLM.\n' +
+        'The prompt construction includes problem description, code, time, hints, and more to give the model sufficient context.\n' +
         'Use "Copy Prompt" → paste in your LLM → copy XML → "Import Feedback".\n' +
         'The final score updates the category bars.',
       anchor: '[data-tour="detail-feedback"]',
@@ -101,7 +115,8 @@ export function buildSteps(opts: {
       id: 'finish',
       title: 'All set!',
       body:
-        "That's it. You can re-run the tutorial from the menu anytime.\n" +
+        'The workflow is simple: Click a suggested problem → solve it → store feedback → suggestions update → repeat.\n\n' +
+        'You can re-run the tutorial from the menu anytime.\n' +
         "We'll now return you to your original account if we temporarily switched.",
       placement: 'center',
     },

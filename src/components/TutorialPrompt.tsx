@@ -18,12 +18,15 @@ export default function TutorialPrompt({ open, onStart, onLater, onNever }: Prop
         aria-labelledby="tutorial-prompt-title"
       >
         <h3 id="tutorial-prompt-title" className="text-lg font-semibold mb-2">
-          Take a quick tutorial?
+          Welcome to LeetTracker!
         </h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Learn how LeetTracker estimates category progress, suggests problems, and records solves.
-          You can exit at any time. We&apos;ll use the demo data so you can see everything
-          populated.
+          Instead of randomly grinding problems, LeetTracker helps you take a systematic approach to
+          interview prep by tracking progress across categories, identifying knowledge gaps, and
+          suggesting the most impactful problems to solve next.
+        </p>
+        <p className="text-sm text-muted-foreground mb-4">
+          Learn how to use this strategic approach effectively with a quick tutorial.
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onLater}>

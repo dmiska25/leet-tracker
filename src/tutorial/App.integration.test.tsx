@@ -99,7 +99,7 @@ describe('App Tutorial Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/Take a quick tutorial\?/i)).toBeInTheDocument();
+        expect(screen.getByText(/Welcome to LeetTracker!/i)).toBeInTheDocument();
       });
     });
 
@@ -114,7 +114,7 @@ describe('App Tutorial Integration', () => {
 
       await waitFor(() => {
         // Should not show the tutorial prompt
-        expect(screen.queryByText(/Take a quick tutorial\?/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Welcome to LeetTracker!/i)).not.toBeInTheDocument();
       });
     });
 
@@ -132,7 +132,7 @@ describe('App Tutorial Integration', () => {
       );
 
       expect(screen.getByText(/Loading…/i)).toBeInTheDocument();
-      expect(screen.queryByText(/Take a quick tutorial\?/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Welcome to LeetTracker!/i)).not.toBeInTheDocument();
     });
   });
 
@@ -147,7 +147,7 @@ describe('App Tutorial Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/Take a quick tutorial\?/i)).toBeInTheDocument();
+        expect(screen.getByText(/Welcome to LeetTracker!/i)).toBeInTheDocument();
       });
 
       const startButton = screen.getByText(/Start tutorial/i);
@@ -173,7 +173,7 @@ describe('App Tutorial Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/Take a quick tutorial\?/i)).toBeInTheDocument();
+        expect(screen.getByText(/Welcome to LeetTracker!/i)).toBeInTheDocument();
       });
 
       const laterButton = screen.getByText(/Maybe Later/i);
@@ -182,7 +182,7 @@ describe('App Tutorial Integration', () => {
       });
 
       await waitFor(() => {
-        expect(screen.queryByText(/Take a quick tutorial\?/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Welcome to LeetTracker!/i)).not.toBeInTheDocument();
       });
     });
 
@@ -196,7 +196,7 @@ describe('App Tutorial Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/Take a quick tutorial\?/i)).toBeInTheDocument();
+        expect(screen.getByText(/Welcome to LeetTracker!/i)).toBeInTheDocument();
       });
 
       const neverButton = screen.getByText(/Don't show again/i);
@@ -206,7 +206,7 @@ describe('App Tutorial Integration', () => {
 
       await waitFor(() => {
         expect(db.markTutorialSeen).toHaveBeenCalledTimes(1);
-        expect(screen.queryByText(/Take a quick tutorial\?/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Welcome to LeetTracker!/i)).not.toBeInTheDocument();
       });
     });
   });
@@ -231,7 +231,7 @@ describe('App Tutorial Integration', () => {
 
       // Should not show prompt, should start tutorial directly
       await waitFor(() => {
-        expect(screen.queryByText(/Take a quick tutorial\?/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Welcome to LeetTracker!/i)).not.toBeInTheDocument();
       });
     });
 
@@ -255,7 +255,7 @@ describe('App Tutorial Integration', () => {
 
       // Should resume tutorial without showing prompt
       await waitFor(() => {
-        expect(screen.queryByText(/Take a quick tutorial\?/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Welcome to LeetTracker!/i)).not.toBeInTheDocument();
       });
     });
   });
@@ -295,7 +295,7 @@ describe('App Tutorial Integration', () => {
 
       // Initially no prompt should show
       await waitFor(() => {
-        expect(screen.queryByText(/Take a quick tutorial\?/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Welcome to LeetTracker!/i)).not.toBeInTheDocument();
       });
 
       // Dispatch show prompt event (like from Help button)
@@ -305,7 +305,7 @@ describe('App Tutorial Integration', () => {
 
       // Should show the prompt
       await waitFor(() => {
-        expect(screen.getByText(/Take a quick tutorial\?/i)).toBeInTheDocument();
+        expect(screen.getByText(/Welcome to LeetTracker!/i)).toBeInTheDocument();
       });
     });
   });
