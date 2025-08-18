@@ -1,114 +1,157 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Test the tutorial preference functions
-describe('Database Tutorial Functions', () => {
-  // Mock tutorialPrefs object to simulate the database layer
-  const mockTutorialPrefs = {
-    get: vi.fn(),
-    set: vi.fn(),
-    del: vi.fn(),
+// Create a shared mock app prefs object for state
+let mockAppPrefs: Record<string, any> = {};
+
+// Mock the entire db module
+vi.mock('../storage/db', () => {
+  const mockDb = {
+    getAppPref: vi.fn((key: string) => Promise.resolve(mockAppPrefs[key])),
+    setAppPref: vi.fn((key: string, value: any) => {
+      mockAppPrefs[key] = value;
+      return Promise.resolve();
+    }),
+    deleteAppPref: vi.fn((key: string) => {
+      delete mockAppPrefs[key];
+      return Promise.resolve();
+    }),
   };
 
+  return {
+    db: mockDb,
+    // Export the actual implementations of the functions that use db
+    markTutorialSeen: () => mockDb.setAppPref('tutorial.seen', true),
+    clearTutorialSeen: () => mockDb.deleteAppPref('tutorial.seen'),
+    getTutorialSeen: async () => (await mockDb.getAppPref('tutorial.seen')) === true,
+    setTutorialActive: (active: boolean) => mockDb.setAppPref('tutorial.active', active),
+    getTutorialActive: async () => (await mockDb.getAppPref('tutorial.active')) === true,
+    setTutorialStep: (step: number) => mockDb.setAppPref('tutorial.step', step),
+    getTutorialStep: async () => (await mockDb.getAppPref('tutorial.step')) ?? 0,
+    setTutorialStartedWithUser: (kind: 'demo' | 'normal') =>
+      mockDb.setAppPref('tutorial.startedWithUser', kind),
+    getTutorialStartedWithUser: async () => await mockDb.getAppPref('tutorial.startedWithUser'),
+    setPrevUser: (username: string) => mockDb.setAppPref('tutorial.prevUser', username),
+    getPrevUser: async () => mockDb.getAppPref('tutorial.prevUser'),
+    clearPrevUser: () => mockDb.deleteAppPref('tutorial.prevUser'),
+  };
+});
+
+import {
+  markTutorialSeen,
+  clearTutorialSeen,
+  getTutorialSeen,
+  setTutorialActive,
+  getTutorialActive,
+  setTutorialStep,
+  getTutorialStep,
+  setTutorialStartedWithUser,
+  getTutorialStartedWithUser,
+  setPrevUser,
+  getPrevUser,
+  clearPrevUser,
+  db,
+} from '../storage/db';
+
+// Test the tutorial preference functions
+describe('Database Tutorial Functions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Clear the mock app prefs state between tests
+    mockAppPrefs = {};
   });
 
   describe('Tutorial Seen Status', () => {
     it('should handle tutorial seen flag operations', async () => {
-      // Test getting undefined (not seen)
-      mockTutorialPrefs.get.mockResolvedValue(undefined);
-      let result = await mockTutorialPrefs.get('tutorial.seen');
-      expect(result).toBeUndefined();
+      // Test getting false when not set
+      let result = await getTutorialSeen();
+      expect(result).toBe(false); // Should default to false
 
       // Test setting seen to true
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
-      await mockTutorialPrefs.set('tutorial.seen', true);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.seen', true);
+      await markTutorialSeen();
+      expect(db.setAppPref).toHaveBeenCalledWith('tutorial.seen', true);
 
       // Test getting true value
-      mockTutorialPrefs.get.mockResolvedValue(true);
-      result = await mockTutorialPrefs.get('tutorial.seen');
+      result = await getTutorialSeen();
       expect(result).toBe(true);
 
       // Test clearing the flag
-      mockTutorialPrefs.del.mockResolvedValue(undefined);
-      await mockTutorialPrefs.del('tutorial.seen');
-      expect(mockTutorialPrefs.del).toHaveBeenCalledWith('tutorial.seen');
+      await clearTutorialSeen();
+      expect(db.deleteAppPref).toHaveBeenCalledWith('tutorial.seen');
     });
   });
 
   describe('Tutorial Active Status', () => {
     it('should handle active status operations', async () => {
       // Test setting active
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
-      await mockTutorialPrefs.set('tutorial.active', true);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.active', true);
+      await setTutorialActive(true);
+      expect(db.setAppPref).toHaveBeenCalledWith('tutorial.active', true);
 
       // Test getting active status
-      mockTutorialPrefs.get.mockResolvedValue(true);
-      const result = await mockTutorialPrefs.get('tutorial.active');
+      const result = await getTutorialActive();
       expect(result).toBe(true);
 
       // Test setting inactive
-      await mockTutorialPrefs.set('tutorial.active', false);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.active', false);
+      await setTutorialActive(false);
+      expect(db.setAppPref).toHaveBeenCalledWith('tutorial.active', false);
     });
 
     it('should default to false when not set', async () => {
-      mockTutorialPrefs.get.mockResolvedValue(undefined);
-      const result = await mockTutorialPrefs.get('tutorial.active');
-      expect(result).toBeUndefined(); // The actual function should handle this and return false
+      const result = await getTutorialActive();
+      expect(result).toBe(false);
     });
   });
 
   describe('Tutorial Step Tracking', () => {
     it('should handle step operations', async () => {
       // Test setting step
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
-      await mockTutorialPrefs.set('tutorial.step', 3);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.step', 3);
+      await setTutorialStep(3);
+      expect(db.setAppPref).toHaveBeenCalledWith('tutorial.step', 3);
 
       // Test getting step
-      mockTutorialPrefs.get.mockResolvedValue(3);
-      const result = await mockTutorialPrefs.get('tutorial.step');
+      const result = await getTutorialStep();
       expect(result).toBe(3);
     });
 
-    it('should handle step progression', async () => {
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
+    it('should default to 0 when not set', async () => {
+      const result = await getTutorialStep();
+      expect(result).toBe(0);
+    });
 
+    it('should handle step progression', async () => {
       // Simulate progressing through steps
       const steps = [0, 1, 2, 3, 4, 5];
 
       for (const step of steps) {
-        await mockTutorialPrefs.set('tutorial.step', step);
-        expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.step', step);
+        await setTutorialStep(step);
+        expect(db.setAppPref).toHaveBeenCalledWith('tutorial.step', step);
       }
 
-      expect(mockTutorialPrefs.set).toHaveBeenCalledTimes(steps.length);
+      expect(db.setAppPref).toHaveBeenCalledTimes(steps.length);
     });
   });
 
   describe('Tutorial Started With User', () => {
     it('should handle started with user operations', async () => {
       // Test setting to 'normal'
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
-      await mockTutorialPrefs.set('tutorial.startedWithUser', 'normal');
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.startedWithUser', 'normal');
+      await setTutorialStartedWithUser('normal');
+      expect(db.setAppPref).toHaveBeenCalledWith('tutorial.startedWithUser', 'normal');
 
       // Test getting the value
-      mockTutorialPrefs.get.mockResolvedValue('normal');
-      let result = await mockTutorialPrefs.get('tutorial.startedWithUser');
+      let result = await getTutorialStartedWithUser();
       expect(result).toBe('normal');
 
       // Test setting to 'demo'
-      await mockTutorialPrefs.set('tutorial.startedWithUser', 'demo');
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.startedWithUser', 'demo');
+      await setTutorialStartedWithUser('demo');
+      expect(db.setAppPref).toHaveBeenCalledWith('tutorial.startedWithUser', 'demo');
 
       // Test getting 'demo'
-      mockTutorialPrefs.get.mockResolvedValue('demo');
-      result = await mockTutorialPrefs.get('tutorial.startedWithUser');
+      result = await getTutorialStartedWithUser();
       expect(result).toBe('demo');
+    });
+
+    it('should return undefined when not set', async () => {
+      const result = await getTutorialStartedWithUser();
+      expect(result).toBeUndefined();
     });
   });
 
@@ -117,105 +160,87 @@ describe('Database Tutorial Functions', () => {
       const testUsername = 'original-user-123';
 
       // Test setting previous user
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
-      await mockTutorialPrefs.set('tutorial.prevUser', testUsername);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.prevUser', testUsername);
+      await setPrevUser(testUsername);
+      expect(db.setAppPref).toHaveBeenCalledWith('tutorial.prevUser', testUsername);
 
       // Test getting previous user
-      mockTutorialPrefs.get.mockResolvedValue(testUsername);
-      const result = await mockTutorialPrefs.get('tutorial.prevUser');
+      const result = await getPrevUser();
       expect(result).toBe(testUsername);
 
       // Test clearing previous user
-      mockTutorialPrefs.del.mockResolvedValue(undefined);
-      await mockTutorialPrefs.del('tutorial.prevUser');
-      expect(mockTutorialPrefs.del).toHaveBeenCalledWith('tutorial.prevUser');
+      await clearPrevUser();
+      expect(db.deleteAppPref).toHaveBeenCalledWith('tutorial.prevUser');
+    });
+
+    it('should return undefined when no previous user is set', async () => {
+      const result = await getPrevUser();
+      expect(result).toBeUndefined();
     });
   });
 
   describe('Complete Tutorial Flow Simulation', () => {
     it('should simulate a complete tutorial session', async () => {
-      mockTutorialPrefs.get.mockImplementation((key: string) => {
-        const state: Record<string, any> = {
-          'tutorial.seen': false,
-          'tutorial.active': false,
-          'tutorial.step': 0,
-          'tutorial.startedWithUser': undefined,
-          'tutorial.prevUser': undefined,
-        };
-        return Promise.resolve(state[key]);
-      });
-
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
-      mockTutorialPrefs.del.mockResolvedValue(undefined);
-
       // 1. Check initial state (new user)
-      let seen = await mockTutorialPrefs.get('tutorial.seen');
-      let active = await mockTutorialPrefs.get('tutorial.active');
+      let seen = await getTutorialSeen();
+      let active = await getTutorialActive();
       expect(seen).toBe(false);
       expect(active).toBe(false);
 
       // 2. Start tutorial (save previous user, set active)
-      await mockTutorialPrefs.set('tutorial.prevUser', 'original-user');
-      await mockTutorialPrefs.set('tutorial.active', true);
-      await mockTutorialPrefs.set('tutorial.startedWithUser', 'normal');
-      await mockTutorialPrefs.set('tutorial.step', 0);
+      await setPrevUser('original-user');
+      await setTutorialActive(true);
+      await setTutorialStartedWithUser('normal');
+      await setTutorialStep(0);
 
       // 3. Progress through steps
       for (let step = 1; step <= 5; step++) {
-        await mockTutorialPrefs.set('tutorial.step', step);
+        await setTutorialStep(step);
       }
 
       // 4. Complete tutorial
-      await mockTutorialPrefs.set('tutorial.seen', true);
-      await mockTutorialPrefs.set('tutorial.active', false);
-      await mockTutorialPrefs.set('tutorial.step', 0);
-      await mockTutorialPrefs.del('tutorial.prevUser');
+      await markTutorialSeen();
+      await setTutorialActive(false);
+      await setTutorialStep(0);
+      await clearPrevUser();
 
-      // Verify all calls were made correctly
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.prevUser', 'original-user');
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.active', true);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.startedWithUser', 'normal');
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.seen', true);
-      expect(mockTutorialPrefs.del).toHaveBeenCalledWith('tutorial.prevUser');
+      // Verify final state
+      seen = await getTutorialSeen();
+      active = await getTutorialActive();
+      const finalStep = await getTutorialStep();
+      const prevUser = await getPrevUser();
+
+      expect(seen).toBe(true);
+      expect(active).toBe(false);
+      expect(finalStep).toBe(0);
+      expect(prevUser).toBeUndefined();
     });
 
     it('should simulate tutorial interruption and resumption', async () => {
-      mockTutorialPrefs.set.mockResolvedValue(undefined);
-      mockTutorialPrefs.get.mockResolvedValue(undefined);
-
       // 1. Start tutorial and progress to step 3
-      await mockTutorialPrefs.set('tutorial.active', true);
-      await mockTutorialPrefs.set('tutorial.step', 3);
-      await mockTutorialPrefs.set('tutorial.startedWithUser', 'normal');
+      await setTutorialActive(true);
+      await setTutorialStep(3);
+      await setTutorialStartedWithUser('normal');
 
       // 2. Simulate page reload/interruption - check if we can resume
-      mockTutorialPrefs.get.mockImplementation((key: string) => {
-        const state: Record<string, any> = {
-          'tutorial.active': true,
-          'tutorial.step': 3,
-          'tutorial.startedWithUser': 'normal',
-        };
-        return Promise.resolve(state[key]);
-      });
-
-      const active = await mockTutorialPrefs.get('tutorial.active');
-      const step = await mockTutorialPrefs.get('tutorial.step');
-      const startedWith = await mockTutorialPrefs.get('tutorial.startedWithUser');
+      const active = await getTutorialActive();
+      const step = await getTutorialStep();
+      const startedWith = await getTutorialStartedWithUser();
 
       expect(active).toBe(true);
       expect(step).toBe(3);
       expect(startedWith).toBe('normal');
 
       // 3. Continue from step 3 to completion
-      await mockTutorialPrefs.set('tutorial.step', 4);
-      await mockTutorialPrefs.set('tutorial.step', 5);
-      await mockTutorialPrefs.set('tutorial.active', false);
-      await mockTutorialPrefs.set('tutorial.seen', true);
+      await setTutorialStep(4);
+      await setTutorialStep(5);
+      await setTutorialActive(false);
+      await markTutorialSeen();
 
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.step', 5);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.active', false);
-      expect(mockTutorialPrefs.set).toHaveBeenCalledWith('tutorial.seen', true);
+      // Verify final state
+      const finalActive = await getTutorialActive();
+      const finalSeen = await getTutorialSeen();
+      expect(finalActive).toBe(false);
+      expect(finalSeen).toBe(true);
     });
   });
 });

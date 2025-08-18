@@ -176,20 +176,6 @@ const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 4, {
 
 export const db = {
   /* ----------------------------------------------------------------------------
-     Database initialization check
-  ---------------------------------------------------------------------------- */
-  async ensureInitialized(): Promise<void> {
-    // Ensure the database is initialized and verify critical stores exist
-    const idb = await dbPromise;
-
-    // Verify that the app-prefs store exists
-    if (!idb.objectStoreNames.contains('app-prefs')) {
-      console.warn('[db] app-prefs store missing, database may need manual refresh');
-      // The user should refresh the page to trigger the v4 upgrade
-    }
-  },
-
-  /* ----------------------------------------------------------------------------
      Private helpers for namespacing
   ---------------------------------------------------------------------------- */
 
@@ -442,110 +428,68 @@ export const db = {
      App preferences for tutorial and other settings
   ---------------------------------------------------------------------------- */
   async getAppPref<T>(key: string): Promise<T | undefined> {
-    try {
-      const idb = await dbPromise;
-      return await idb.get('app-prefs', key);
-    } catch (error) {
-      // Handle case where app-prefs store doesn't exist yet
-      if (error instanceof Error && error.name === 'NotFoundError') {
-        console.warn('[db] app-prefs store not found, returning undefined for key:', key);
-        return undefined;
-      }
-      throw error;
-    }
+    const idb = await dbPromise;
+    return await idb.get('app-prefs', key);
   },
 
   async setAppPref<T>(key: string, val: T): Promise<void> {
-    try {
-      const idb = await dbPromise;
-      await idb.put('app-prefs', val, key);
-    } catch (error) {
-      // Handle case where app-prefs store doesn't exist yet
-      if (error instanceof Error && error.name === 'NotFoundError') {
-        console.warn('[db] app-prefs store not found, cannot set key:', key);
-        return;
-      }
-      throw error;
-    }
+    const idb = await dbPromise;
+    await idb.put('app-prefs', val, key);
   },
 
   async deleteAppPref(key: string): Promise<void> {
-    try {
-      const idb = await dbPromise;
-      await idb.delete('app-prefs', key);
-    } catch (error) {
-      // Handle case where app-prefs store doesn't exist yet
-      if (error instanceof Error && error.name === 'NotFoundError') {
-        console.warn('[db] app-prefs store not found, cannot delete key:', key);
-        return;
-      }
-      throw error;
-    }
+    const idb = await dbPromise;
+    await idb.delete('app-prefs', key);
   },
 };
 
 /* ----------------------------------------------------------------------------
-   Tutorial preference helpers
+   Tutorial preference functions
 ---------------------------------------------------------------------------- */
-export const tutorialPrefs = {
-  async get<T>(key: string): Promise<T | undefined> {
-    await db.ensureInitialized();
-    return db.getAppPref(key);
-  },
-  async set<T>(key: string, val: T): Promise<void> {
-    await db.ensureInitialized();
-    return db.setAppPref(key, val);
-  },
-  async del(key: string): Promise<void> {
-    await db.ensureInitialized();
-    return db.deleteAppPref(key);
-  },
-};
-
 export async function markTutorialSeen() {
-  await tutorialPrefs.set('tutorial.seen', true);
+  await db.setAppPref('tutorial.seen', true);
 }
 
 export async function clearTutorialSeen() {
-  await tutorialPrefs.del('tutorial.seen');
+  await db.deleteAppPref('tutorial.seen');
 }
 
 export async function getTutorialSeen(): Promise<boolean> {
-  return (await tutorialPrefs.get<boolean>('tutorial.seen')) === true;
+  return (await db.getAppPref<boolean>('tutorial.seen')) === true;
 }
 
 export async function setTutorialActive(active: boolean) {
-  await tutorialPrefs.set('tutorial.active', active);
+  await db.setAppPref('tutorial.active', active);
 }
 
 export async function getTutorialActive(): Promise<boolean> {
-  return (await tutorialPrefs.get<boolean>('tutorial.active')) === true;
+  return (await db.getAppPref<boolean>('tutorial.active')) === true;
 }
 
 export async function setTutorialStep(step: number) {
-  await tutorialPrefs.set('tutorial.step', step);
+  await db.setAppPref('tutorial.step', step);
 }
 
 export async function getTutorialStep(): Promise<number> {
-  return (await tutorialPrefs.get<number>('tutorial.step')) ?? 0;
+  return (await db.getAppPref<number>('tutorial.step')) ?? 0;
 }
 
 export async function setTutorialStartedWithUser(kind: 'demo' | 'normal') {
-  await tutorialPrefs.set('tutorial.startedWithUser', kind);
+  await db.setAppPref('tutorial.startedWithUser', kind);
 }
 
 export async function getTutorialStartedWithUser(): Promise<'demo' | 'normal' | undefined> {
-  return await tutorialPrefs.get<'demo' | 'normal'>('tutorial.startedWithUser');
+  return await db.getAppPref<'demo' | 'normal'>('tutorial.startedWithUser');
 }
 
 export async function setPrevUser(username: string) {
-  await tutorialPrefs.set('tutorial.prevUser', username);
+  await db.setAppPref('tutorial.prevUser', username);
 }
 
 export async function getPrevUser(): Promise<string | undefined> {
-  return tutorialPrefs.get<string>('tutorial.prevUser');
+  return db.getAppPref<string>('tutorial.prevUser');
 }
 
 export async function clearPrevUser() {
-  await tutorialPrefs.del('tutorial.prevUser');
+  await db.deleteAppPref('tutorial.prevUser');
 }

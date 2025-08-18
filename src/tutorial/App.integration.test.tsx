@@ -11,7 +11,6 @@ vi.mock('@/storage/db', () => ({
   db: {
     getUsername: vi.fn(),
     setUsername: vi.fn(),
-    ensureInitialized: vi.fn(),
     getAllGoalProfiles: vi.fn(),
     getActiveGoalProfileId: vi.fn(),
     getAllSolvesSorted: vi.fn(),
@@ -61,7 +60,7 @@ describe('App Tutorial Integration', () => {
     (db.getTutorialStep as Mock).mockResolvedValue(0);
     (db.getTutorialStartedWithUser as Mock).mockResolvedValue('demo');
     (db.getTutorialSeen as Mock).mockResolvedValue(false);
-    (db.db.ensureInitialized as Mock).mockResolvedValue(undefined);
+    (db.db.getUsername as Mock).mockResolvedValue('testuser');
     (db.db.getAllGoalProfiles as Mock).mockResolvedValue([]);
     (db.db.getActiveGoalProfileId as Mock).mockResolvedValue(null);
     (db.db.getAllSolvesSorted as Mock).mockResolvedValue([]);
@@ -314,7 +313,7 @@ describe('App Tutorial Integration', () => {
 
   describe('Error handling', () => {
     it('should handle database errors gracefully', async () => {
-      (db.db.ensureInitialized as Mock).mockRejectedValue(new Error('DB Error'));
+      (db.db.getUsername as Mock).mockRejectedValue(new Error('DB Error'));
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

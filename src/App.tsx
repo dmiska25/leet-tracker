@@ -51,9 +51,6 @@ function App() {
       if (loading || tutorialInitialized) return;
       if (!username) return; // No prompt on sign-in screen
 
-      // Ensure database is fully initialized before any tutorial operations
-      await db.ensureInitialized();
-
       const demoUsername = import.meta.env.VITE_DEMO_USERNAME || 'leet-tracker-demo-user';
 
       // If tutorial is already active, check if we need to provide steps

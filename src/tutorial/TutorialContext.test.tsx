@@ -9,7 +9,6 @@ vi.mock('@/storage/db', () => ({
   db: {
     getUsername: vi.fn(),
     setUsername: vi.fn(),
-    ensureInitialized: vi.fn(),
   },
   getTutorialActive: vi.fn(),
   setTutorialActive: vi.fn(),
