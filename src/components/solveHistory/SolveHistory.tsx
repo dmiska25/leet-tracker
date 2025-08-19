@@ -79,6 +79,7 @@ export default function SolveHistory() {
             ${mobileView === 'listing' ? 'basis-full opacity-100' : 'basis-0 opacity-0'}
             ${sidebarOpen ? 'sm:basis-[20rem] sm:flex-none sm:opacity-100' : 'sm:basis-0 sm:opacity-0'}
           `}
+          data-tour="solve-history-list"
         >
           <SolveSidebar
             solves={solves}

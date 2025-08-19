@@ -6,6 +6,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import App from './App.tsx';
 import { ToastProvider } from '@/components/ui/toast';
 import { PostHogProvider } from 'posthog-js/react';
+import { TutorialProvider } from '@/tutorial/TutorialContext';
 
 function ConditionalPostHogProvider({ children }: { children: React.ReactNode }) {
   const isProduction = import.meta.env.PROD;
@@ -33,7 +34,9 @@ createRoot(document.getElementById('root')!).render(
     <ConditionalPostHogProvider>
       <ErrorBoundary>
         <ToastProvider>
-          <App />
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
         </ToastProvider>
       </ErrorBoundary>
     </ConditionalPostHogProvider>

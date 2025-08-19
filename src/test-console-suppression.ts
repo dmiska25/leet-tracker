@@ -1,0 +1,72 @@
+// Global test setup to suppress common console warnings and errors
+
+// Store original console methods
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+// Patterns to suppress (add more as needed)
+const suppressedErrorPatterns = [
+  /Warning: An update to .* inside a test was not wrapped in act/,
+  /The current testing environment is not configured to support act/,
+  /Warning: ReactDOM.render is no longer supported/,
+  /Warning: .* is deprecated/,
+  /Not implemented: navigation/,
+];
+
+const suppressedWarnPatterns = [/Received NaN for the `value` attribute/];
+
+// Custom console.error that filters out known test warnings
+console.error = (...args: any[]) => {
+  const message = args.filter((a) => typeof a === 'string').join(' ');
+
+  // Check if this error should be suppressed
+  const shouldSuppress = suppressedErrorPatterns.some((pattern) => pattern.test(message));
+
+  if (!shouldSuppress) {
+    originalConsoleError.apply(console, args);
+  }
+};
+
+// Custom console.warn that filters out known test warnings
+console.warn = (...args: any[]) => {
+  const message = args.filter((a) => typeof a === 'string').join(' ');
+
+  // Check if this warning should be suppressed
+  const shouldSuppress = suppressedWarnPatterns.some((pattern) => pattern.test(message));
+
+  if (!shouldSuppress) {
+    originalConsoleWarn.apply(console, args);
+  }
+};
+
+// Handle unhandled promise rejections from tests
+// IMPORTANT: This replaces all existing 'unhandledRejection' listeners
+// and proxies them through our filter. This changes the execution order
+// and may cause surprises for test runners or libraries that add their own listeners.
+// This is only recommended in test environments where suppression is needed.
+const originalUnhandledRejection = process.listeners('unhandledRejection');
+process.removeAllListeners('unhandledRejection');
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  // Suppress expected test errors
+  if (reason instanceof Error && reason.message === 'DB Error') {
+    return; // This is an expected test error, ignore it
+  }
+
+  // Handle the case where there were zero original listeners
+  if (originalUnhandledRejection.length === 0) {
+    console.error('Unhandled Promise Rejection in test:', reason);
+    // Schedule async rethrow to surface the failure in tests
+    setTimeout(() => {
+      throw reason;
+    }, 0);
+    return;
+  }
+
+  // For other rejections, call the original handlers
+  originalUnhandledRejection.forEach((handler) => {
+    if (typeof handler === 'function') {
+      handler(reason, promise);
+    }
+  });
+});

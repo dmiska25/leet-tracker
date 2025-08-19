@@ -1,3 +1,4 @@
+import React from 'react';
 import clsx from 'clsx';
 import { ModeBadge } from '@/components/ModeBadge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -14,7 +15,16 @@ interface Props {
 
 export default function HeaderNav({ view, onChange }: Props) {
   /* ---------- helpers ---------- */
-  const NavBtn = ({ value, label }: { value: View; label: string }) => (
+  const NavBtn = ({
+    value,
+    label,
+    className,
+    ...buttonProps
+  }: {
+    value: View;
+    label: string;
+    className?: string;
+  } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button
       type="button"
       onClick={() => onChange(value)}
@@ -23,7 +33,9 @@ export default function HeaderNav({ view, onChange }: Props) {
         view === value
           ? 'bg-background text-foreground shadow'
           : 'text-muted-foreground hover:text-foreground',
+        className,
       )}
+      {...buttonProps}
     >
       {label}
     </button>
@@ -43,7 +55,7 @@ export default function HeaderNav({ view, onChange }: Props) {
 
   /* ---------- render ---------- */
   return (
-    <nav className="border-b bg-card">
+    <nav className="border-b bg-card" data-tour="header-nav">
       <div className="max-w-6xl mx-auto flex h-16 items-center px-4 sm:px-6">
         {/* Logo + mode pill */}
         <div className="flex items-center gap-4">
@@ -55,9 +67,23 @@ export default function HeaderNav({ view, onChange }: Props) {
         <div className="ml-auto flex items-center gap-4">
           {/* View selector */}
           <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 hidden sm:flex">
-            <NavBtn value="dashboard" label="Dashboard" />
-            <NavBtn value="history" label="Solve History" />
+            <NavBtn value="dashboard" label="Dashboard" className="dashboard-nav" />
+            <NavBtn
+              value="history"
+              label="Solve History"
+              className="solve-history-nav"
+              data-tour="nav-history"
+            />
           </div>
+
+          <Button
+            variant="ghost"
+            onClick={() => window.dispatchEvent(new CustomEvent('leet:replay-tour'))}
+            className="replay-tour-btn"
+            title="Replay tutorial"
+          >
+            Help
+          </Button>
 
           <ThemeToggle />
           <Button variant="ghost" onClick={handleSignOut}>

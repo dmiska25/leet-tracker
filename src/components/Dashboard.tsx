@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GoalProfile } from '@/types/types';
 import { RefreshCcw, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
@@ -34,7 +34,36 @@ export default function Dashboard() {
   const [profiles, setProfiles] = useState<GoalProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | undefined>(undefined);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const timeAgo = useTimeAgo(lastSynced);
+
+  // Handle click outside and Escape key for profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setProfileOpen(false);
+      }
+    };
+
+    if (profileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [profileOpen]);
 
   /* update the last-synced timestamp once initial data is ready */
   useEffect(() => {
@@ -136,39 +165,55 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">Last synced: {timeAgo}</p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Profile selector */}
-            <div className="relative">
-              <Button
-                variant="outline"
-                onClick={() => setProfileOpen((o) => !o)}
-                className="px-3 py-2"
-              >
-                Profile: {profiles.find((p) => p.id === activeProfileId)?.name ?? 'Select profile'}
-              </Button>
-              {profileOpen && (
-                <div className="absolute right-0 z-20 mt-1 w-44 max-h-60 overflow-y-auto rounded-md border bg-card shadow">
-                  {profiles.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => handleSelectProfile(p.id)}
-                      className={`block w-full text-left px-3 py-1.5 text-sm ${
-                        p.id === activeProfileId ? 'bg-muted font-medium' : 'hover:bg-muted'
-                      }`}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Profile controls wrapper */}
+            <div className="flex items-center gap-2" data-tour="profile-controls">
+              {/* Profile selector */}
+              <div className="relative" ref={profileDropdownRef}>
+                <Button
+                  variant="outline"
+                  onClick={() => setProfileOpen((o) => !o)}
+                  className="px-3 py-2"
+                  aria-expanded={profileOpen}
+                  aria-haspopup="listbox"
+                >
+                  Profile:{' '}
+                  {profiles.find((p) => p.id === activeProfileId)?.name ?? 'Select profile'}
+                </Button>
+                {profileOpen && (
+                  <div
+                    className="absolute right-0 z-20 mt-1 w-44 max-h-60 overflow-y-auto rounded-md border bg-card shadow"
+                    role="listbox"
+                    aria-label="Profile selection"
+                  >
+                    {profiles.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleSelectProfile(p.id)}
+                        className={`block w-full text-left px-3 py-1.5 text-sm ${
+                          p.id === activeProfileId ? 'bg-muted font-medium' : 'hover:bg-muted'
+                        }`}
+                        role="option"
+                        aria-selected={p.id === activeProfileId}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Manage Profiles */}
-            <Button variant="outline" onClick={() => setProfileManagerOpen(true)}>
-              Manage Profiles
-            </Button>
+              {/* Manage Profiles */}
+              <Button variant="outline" onClick={() => setProfileManagerOpen(true)}>
+                Manage Profiles
+              </Button>
+            </div>
             {/* Sync button */}
-            <Button onClick={handleSync} disabled={syncing} className="flex items-center gap-2">
+            <Button
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-2 sync-now-btn"
+            >
               <RefreshCcw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Syncing…' : 'Sync Now'}
             </Button>
@@ -176,7 +221,7 @@ export default function Dashboard() {
         </header>
 
         {/* Category list */}
-        <Card>
+        <Card className="progress-score-card">
           <CardHeader className="px-4 py-2">
             <CardTitle>Problem Categories</CardTitle>
             <CardDescription>Categories sorted by completion (lowest first)</CardDescription>
@@ -240,13 +285,17 @@ export default function Dashboard() {
                 </div>
 
                 {/* Category rows */}
-                {sorted.map((cat) => {
+                {sorted.map((cat, index) => {
                   const percent = Math.round(cat.adjustedScore * 100);
                   const goalPercent = Math.round(cat.goal * 100);
                   const isOpen = open === cat.tag;
 
                   return (
-                    <div key={cat.tag} className="py-4 space-y-3">
+                    <div
+                      key={cat.tag}
+                      className="py-4 space-y-3"
+                      {...(index === 0 ? { 'data-tour': 'category-row-0' } : {})}
+                    >
                       {/* Summary row */}
                       <button
                         className="w-full text-left space-y-2"

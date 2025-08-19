@@ -74,5 +74,13 @@ export const trackProfileChanged = (newProfileId: string) =>
 
 export const trackExtensionDetected = () => posthog.capture('extension_detected');
 
+export const trackTourStarted = () => posthog.capture('tour_started');
+
+export const trackTourFinished = (status: 'finished' | 'skipped') =>
+  posthog.capture('tour_finished', { status });
+
+export const trackTourStep = (stepId: string, view: 'dashboard' | 'history') =>
+  posthog.capture('tour_step', { stepId, view });
+
 export const trackErrorBoundary = (errorMessage: string, stack?: string) =>
   posthog.capture('error_boundary_triggered', { errorMessage, stack });

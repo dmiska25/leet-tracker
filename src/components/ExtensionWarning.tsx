@@ -39,6 +39,7 @@ export function ExtensionWarning({ extensionInstalled, className }: ExtensionWar
   return (
     <>
       <div
+        data-tour="extension-warning"
         className={clsx(
           'flex items-start justify-between gap-4 rounded-md border border-leetcode-orange bg-leetcode-orange/5 p-4 hidden md:flex',
           className,
