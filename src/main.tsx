@@ -7,6 +7,7 @@ import App from './App.tsx';
 import { ToastProvider } from '@/components/ui/toast';
 import { PostHogProvider } from 'posthog-js/react';
 import { TutorialProvider } from '@/tutorial/TutorialContext';
+import { initializeTheme } from '@/hooks/useTheme';
 
 function ConditionalPostHogProvider({ children }: { children: React.ReactNode }) {
   const isProduction = import.meta.env.PROD;
@@ -28,6 +29,9 @@ function ConditionalPostHogProvider({ children }: { children: React.ReactNode })
     </PostHogProvider>
   );
 }
+
+// Initialize theme immediately before React renders to prevent flash
+initializeTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
