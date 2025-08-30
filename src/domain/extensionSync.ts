@@ -29,16 +29,26 @@ export async function syncFromExtension(username: string): Promise<number> {
     for (const raw of rawSolves) {
       const p = await db.getProblem(raw.titleSlug);
       if (!p) continue; // skip if problem not found
-      // Update problem description if provided
-      if (raw.problemDescription) {
-        p.description = raw.problemDescription;
-        await db.addOrUpdateProblem(p);
+
+      // Update problem description if provided (handles string or { content } form)
+      const descAny = (raw as any).problemDescription;
+      if (descAny) {
+        const content =
+          typeof descAny === 'string'
+            ? descAny
+            : descAny && 'content' in descAny
+              ? (descAny as any).content
+              : undefined;
+        if (typeof content === 'string') {
+          p.description = content;
+          await db.addOrUpdateProblem(p);
+        }
       }
 
       // get existing solve if exists
       const existingSolve = await db.getSolve(raw.titleSlug, raw.timestamp);
 
-      // Build Solve
+      // Build Solve with extension-enriched optional fields
       const solve: Solve = {
         ...existingSolve, // preserve existing solve data if available and don't override timeUsed, code, or tags.
         slug: raw.titleSlug,
@@ -46,10 +56,20 @@ export async function syncFromExtension(username: string): Promise<number> {
         timestamp: Number(raw.timestamp),
         status: raw.statusDisplay,
         lang: raw.lang,
-        timeUsed: existingSolve?.timeUsed ?? raw.solveTime ?? undefined,
-        code: existingSolve?.code ?? raw.codeDetail?.code ?? undefined,
+
+        // New optional fields
+        submissionId: (raw as any).id ? String((raw as any).id) : existingSolve?.submissionId,
+        timeUsed: existingSolve?.timeUsed ?? (raw as any).solveTime ?? undefined,
+        code:
+          existingSolve?.code ?? (raw as any).code ?? (raw as any).codeDetail?.code ?? undefined,
         difficulty: p.difficulty,
         tags: existingSolve?.tags ?? p.tags,
+
+        // Extension-enriched structures (all optional for backward compatibility)
+        submissionDetails: existingSolve?.submissionDetails ?? (raw as any).submissionDetails,
+        problemNote: existingSolve?.problemNote ?? (raw as any).problemNote ?? undefined,
+        codingJourney: (raw as any).codingJourney ?? existingSolve?.codingJourney,
+        runEvents: (raw as any).runEvents ?? existingSolve?.runEvents,
       };
 
       await db.saveSolve(solve);
