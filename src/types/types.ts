@@ -164,6 +164,8 @@ export interface RunEvent {
   totalCorrect: number | null;
   totalTestcases: number | null;
   runtimeError: string | null;
+  lastTestcase: string | null;
+  code: string | null;
   compareResult: unknown; // pass-through, structure varies by LC
   runtime: number | string | null;
   memory: number | string | null;

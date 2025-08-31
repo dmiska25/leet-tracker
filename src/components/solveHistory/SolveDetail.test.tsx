@@ -435,12 +435,18 @@ describe('<SolveDetail>', () => {
 
       // Check that the prompt contains all expected content
       await waitFor(() => {
+        // New header text from feedbackPrompt.ts
         expect(mockWriteText).toHaveBeenCalledWith(
-          expect.stringContaining('You are an expert coding-interview reviewer'),
+          expect.stringContaining(
+            'You are a seasoned algorithms mentor and coding interview coach.',
+          ),
         );
         expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('Two Sum'));
         expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('30 min'));
-        expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('LeetCode Hint'));
+        // Hints now shown in raw enum form inside the prompt
+        expect(mockWriteText).toHaveBeenCalledWith(
+          expect.stringContaining('Hints Used: leetcode_hint'),
+        );
         expect(mockWriteText).toHaveBeenCalledWith(
           expect.stringContaining('Had to think about edge cases'),
         );
