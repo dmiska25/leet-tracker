@@ -192,7 +192,7 @@ function rawPatchText(s: CodeSnapshot): string {
 /**
  * Build a rich feedback prompt:
  * - Header (instructions + metadata)
- * - Timeline (snapshots show patch text first; runs show code captured at run)
+ * - Timeline (snapshots/runs if available; otherwise note absence)
  * - Solve details + final code
  * - Problem description (reference)
  *
@@ -233,8 +233,8 @@ export async function buildFeedbackPrompt(solve: Solve): Promise<string> {
   headerParts.push(
     [
       `You are a seasoned algorithms mentor and coding interview coach.`,
-      `You are given a user's LeetCode submission details along with a timeline of their coding journey and run attempts.`,
-      `Analyze the behavior chronologically and provide constructive, **actionable** guidance.`,
+      `You may be given a user's LeetCode submission details along with a timeline of their coding journey and run attempts (if available).`,
+      `Analyze the behavior chronologically when the timeline is present and provide constructive, **actionable** guidance. If the timeline is not present, infer process from the final submission, any runtime/memory stats, and comments—be explicit about uncertainty.`,
       ``,
       `### Scoring Rubric & Anchors (Use this consistently)`,
       ``,
@@ -292,13 +292,16 @@ export async function buildFeedbackPrompt(solve: Solve): Promise<string> {
       `- 1: Severe blow-ups (e.g., quadratic where linear is standard).`,
       `- 0: Exponential/backtracking where polynomial is known; wrong data structure choice.`,
       ``,
-      `Process Subscore (0-5) — from the Timeline (snapshots & runs)`,
-      `- 5: Plans before running; purposeful iterations; targeted tests; few compile errors.`,
-      `- 4: Some planning; iterations mostly purposeful.`,
-      `- 3: Mixed; some thrash; visible course-corrections.`,
-      `- 2: Frequent thrash; many runs without clear improvements.`,
-      `- 1: Guess-and-check; repeated identical errors.`,
-      `- 0: No coherent process.`,
+      `Process Subscore (0-5) — from the Timeline (snapshots & runs, if available)`,
+      `- When timeline is available:`,
+      `  - 5: Plans before running; purposeful iterations; targeted tests; few compile errors.`,
+      `  - 4: Some planning; iterations mostly purposeful.`,
+      `  - 3: Mixed; some thrash; visible course-corrections.`,
+      `  - 2: Frequent thrash; many runs without clear improvements.`,
+      `  - 1: Guess-and-check; repeated identical errors.`,
+      `  - 0: No coherent process.`,
+      `- When timeline is not available: estimate from submission details and final code quality;`,
+      `  use neutral 3 if truly unknown and state uncertainty.`,
       ``,
       `Penalties (negative only, bounded total -8)`,
       `- Hint usage (0 to -5): none (0); LeetCode hint (-1); GPT help (-3); solution peek (-5).`,
@@ -323,7 +326,7 @@ export async function buildFeedbackPrompt(solve: Solve): Promise<string> {
       `Follow the rubric above strictly so scores are comparable across problems.`,
       ``,
       `### What to return (in this EXACT order):`,
-      `1) **Strategy Timeline Summary** — What happened chronologically; highlight key decisions, pivots, and where time was spent.`,
+      `1) **Strategy Timeline Summary (if available)** — What happened chronologically; highlight key decisions, pivots, and where time was spent. If no timeline is present, briefly infer likely strategy from the submission/stats and call out uncertainty.`,
       `2) **How to Improve Faster** — Specific feedback on how the user could reach an optimal solution sooner; common mistakes/misconceptions to address; concrete strategies to improve speed and efficiency for this and similar problems.`,
       `3) **Final Submission Review** — Critique of the final code and outcome (including any runtime/memory stats); correctness, complexity, clarity, and potential refactors.`,
       `4) **Legacy XML (at the very end)** — Include the XML block used by the app with the most important points echoed in the comments that the user can carry with them in future problems:`,
@@ -459,7 +462,9 @@ export async function buildFeedbackPrompt(solve: Solve): Promise<string> {
 
   // ---------------- Render timeline text ----------------
   const timelineParts: string[] = [];
-  timelineParts.push(`\n### Timeline (Snapshots & Runs)\n`);
+  timelineParts.push(`\n### Timeline (Snapshots & Runs — if available)\n`);
+
+  const hasTimeline = timeline.length > 0;
 
   // Runs overview (optional quick glance)
   if (runs && runs.length) {
@@ -470,47 +475,53 @@ export async function buildFeedbackPrompt(solve: Solve): Promise<string> {
     );
   }
 
-  for (const ev of timeline) {
-    if (ev.kind === 'snapshot') {
-      const s = snapshots[ev.idx];
-      const when = iso(s.timestamp ?? null);
-      const label = ev.note ? `snapshot #${ev.idx} (${ev.note})` : `snapshot #${ev.idx}`;
-      timelineParts.push(`- **${when} — ${label}**`);
-      // Include full reconstructed code if selected and available
-      if (ev.includeCode && ev.reconstructedCode) {
-        timelineParts.push(
-          `  - reconstructed code:\n\`\`\`\n${maybeTruncateCode(ev.reconstructedCode)}\n\`\`\``,
-        );
-      }
-      // Include patch if not including full code
-      else if (ev.patchIncluded && ev.patchIncluded.trim().length) {
-        timelineParts.push(`  - patch:\n\`\`\`\n${ev.patchIncluded}\n\`\`\``);
+  if (hasTimeline) {
+    for (const ev of timeline) {
+      if (ev.kind === 'snapshot') {
+        const s = snapshots[ev.idx];
+        const when = iso(s.timestamp ?? null);
+        const label = ev.note ? `snapshot #${ev.idx} (${ev.note})` : `snapshot #${ev.idx}`;
+        timelineParts.push(`- **${when} — ${label}**`);
+        // Include full reconstructed code if selected and available
+        if (ev.includeCode && ev.reconstructedCode) {
+          timelineParts.push(
+            `  - reconstructed code:\n\`\`\`\n${maybeTruncateCode(ev.reconstructedCode)}\n\`\`\``,
+          );
+        }
+        // Include patch if not including full code
+        else if (ev.patchIncluded && ev.patchIncluded.trim().length) {
+          timelineParts.push(`  - patch:\n\`\`\`\n${ev.patchIncluded}\n\`\`\``);
+        } else {
+          timelineParts.push(`  - patch: (no patch text captured)`);
+        }
       } else {
-        timelineParts.push(`  - patch: (no patch text captured)`);
-      }
-    } else {
-      const r = ev.run;
-      const when = iso(r.startedAt ?? null);
-      const ratio =
-        r.totalCorrect != null && r.totalTestcases != null
-          ? `${r.totalCorrect}/${r.totalTestcases}`
-          : 'n/a';
-      const rt = r.runtime != null ? `${r.runtime}` : 'n/a';
-      const mem = r.memory != null ? `${r.memory}` : 'n/a';
-      timelineParts.push(
-        `- **${when} — run**: status="${r.statusMsg}", cases=${ratio}, runtime=${rt}, memory=${mem}`,
-      );
-      if (r.runtimeError) timelineParts.push(`  - runtimeError: ${r.runtimeError}`);
-      if (typeof r.lastTestcase === 'string' && r.lastTestcase.length > 0) {
-        timelineParts.push(`  - lastTestcase: ${r.lastTestcase}`);
-      }
-      // Include exact code used at this run (if present)
-      if (ev.codeIncluded && ev.codeIncluded.trim().length) {
+        const r = ev.run;
+        const when = iso(r.startedAt ?? null);
+        const ratio =
+          r.totalCorrect != null && r.totalTestcases != null
+            ? `${r.totalCorrect}/${r.totalTestcases}`
+            : 'n/a';
+        const rt = r.runtime != null ? `${r.runtime}` : 'n/a';
+        const mem = r.memory != null ? `${r.memory}` : 'n/a';
         timelineParts.push(
-          `  - code at run:\n\`\`\`\n${maybeTruncateCode(ev.codeIncluded)}\n\`\`\``,
+          `- **${when} — run**: status="${r.statusMsg}", cases=${ratio}, runtime=${rt}, memory=${mem}`,
         );
+        if (r.runtimeError) timelineParts.push(`  - runtimeError: ${r.runtimeError}`);
+        if (typeof r.lastTestcase === 'string' && r.lastTestcase.length > 0) {
+          timelineParts.push(`  - lastTestcase: ${r.lastTestcase}`);
+        }
+        // Include exact code used at this run (if present)
+        if (ev.codeIncluded && ev.codeIncluded.trim().length) {
+          timelineParts.push(
+            `  - code at run:\n\`\`\`\n${maybeTruncateCode(ev.codeIncluded)}\n\`\`\``,
+          );
+        }
       }
     }
+  } else {
+    timelineParts.push(
+      `No timeline data was captured by the extension. If you need process insights, infer from submission details and the final code and be explicit about uncertainty (use a neutral process baseline of ~3 if unknown).`,
+    );
   }
 
   // ---------------- Solve details & final stats ----------------

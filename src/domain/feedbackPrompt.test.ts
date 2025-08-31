@@ -166,7 +166,7 @@ describe('buildFeedbackPrompt', () => {
       },
     });
 
-    expect(prompt).toContain('### Timeline (Snapshots & Runs)');
+    expect(prompt).toContain('### Timeline (Snapshots & Runs — if available)');
     // Snapshot lines (at least references to snapshot indices)
     expect(prompt).toContain('snapshot #0');
     expect(prompt).toContain('snapshot #1');
@@ -177,5 +177,20 @@ describe('buildFeedbackPrompt', () => {
     // Code at run (we include code when available)
     expect(prompt).toContain('code at run:');
     expect(prompt).toContain('function twoSum(a,b){return [0,1]}');
+  });
+
+  it('handles no timeline gracefully', async () => {
+    const prompt = await buildFeedbackPrompt({
+      ...baseSolve,
+      // No codingJourney, no runEvents
+    });
+
+    // Header still present, but we clearly indicate timeline may be absent
+    expect(prompt).toContain('### Timeline (Snapshots & Runs — if available)');
+    // The fallback note should appear
+    expect(prompt).toContain('No timeline data was captured by the extension.');
+    // Should not contain run lines or snapshot labels
+    expect(prompt).not.toMatch(/— run/);
+    expect(prompt).not.toContain('snapshot #0');
   });
 });
