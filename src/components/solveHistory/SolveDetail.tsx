@@ -227,8 +227,8 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     }
   };
 
-  /** Handle user approval for clipboard permission */
-  const handleClipboardPermissionApprove = async () => {
+  /** Handle continue from clipboard permission explanation dialog */
+  const handleClipboardPermissionContinue = async () => {
     setClipboardPermissionDialog('hidden');
 
     try {
@@ -239,23 +239,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     } catch (error) {
       // User denied or other error - fallback to manual input
       console.error('Clipboard permission denied:', error);
-      setXmlInputOpen(true);
-    }
-  };
-
-  /** Handle user denial for clipboard permission */
-  const handleClipboardPermissionDeny = async () => {
-    setClipboardPermissionDialog('hidden');
-
-    // Still trigger the Chrome prompt even if user said "No thanks"
-    // They might change their mind when they see the actual browser prompt
-    try {
-      await navigator.clipboard.readText();
-      // If they approve in Chrome, show thanks dialog
-      setClipboardPermissionDialog('thanking');
-    } catch (error) {
-      // User denied in Chrome or other error - fallback to manual input
-      console.error('Clipboard permission denied in Chrome:', error);
       setXmlInputOpen(true);
     }
   };
@@ -1134,15 +1117,12 @@ Expected format:
               and parse it for you.
             </p>
             <p className="text-sm text-muted-foreground mb-4">
-              <strong>This is optional.</strong> Either way, your browser will ask for final
-              permission. You can always paste feedback manually if you prefer.
+              Your browser will ask for permission to access your clipboard. You can approve or deny
+              this request as you prefer.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handleClipboardPermissionDeny}>
-                No thanks
-              </Button>
-              <Button onClick={handleClipboardPermissionApprove} autoFocus>
-                Enable clipboard reading
+              <Button onClick={handleClipboardPermissionContinue} autoFocus>
+                Continue
               </Button>
             </div>
           </div>
