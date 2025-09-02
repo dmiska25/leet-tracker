@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/toast';
-import { db } from '@/storage/db';
+import { db, markAiFeedbackUsed, getAiFeedbackUsed } from '@/storage/db';
 import type { Solve } from '@/types/types';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import type { HintType } from '@/types/types';
@@ -142,6 +142,19 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const [xmlText, setXmlText] = useState('');
   const [xmlError, setXmlError] = useState(false);
 
+  /** Trigger the help tooltip to show instructions */
+  const showHelpInstructions = () => {
+    try {
+      const helpButton = document.querySelector('[data-tooltip-id="feedback-help"]');
+      if (helpButton instanceof HTMLElement) {
+        helpButton.click();
+      }
+    } catch (error) {
+      // Silently fail in test environments or if tooltip library isn't available
+      console.debug('Could not trigger help instructions:', error);
+    }
+  };
+
   /** Check if we have clipboard read access */
   const canReadClipboard = async (): Promise<boolean> => {
     try {
@@ -160,6 +173,13 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   /** Smart import: auto-paste if possible, otherwise open manual input */
   const handleSmartImport = async () => {
     const hasClipboardAccess = await canReadClipboard();
+
+    // Check if this is the user's first time using the AI feedback workflow
+    const hasUsedBefore = getAiFeedbackUsed();
+    if (!hasUsedBefore) {
+      showHelpInstructions();
+      markAiFeedbackUsed();
+    }
 
     if (hasClipboardAccess) {
       trackPromptCopied(solve.slug);
@@ -193,6 +213,13 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     try {
       await navigator.clipboard.writeText(await buildFeedbackPrompt(solve));
       const hasClipboardAccess = await canReadClipboard();
+
+      // Check if this is the user's first time using the AI feedback workflow
+      const hasUsedBefore = getAiFeedbackUsed();
+      if (!hasUsedBefore) {
+        showHelpInstructions();
+        markAiFeedbackUsed();
+      }
 
       if (hasClipboardAccess) {
         // If we can read clipboard, don't auto-open - user can use smart import
@@ -294,9 +321,9 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       return true; // Success
     } catch (err) {
       console.error('[XML-import]', err);
-      const errorMsg = err instanceof Error ? err.message : 'Invalid XML format';
-      toast(`Import failed: ${errorMsg}`, 'error');
+      toast(`Import failed: please refer to the instructions below`, 'error');
       setXmlError(true);
+      showHelpInstructions(); // Show instructions when import fails
       return false; // Failure
     }
   };

@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import { db } from './db';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { db, markAiFeedbackUsed, getAiFeedbackUsed } from './db';
 import { Problem, Solve, GoalProfile, Difficulty } from '../types/types';
 
 const exampleProblem: Problem = {
@@ -49,9 +49,31 @@ const exampleProfile: GoalProfile = {
 };
 
 describe('db storage module', () => {
+  // Mock localStorage for AI feedback tests
+  const mockLocalStorage = (() => {
+    let store: Record<string, string> = {};
+    return {
+      getItem: vi.fn((key: string) => store[key] || null),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = String(value);
+      }),
+      clear: vi.fn(() => {
+        store = {};
+      }),
+    };
+  })();
+
+  // Replace the global localStorage with our mock
+  Object.defineProperty(global, 'localStorage', {
+    value: mockLocalStorage,
+  });
+
   afterEach(async () => {
     // Reset the username cache
     db._usernameCache = null;
+    // Clear localStorage and reset mocks
+    mockLocalStorage.clear();
+    vi.clearAllMocks();
     // IndexedDB persists across tests — clearing it ensures isolation
     await new Promise<void>((resolve) => {
       const deleteReq = indexedDB.deleteDatabase('leet-tracker-db');
@@ -355,6 +377,34 @@ describe('db storage module', () => {
 
       // This should not throw an error
       await expect(db.clearGoalProfiles()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('AI Feedback Usage Status', () => {
+    it('should handle AI feedback used flag operations', () => {
+      // Test getting false when not set
+      let result = getAiFeedbackUsed();
+      expect(result).toBe(false); // Should default to false
+
+      // Test setting used to true
+      markAiFeedbackUsed();
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('leettracker-ai-feedback-used', 'true');
+
+      // Test getting true value
+      result = getAiFeedbackUsed();
+      expect(result).toBe(true);
+    });
+
+    it('should persist across calls', () => {
+      // Initially false
+      expect(getAiFeedbackUsed()).toBe(false);
+
+      // Mark as used
+      markAiFeedbackUsed();
+      expect(getAiFeedbackUsed()).toBe(true);
+
+      // Should remain true on subsequent calls
+      expect(getAiFeedbackUsed()).toBe(true);
     });
   });
 });
