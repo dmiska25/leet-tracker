@@ -170,6 +170,25 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     }
   };
 
+  /** Check clipboard permission state without triggering permission prompt */
+  const getClipboardPermissionState = async (): Promise<
+    'granted' | 'denied' | 'prompt' | 'unsupported'
+  > => {
+    try {
+      // Check if the API exists
+      if (!navigator.permissions || !navigator.clipboard) {
+        return 'unsupported';
+      }
+
+      const permission = await navigator.permissions.query({
+        name: 'clipboard-read' as any,
+      });
+      return permission.state as 'granted' | 'denied' | 'prompt';
+    } catch {
+      return 'unsupported';
+    }
+  };
+
   /** Smart import: auto-paste if possible, otherwise open manual input */
   const handleSmartImport = async () => {
     const hasClipboardAccess = await canReadClipboard();
@@ -212,7 +231,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const handleCopyPrompt = async () => {
     try {
       await navigator.clipboard.writeText(await buildFeedbackPrompt(solve));
-      const hasClipboardAccess = await canReadClipboard();
 
       // Check if this is the user's first time using the AI feedback workflow
       const hasUsedBefore = getAiFeedbackUsed();
@@ -221,13 +239,16 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
         markAiFeedbackUsed();
       }
 
-      if (hasClipboardAccess) {
-        // If we can read clipboard, don't auto-open - user can use smart import
-        toast('Prompt copied - use "Import Feedback" to paste XML response.', 'success');
-      } else {
-        // No clipboard read access, auto-open for manual paste
+      // Check clipboard permission state to decide whether to open XML input
+      const permissionState = await getClipboardPermissionState();
+
+      if (permissionState === 'denied' || permissionState === 'unsupported') {
+        // User denied permission or clipboard unsupported - open manual input
         setXmlInputOpen(true);
         toast('Prompt copied - paste the XML reply in the box below.', 'success');
+      } else {
+        // Permission granted or not asked yet - user can use smart import
+        toast('Prompt copied - use "Import Feedback" to paste XML response.', 'success');
       }
     } catch {
       toast('Failed to copy prompt', 'error');
