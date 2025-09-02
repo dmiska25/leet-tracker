@@ -1,6 +1,5 @@
 import React from 'react';
 import clsx from 'clsx';
-import { ModeBadge } from '@/components/ModeBadge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { db } from '@/storage/db';
@@ -57,16 +56,15 @@ export default function HeaderNav({ view, onChange }: Props) {
   return (
     <nav className="border-b bg-card" data-tour="header-nav">
       <div className="max-w-6xl mx-auto flex h-16 items-center px-4 sm:px-6">
-        {/* Logo + mode pill */}
-        <div className="flex items-center gap-4">
+        {/* Logo */}
+        <div className="flex items-center">
           <h1 className="text-lg font-semibold">LeetTracker</h1>
-          <ModeBadge />
         </div>
 
         {/* Right-side controls */}
         <div className="ml-auto flex items-center gap-4">
           {/* View selector */}
-          <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 hidden sm:flex">
+          <div className="hidden sm:inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1">
             <NavBtn value="dashboard" label="Dashboard" className="dashboard-nav" />
             <NavBtn
               value="history"
@@ -76,6 +74,7 @@ export default function HeaderNav({ view, onChange }: Props) {
             />
           </div>
 
+          <ThemeToggle />
           <Button
             variant="ghost"
             onClick={() => window.dispatchEvent(new CustomEvent('leet:replay-tour'))}
@@ -85,7 +84,6 @@ export default function HeaderNav({ view, onChange }: Props) {
             Help
           </Button>
 
-          <ThemeToggle />
           <Button variant="ghost" onClick={handleSignOut}>
             Sign Out
           </Button>

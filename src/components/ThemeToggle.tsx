@@ -1,26 +1,32 @@
-import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/hooks/useTheme';
 
 export function ThemeToggle() {
-  // Track current theme based on the presence of the `dark` class
-  const [dark, setDark] = useState(
-    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'),
-  );
+  const { toggleTheme, theme } = useTheme();
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-  }, [dark]);
+  const getAriaLabel = () => {
+    return `Toggle theme (currently ${theme} mode)`;
+  };
 
   return (
     <Button
       variant="outline"
-      aria-label="Toggle theme"
-      className="relative h-8 w-8 p-0 flex items-center justify-center"
-      onClick={() => setDark((d) => !d)}
+      aria-label={getAriaLabel()}
+      className="flex items-center gap-2 h-8 px-3"
+      onClick={toggleTheme}
     >
-      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      {theme === 'dark' ? (
+        <>
+          <Moon className="h-4 w-4" />
+          <span className="text-sm">Dark Mode</span>
+        </>
+      ) : (
+        <>
+          <Sun className="h-4 w-4" />
+          <span className="text-sm">Light Mode</span>
+        </>
+      )}
     </Button>
   );
 }
