@@ -52,4 +52,6 @@ Object.defineProperty(globalThis, 'localStorage', {
       this.store = {};
     },
   },
+  writable: true,
+  configurable: true,
 });

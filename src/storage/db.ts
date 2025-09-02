@@ -497,10 +497,13 @@ export async function clearPrevUser() {
 /* ----------------------------------------------------------------------------
    AI Feedback workflow preference functions
 ---------------------------------------------------------------------------- */
+
+export const AI_FEEDBACK_USED_KEY = 'leettracker-ai-feedback-used';
+
 export function markAiFeedbackUsed() {
-  localStorage.setItem('leettracker-ai-feedback-used', 'true');
+  localStorage.setItem(AI_FEEDBACK_USED_KEY, 'true');
 }
 
 export function getAiFeedbackUsed(): boolean {
-  return localStorage.getItem('leettracker-ai-feedback-used') === 'true';
+  return localStorage.getItem(AI_FEEDBACK_USED_KEY) === 'true';
 }

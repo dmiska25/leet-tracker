@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { db, markAiFeedbackUsed, getAiFeedbackUsed } from './db';
+import { db, markAiFeedbackUsed, getAiFeedbackUsed, AI_FEEDBACK_USED_KEY } from './db';
 import { Problem, Solve, GoalProfile, Difficulty } from '../types/types';
 
 const exampleProblem: Problem = {
@@ -49,30 +49,16 @@ const exampleProfile: GoalProfile = {
 };
 
 describe('db storage module', () => {
-  // Mock localStorage for AI feedback tests
-  const mockLocalStorage = (() => {
-    let store: Record<string, string> = {};
-    return {
-      getItem: vi.fn((key: string) => store[key] || null),
-      setItem: vi.fn((key: string, value: string) => {
-        store[key] = String(value);
-      }),
-      clear: vi.fn(() => {
-        store = {};
-      }),
-    };
-  })();
-
-  // Replace the global localStorage with our mock
-  Object.defineProperty(global, 'localStorage', {
-    value: mockLocalStorage,
+  beforeEach(() => {
+    // Clear localStorage between tests
+    global.localStorage.clear();
   });
 
   afterEach(async () => {
     // Reset the username cache
     db._usernameCache = null;
-    // Clear localStorage and reset mocks
-    mockLocalStorage.clear();
+    // Restore all mocks
+    vi.restoreAllMocks();
     vi.clearAllMocks();
     // IndexedDB persists across tests — clearing it ensures isolation
     await new Promise<void>((resolve) => {
@@ -386,11 +372,13 @@ describe('db storage module', () => {
       let result = getAiFeedbackUsed();
       expect(result).toBe(false); // Should default to false
 
-      // Test setting used to true
+      // Test setting used to true and verify localStorage call
+      const setItemSpy = vi.spyOn(global.localStorage, 'setItem');
       markAiFeedbackUsed();
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('leettracker-ai-feedback-used', 'true');
+      expect(setItemSpy).toHaveBeenCalledWith(AI_FEEDBACK_USED_KEY, 'true');
+      setItemSpy.mockRestore();
 
-      // Test getting true value
+      // Test getting true value (localStorage was actually set)
       result = getAiFeedbackUsed();
       expect(result).toBe(true);
     });

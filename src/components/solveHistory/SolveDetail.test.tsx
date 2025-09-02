@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import { vi, describe, it, beforeEach, afterEach, expect } from 'vitest';
 
 import SolveDetail from './SolveDetail';
-import { db } from '@/storage/db';
+import { db, AI_FEEDBACK_USED_KEY } from '@/storage/db';
 import { Difficulty, Category, Solve } from '@/types/types';
 
 /* ------------------------------------------------------------------ */
@@ -30,6 +30,8 @@ vi.mock('@/storage/db', () => ({
   markAiFeedbackUsed: vi.fn(() => {
     localStorage.setItem('leettracker-ai-feedback-used', 'true');
   }),
+  // Export the constant for testing
+  AI_FEEDBACK_USED_KEY: 'leettracker-ai-feedback-used',
 }));
 
 const saveSolve = vi.mocked(db.saveSolve);
@@ -52,13 +54,14 @@ describe('<SolveDetail>', () => {
 
   beforeEach(() => {
     // Set AI feedback as already used to skip first-time user flow
-    localStorage.setItem('leettracker-ai-feedback-used', 'true');
+    localStorage.setItem(AI_FEEDBACK_USED_KEY, 'true');
 
     // Mock document.querySelector to prevent DOM manipulation issues in tests
     const mockQuerySelector = vi.fn().mockReturnValue(null);
     Object.defineProperty(document, 'querySelector', {
       value: mockQuerySelector,
       writable: true,
+      configurable: true,
     });
 
     saveSolve.mockResolvedValue('');
@@ -869,16 +872,18 @@ describe('<SolveDetail>', () => {
 
       await user.click(screen.getByRole('button', { name: /copy prompt/i }));
 
-      // Should mark AI feedback as used for first-time user
-      expect(localStorage.getItem('leettracker-ai-feedback-used')).toBe('true');
-      expect(mockWriteText).toHaveBeenCalled();
+      await waitFor(() => {
+        // Should mark AI feedback as used for first-time user
+        expect(localStorage.getItem(AI_FEEDBACK_USED_KEY)).toBe('true');
+        expect(mockWriteText).toHaveBeenCalled();
+      });
     });
 
     it('should NOT trigger help button for returning user when copying prompt', async () => {
       const user = userEvent.setup();
 
       // Mark user as having used AI feedback before
-      localStorage.setItem('leettracker-ai-feedback-used', 'true');
+      localStorage.setItem(AI_FEEDBACK_USED_KEY, 'true');
 
       // Mock clipboard
       const mockWriteText = vi.fn();
@@ -900,9 +905,11 @@ describe('<SolveDetail>', () => {
 
       await user.click(screen.getByRole('button', { name: /copy prompt/i }));
 
-      // Should NOT mark as used again for returning user - localStorage should remain unchanged
-      expect(localStorage.getItem('leettracker-ai-feedback-used')).toBe('true');
-      expect(mockWriteText).toHaveBeenCalled();
+      await waitFor(() => {
+        // Should NOT mark as used again for returning user - localStorage should remain unchanged
+        expect(localStorage.getItem(AI_FEEDBACK_USED_KEY)).toBe('true');
+        expect(mockWriteText).toHaveBeenCalled();
+      });
     });
 
     it('should trigger help button for first-time user when using smart import', async () => {
@@ -942,7 +949,7 @@ describe('<SolveDetail>', () => {
 
       await waitFor(() => {
         // Should mark AI feedback as used for first-time user
-        expect(localStorage.getItem('leettracker-ai-feedback-used')).toBe('true');
+        expect(localStorage.getItem(AI_FEEDBACK_USED_KEY)).toBe('true');
       });
     });
 
@@ -950,7 +957,7 @@ describe('<SolveDetail>', () => {
       const user = userEvent.setup();
 
       // Mark user as having used AI feedback before
-      localStorage.setItem('leettracker-ai-feedback-used', 'true');
+      localStorage.setItem(AI_FEEDBACK_USED_KEY, 'true');
 
       // Mock clipboard with valid XML
       const validXML = `<feedback>
@@ -986,7 +993,7 @@ describe('<SolveDetail>', () => {
 
       await waitFor(() => {
         // Should NOT mark as used again for returning user - localStorage should remain unchanged
-        expect(localStorage.getItem('leettracker-ai-feedback-used')).toBe('true');
+        expect(localStorage.getItem(AI_FEEDBACK_USED_KEY)).toBe('true');
       });
     });
 
@@ -998,6 +1005,7 @@ describe('<SolveDetail>', () => {
       Object.defineProperty(document, 'querySelector', {
         value: mockQuerySelector,
         writable: true,
+        configurable: true,
       });
 
       // Mock clipboard
@@ -1007,6 +1015,7 @@ describe('<SolveDetail>', () => {
           writeText: mockWriteText,
         },
         writable: true,
+        configurable: true,
       });
 
       render(
@@ -1025,7 +1034,7 @@ describe('<SolveDetail>', () => {
       expect(mockQuerySelector).toHaveBeenCalledWith('[data-tooltip-id="feedback-help"]');
 
       // Should mark AI feedback as used for first-time user
-      expect(localStorage.getItem('leettracker-ai-feedback-used')).toBe('true');
+      expect(localStorage.getItem(AI_FEEDBACK_USED_KEY)).toBe('true');
 
       // Should still copy the prompt successfully
       expect(mockWriteText).toHaveBeenCalled();
@@ -1056,8 +1065,10 @@ describe('<SolveDetail>', () => {
 
       await user.click(screen.getByRole('button', { name: /import feedback/i }));
 
-      // Should mark AI feedback as used for first-time user even when import fails
-      expect(localStorage.getItem('leettracker-ai-feedback-used')).toBe('true');
+      await waitFor(() => {
+        // Should mark AI feedback as used for first-time user even when import fails
+        expect(localStorage.getItem(AI_FEEDBACK_USED_KEY)).toBe('true');
+      });
     });
   });
 });
