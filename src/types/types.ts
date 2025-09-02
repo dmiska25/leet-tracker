@@ -82,7 +82,10 @@ export const allCategories = [
 
 export type Category = (typeof allCategories)[number] | 'Random';
 
-// Core LeetCode problem definition
+/* -------------------------------------------------------------------------- */
+/*                                Problem types                               */
+/* -------------------------------------------------------------------------- */
+
 export interface Problem {
   slug: string;
   title: string;
@@ -94,6 +97,93 @@ export interface Problem {
   isFundamental: boolean; // infered from ai model
   createdAt: number; // epoch time in seconds
 }
+
+/** Shape sometimes returned by the extension for problemDescription enrichment. */
+export interface ProblemDescription {
+  questionId?: string | number;
+  content?: string; // HTML
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          Extension-enriched structures                     */
+/* -------------------------------------------------------------------------- */
+
+/** Detailed submission stats from LeetCode's submissionDetails query. */
+export interface SubmissionDetails {
+  runtime?: number | string | null;
+  memory?: number | string | null;
+  runtimeDisplay?: string | null;
+  runtimePercentile?: number | null;
+  memoryDisplay?: string | null;
+  memoryPercentile?: number | null;
+  totalCorrect?: number | null;
+  totalTestcases?: number | null;
+  lastTestcase?: string | null;
+  codeOutput?: string | null;
+  expectedOutput?: string | null;
+  runtimeError?: string | null;
+  compileError?: string | null;
+  fullCodeOutput?: string | null;
+  notes?: string | null;
+}
+
+/** Individual code snapshot as captured by the extension. */
+export interface CodeSnapshot {
+  timestamp: number; // ms
+  patchText?: string; // new format (diff-match-patch)
+  checksumBefore?: string;
+  checksumAfter?: string;
+  encodingInfo?: string;
+  fullCode?: string; // present for checkpoints
+  isCheckpoint?: boolean;
+  /** Legacy support (older snapshot format) */
+  patch?: string;
+}
+
+/** Compact journey summary stored on solves, with optional detail enrichment. */
+export interface CodingJourneySummary {
+  snapshotCount: number;
+  totalCodingTime: number; // ms
+  firstSnapshot: number; // ms
+  lastSnapshot: number; // ms
+  hasDetailedJourney?: boolean;
+}
+
+/** Detailed journey including the full snapshot list (provided via inject_webapp.js). */
+export interface CodingJourneyDetailed extends CodingJourneySummary {
+  snapshots: CodeSnapshot[];
+}
+
+export type CodingJourney = CodingJourneySummary | CodingJourneyDetailed;
+
+/** Per-run summary captured from interpret_solution/check network events. */
+export interface RunEvent {
+  id: string | null;
+  startedAt: number | null; // ms since epoch, if available
+  statusMsg: string;
+  totalCorrect: number | null;
+  totalTestcases: number | null;
+  runtimeError: string | null;
+  lastTestcase: string | null;
+  code: string | null;
+  compareResult: unknown; // pass-through, structure varies by LC
+  runtime: number | string | null;
+  memory: number | string | null;
+}
+
+/** Run events attached to a submission with the capture window. */
+export interface RunEventsSummary {
+  count: number;
+  firstRun: number; // ms
+  lastRun: number; // ms
+  hasDetailedRuns?: boolean;
+  runs?: RunEvent[];
+  _window?: { startMs: number; endMs: number };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   Solve                                    */
+/* -------------------------------------------------------------------------- */
 
 // Single user solve attempt
 export type HintType = 'none' | 'leetcode_hint' | 'solution_peek' | 'gpt_help';
@@ -107,10 +197,28 @@ export interface Solve {
   code?: string; // full source code
   difficulty?: Difficulty; // ← optional at first, inferred from Problem DB
   tags?: Category[]; // ← optional at first, inferred from Problem DB
-  timeUsed?: number; // time used in seconds
+
+  /** Time used in seconds (mapped from extension's solveTime). */
+  timeUsed?: number;
+
   usedHints?: HintType;
   qualityScore?: number; // Optional: manual or GPT
   notes?: string; // Optional: user notes
+
+  /** Optional LeetCode submission identifier. */
+  submissionId?: string;
+
+  /** Optional problem note content captured by the extension. */
+  problemNote?: string | null;
+
+  /** Optional structured submission details. */
+  submissionDetails?: SubmissionDetails;
+
+  /** Optional coding journey summary or detailed snapshots. */
+  codingJourney?: CodingJourney;
+
+  /** Optional captured run events within the solve window. */
+  runEvents?: RunEventsSummary;
 
   /** Structured feedback (manual or AI-generated) */
   feedback?: {

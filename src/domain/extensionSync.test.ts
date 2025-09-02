@@ -61,17 +61,19 @@ describe('syncFromExtension', () => {
       ...mockProblems[0],
       description: 'Updated description',
     });
-    expect(db.saveSolve).toHaveBeenCalledWith({
-      slug: 'p1',
-      title: 'p1',
-      timestamp: 1234567890,
-      status: 'Accepted',
-      lang: 'ts',
-      timeUsed: 120,
-      code: 'console.log("solution");',
-      difficulty: Difficulty.Easy,
-      tags: ['Array'],
-    });
+    expect(db.saveSolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: 'p1',
+        title: 'p1',
+        timestamp: 1234567890,
+        status: 'Accepted',
+        lang: 'ts',
+        timeUsed: 120,
+        code: 'console.log("solution");',
+        difficulty: Difficulty.Easy,
+        tags: ['Array'],
+      }),
+    );
     expect(db.setExtensionLastTimestamp).toHaveBeenCalledWith(1234567890);
   });
 
@@ -124,16 +126,122 @@ describe('syncFromExtension', () => {
     const added = await syncFromExtension('testuser');
 
     expect(added).toBe(1); // One solve added
-    expect(db.saveSolve).toHaveBeenCalledWith({
-      slug: 'p1',
-      title: 'p1',
-      timestamp: 1234567890,
-      status: 'Accepted',
+    expect(db.saveSolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: 'p1',
+        title: 'p1',
+        timestamp: 1234567890,
+        status: 'Accepted',
+        lang: 'ts',
+        timeUsed: 300, // Preserved timeUsed
+        code: 'console.log("existing solution");', // Preserved code
+        difficulty: Difficulty.Easy,
+        tags: ['Greedy'], // Preserved tags
+      }),
+    );
+  });
+
+  it('ingests enriched fields from the extension (problemDescription object, submission details, journey, runs)', async () => {
+    // Override chunk data with enriched payload
+    const enrichedTs = 1234567891;
+    const enrichedSolve = {
+      id: '99999',
+      titleSlug: 'p1',
+      timestamp: enrichedTs,
+      statusDisplay: 'Accepted',
       lang: 'ts',
-      timeUsed: 300, // Preserved timeUsed
-      code: 'console.log("existing solution");', // Preserved code
-      difficulty: Difficulty.Easy,
-      tags: ['Greedy'], // Preserved tags
-    });
+      // prefer raw.code over codeDetail.code
+      code: 'print(42)',
+      codeDetail: { code: 'print("legacy")' },
+      solveTime: 42,
+      // problemDescription may be an object { content }
+      problemDescription: { questionId: '123', content: '<p>HTML</p>' },
+      problemNote: '<p>note</p>',
+      submissionDetails: {
+        runtime: 12,
+        memory: 34,
+        runtimeDisplay: '12 ms',
+        memoryDisplay: '34 MB',
+        totalCorrect: 10,
+        totalTestcases: 10,
+      },
+      // Injected via inject_webapp.js
+      codingJourney: {
+        snapshotCount: 2,
+        totalCodingTime: 3000,
+        firstSnapshot: 1700000000000,
+        lastSnapshot: 1700000003000,
+        hasDetailedJourney: true,
+        snapshots: [
+          { timestamp: 1700000000000, fullCode: 'a' },
+          { timestamp: 1700000003000, patchText: '@@ -1,1 +1,1 @@' },
+        ],
+      },
+      runEvents: {
+        count: 1,
+        firstRun: 1700000001000,
+        lastRun: 1700000002000,
+        hasDetailedRuns: true,
+        runs: [
+          {
+            id: 'r1',
+            startedAt: 1700000001000,
+            statusMsg: 'Accepted',
+            totalCorrect: 10,
+            totalTestcases: 10,
+            runtimeError: null,
+            compareResult: null,
+            runtime: '12 ms',
+            memory: '10 MB',
+          },
+        ],
+        _window: { startMs: 1700000000000, endMs: 1700000003000 },
+      },
+    };
+
+    vi.mocked(getChunk).mockResolvedValue([enrichedSolve]);
+
+    const added = await syncFromExtension('testuser');
+    expect(added).toBe(1);
+
+    // Problem description updated from object.content
+    expect(db.addOrUpdateProblem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ...mockProblems[0],
+        description: '<p>HTML</p>',
+      }),
+    );
+
+    // Saved solve contains enriched fields
+    expect(db.saveSolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: 'p1',
+        title: 'p1',
+        timestamp: enrichedTs,
+        status: 'Accepted',
+        lang: 'ts',
+        submissionId: '99999',
+        timeUsed: 42,
+        code: 'print(42)',
+        problemNote: '<p>note</p>',
+        submissionDetails: expect.objectContaining({
+          runtime: 12,
+          memory: 34,
+          totalCorrect: 10,
+          totalTestcases: 10,
+        }),
+        codingJourney: expect.objectContaining({
+          snapshotCount: 2,
+          totalCodingTime: 3000,
+        }),
+        runEvents: expect.objectContaining({
+          count: 1,
+          hasDetailedRuns: true,
+        }),
+      }),
+    );
+
+    // Newest timestamp should be updated
+    expect(db.setExtensionLastTimestamp).toHaveBeenCalledWith(enrichedTs);
   });
 });
