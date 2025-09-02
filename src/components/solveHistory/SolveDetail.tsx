@@ -207,7 +207,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
   /** Perform the actual clipboard read operation */
   const performClipboardRead = async () => {
-    trackPromptCopied(solve.slug);
     try {
       const clipboardText = await navigator.clipboard.readText();
       if (!clipboardText.trim()) {
@@ -274,6 +273,9 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const handleCopyPrompt = async () => {
     try {
       await navigator.clipboard.writeText(await buildFeedbackPrompt(solve));
+
+      // Track that the prompt was successfully copied
+      trackPromptCopied(solve.slug);
 
       // Check if this is the user's first time using the AI feedback workflow
       const hasUsedBefore = getAiFeedbackUsed();
