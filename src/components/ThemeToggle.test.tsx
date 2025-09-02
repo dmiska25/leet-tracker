@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 import { ThemeToggle } from './ThemeToggle';
 import { ModeBadge } from './ModeBadge';
@@ -9,10 +10,13 @@ import { ModeBadge } from './ModeBadge';
 const mockLocalStorage = (() => {
   let store: { [key: string]: string } = {};
   return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
       store[key] = value;
-    },
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
     clear: () => {
       store = {};
     },
@@ -21,6 +25,8 @@ const mockLocalStorage = (() => {
 
 Object.defineProperty(window, 'localStorage', {
   value: mockLocalStorage,
+  configurable: true,
+  writable: true,
 });
 
 // Mock matchMedia
