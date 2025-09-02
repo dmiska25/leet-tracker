@@ -8,6 +8,21 @@ vi.mock('posthog-js/react', () => ({
   PostHogProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+// Mock matchMedia for theme detection tests
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false, // Default to light theme in tests
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // Mock ResizeObserver for tests (used by react-tooltip)
 Object.defineProperty(globalThis, 'ResizeObserver', {
   value: class ResizeObserver {
