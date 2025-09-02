@@ -142,6 +142,11 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const [xmlText, setXmlText] = useState('');
   const [xmlError, setXmlError] = useState(false);
 
+  /* ---------- clipboard permission dialog ---------- */
+  const [clipboardPermissionDialog, setClipboardPermissionDialog] = useState<
+    'hidden' | 'requesting' | 'thanking'
+  >('hidden');
+
   /** Trigger the help tooltip to show instructions */
   const showHelpInstructions = () => {
     try {
@@ -152,21 +157,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     } catch (error) {
       // Silently fail in test environments or if tooltip library isn't available
       console.debug('Could not trigger help instructions:', error);
-    }
-  };
-
-  /** Check if we have clipboard read access */
-  const canReadClipboard = async (): Promise<boolean> => {
-    try {
-      // Check if the API exists and if we have permission
-      if (!navigator.clipboard || !navigator.clipboard.readText) {
-        return false;
-      }
-      // Try to read clipboard to test permissions
-      await navigator.clipboard.readText();
-      return true;
-    } catch {
-      return false;
     }
   };
 
@@ -191,8 +181,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
 
   /** Smart import: auto-paste if possible, otherwise open manual input */
   const handleSmartImport = async () => {
-    const hasClipboardAccess = await canReadClipboard();
-
     // Check if this is the user's first time using the AI feedback workflow
     const hasUsedBefore = getAiFeedbackUsed();
     if (!hasUsedBefore) {
@@ -200,29 +188,84 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       markAiFeedbackUsed();
     }
 
-    if (hasClipboardAccess) {
-      trackPromptCopied(solve.slug);
-      try {
-        const clipboardText = await navigator.clipboard.readText();
-        if (!clipboardText.trim()) {
-          toast('Clipboard is empty', 'error');
-          setXmlInputOpen(true);
-          return;
-        }
-        setXmlText(clipboardText);
-        const success = parseXmlFeedback(clipboardText);
-        if (success) {
-          setXmlInputOpen(false);
-          setXmlText('');
-        }
-      } catch (_) {
-        toast('Unable to read from clipboard', 'error');
-        setXmlInputOpen(true);
-      }
+    // Check current permission state
+    const permissionState = await getClipboardPermissionState();
+
+    if (permissionState === 'granted') {
+      // We have permission, proceed with clipboard read
+      return await performClipboardRead();
+    } else if (permissionState === 'prompt') {
+      // User hasn't been prompted yet - show our custom dialog first
+      setClipboardPermissionDialog('requesting');
+      return;
     } else {
-      // No clipboard access, open manual input
+      // Permission denied or unsupported - go straight to manual input
+      setXmlInputOpen(true);
+      return;
+    }
+  };
+
+  /** Perform the actual clipboard read operation */
+  const performClipboardRead = async () => {
+    trackPromptCopied(solve.slug);
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText.trim()) {
+        toast('Clipboard is empty', 'error');
+        setXmlInputOpen(true);
+        return;
+      }
+      setXmlText(clipboardText);
+      const success = parseXmlFeedback(clipboardText);
+      if (success) {
+        setXmlInputOpen(false);
+        setXmlText('');
+      }
+    } catch (error) {
+      console.error('Clipboard read error:', error);
+      toast('Unable to read from clipboard', 'error');
       setXmlInputOpen(true);
     }
+  };
+
+  /** Handle user approval for clipboard permission */
+  const handleClipboardPermissionApprove = async () => {
+    setClipboardPermissionDialog('hidden');
+
+    try {
+      // Request permission by attempting to read clipboard
+      await navigator.clipboard.readText();
+      // If successful, show thanks dialog
+      setClipboardPermissionDialog('thanking');
+    } catch (error) {
+      // User denied or other error - fallback to manual input
+      console.error('Clipboard permission denied:', error);
+      setXmlInputOpen(true);
+    }
+  };
+
+  /** Handle user denial for clipboard permission */
+  const handleClipboardPermissionDeny = async () => {
+    setClipboardPermissionDialog('hidden');
+
+    // Still trigger the Chrome prompt even if user said "No thanks"
+    // They might change their mind when they see the actual browser prompt
+    try {
+      await navigator.clipboard.readText();
+      // If they approve in Chrome, show thanks dialog
+      setClipboardPermissionDialog('thanking');
+    } catch (error) {
+      // User denied in Chrome or other error - fallback to manual input
+      console.error('Clipboard permission denied in Chrome:', error);
+      setXmlInputOpen(true);
+    }
+  };
+
+  /** Handle continuing after thanks dialog */
+  const handleClipboardThanks = async () => {
+    setClipboardPermissionDialog('hidden');
+    // Now proceed with the actual clipboard read since we have permission
+    await performClipboardRead();
   };
 
   // Prompt construction moved to domain/feedbackPrompt.ts
@@ -1070,6 +1113,64 @@ Expected format:
           </div>
         </ScrollArea>
       </CardContent>
+
+      {/* Clipboard Permission Dialog - Requesting */}
+      {clipboardPermissionDialog === 'requesting' && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50">
+          <div
+            className="max-w-md w-full rounded-lg border bg-card p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clipboard-permission-title"
+          >
+            <h3 id="clipboard-permission-title" className="text-lg font-semibold mb-2">
+              Enhanced Clipboard Feature
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              LeetTracker can read feedback directly from your clipboard for a seamless experience.
+              When you copy XML feedback from ChatGPT or other AI tools, we can automatically paste
+              and parse it for you.
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              <strong>This is optional.</strong> Either way, your browser will ask for final
+              permission. You can always paste feedback manually if you prefer.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={handleClipboardPermissionDeny}>
+                No thanks
+              </Button>
+              <Button onClick={handleClipboardPermissionApprove} autoFocus>
+                Enable clipboard reading
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clipboard Permission Dialog - Thanks */}
+      {clipboardPermissionDialog === 'thanking' && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50">
+          <div
+            className="max-w-md w-full rounded-lg border bg-card p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clipboard-thanks-title"
+          >
+            <h3 id="clipboard-thanks-title" className="text-lg font-semibold mb-2">
+              Thanks for confirming!
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              We can now read from your clipboard. This will make importing AI feedback much faster
+              and more convenient.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={handleClipboardThanks} autoFocus>
+                Continue
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
