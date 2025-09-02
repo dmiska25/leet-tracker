@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/toast';
-import { db } from '@/storage/db';
+import { db, markAiFeedbackUsed, getAiFeedbackUsed } from '@/storage/db';
 import type { Solve } from '@/types/types';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import type { HintType } from '@/types/types';
@@ -142,48 +142,112 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const [xmlText, setXmlText] = useState('');
   const [xmlError, setXmlError] = useState(false);
 
-  /** Check if we have clipboard read access */
-  const canReadClipboard = async (): Promise<boolean> => {
+  /* ---------- clipboard permission dialog ---------- */
+  const [clipboardPermissionDialog, setClipboardPermissionDialog] = useState<
+    'hidden' | 'requesting' | 'thanking'
+  >('hidden');
+
+  /** Trigger the help tooltip to show instructions */
+  const showHelpInstructions = () => {
     try {
-      // Check if the API exists and if we have permission
-      if (!navigator.clipboard || !navigator.clipboard.readText) {
-        return false;
+      const helpButton = document.querySelector('[data-tooltip-id="feedback-help"]');
+      if (helpButton instanceof HTMLElement) {
+        helpButton.click();
       }
-      // Try to read clipboard to test permissions
-      await navigator.clipboard.readText();
-      return true;
+    } catch (error) {
+      // Silently fail in test environments or if tooltip library isn't available
+      console.debug('Could not trigger help instructions:', error);
+    }
+  };
+
+  /** Check clipboard permission state without triggering permission prompt */
+  const getClipboardPermissionState = async (): Promise<
+    'granted' | 'denied' | 'prompt' | 'unsupported'
+  > => {
+    try {
+      // Check if the API exists
+      if (!navigator.permissions || !navigator.clipboard) {
+        return 'unsupported';
+      }
+
+      const permission = await navigator.permissions.query({
+        name: 'clipboard-read' as any,
+      });
+      return permission.state as 'granted' | 'denied' | 'prompt';
     } catch {
-      return false;
+      return 'unsupported';
     }
   };
 
   /** Smart import: auto-paste if possible, otherwise open manual input */
   const handleSmartImport = async () => {
-    const hasClipboardAccess = await canReadClipboard();
+    // Check if this is the user's first time using the AI feedback workflow
+    const hasUsedBefore = getAiFeedbackUsed();
+    if (!hasUsedBefore) {
+      showHelpInstructions();
+      markAiFeedbackUsed();
+    }
 
-    if (hasClipboardAccess) {
-      trackPromptCopied(solve.slug);
-      try {
-        const clipboardText = await navigator.clipboard.readText();
-        if (!clipboardText.trim()) {
-          toast('Clipboard is empty', 'error');
-          setXmlInputOpen(true);
-          return;
-        }
-        setXmlText(clipboardText);
-        const success = parseXmlFeedback(clipboardText);
-        if (success) {
-          setXmlInputOpen(false);
-          setXmlText('');
-        }
-      } catch (_) {
-        toast('Unable to read from clipboard', 'error');
-        setXmlInputOpen(true);
-      }
+    // Check current permission state
+    const permissionState = await getClipboardPermissionState();
+
+    if (permissionState === 'granted') {
+      // We have permission, proceed with clipboard read
+      return await performClipboardRead();
+    } else if (permissionState === 'prompt') {
+      // User hasn't been prompted yet - show our custom dialog first
+      setClipboardPermissionDialog('requesting');
+      return;
     } else {
-      // No clipboard access, open manual input
+      // Permission denied or unsupported - go straight to manual input
+      setXmlInputOpen(true);
+      return;
+    }
+  };
+
+  /** Perform the actual clipboard read operation */
+  const performClipboardRead = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText.trim()) {
+        toast('Clipboard is empty', 'error');
+        setXmlInputOpen(true);
+        return;
+      }
+      setXmlText(clipboardText);
+      const success = parseXmlFeedback(clipboardText);
+      if (success) {
+        setXmlInputOpen(false);
+        setXmlText('');
+      }
+    } catch (error) {
+      console.error('Clipboard read error:', error);
+      toast('Unable to read from clipboard', 'error');
       setXmlInputOpen(true);
     }
+  };
+
+  /** Handle continue from clipboard permission explanation dialog */
+  const handleClipboardPermissionContinue = async () => {
+    setClipboardPermissionDialog('hidden');
+
+    try {
+      // Request permission by attempting to read clipboard
+      await navigator.clipboard.readText();
+      // If successful, show thanks dialog
+      setClipboardPermissionDialog('thanking');
+    } catch (error) {
+      // User denied or other error - fallback to manual input
+      console.error('Clipboard permission denied:', error);
+      setXmlInputOpen(true);
+    }
+  };
+
+  /** Handle continuing after thanks dialog */
+  const handleClipboardThanks = async () => {
+    setClipboardPermissionDialog('hidden');
+    // Now proceed with the actual clipboard read since we have permission
+    await performClipboardRead();
   };
 
   // Prompt construction moved to domain/feedbackPrompt.ts
@@ -192,15 +256,27 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const handleCopyPrompt = async () => {
     try {
       await navigator.clipboard.writeText(await buildFeedbackPrompt(solve));
-      const hasClipboardAccess = await canReadClipboard();
 
-      if (hasClipboardAccess) {
-        // If we can read clipboard, don't auto-open - user can use smart import
-        toast('Prompt copied - use "Import Feedback" to paste XML response.', 'success');
-      } else {
-        // No clipboard read access, auto-open for manual paste
+      // Track that the prompt was successfully copied
+      trackPromptCopied(solve.slug);
+
+      // Check if this is the user's first time using the AI feedback workflow
+      const hasUsedBefore = getAiFeedbackUsed();
+      if (!hasUsedBefore) {
+        showHelpInstructions();
+        markAiFeedbackUsed();
+      }
+
+      // Check clipboard permission state to decide whether to open XML input
+      const permissionState = await getClipboardPermissionState();
+
+      if (permissionState === 'denied' || permissionState === 'unsupported') {
+        // User denied permission or clipboard unsupported - open manual input
         setXmlInputOpen(true);
         toast('Prompt copied - paste the XML reply in the box below.', 'success');
+      } else {
+        // Permission granted or not asked yet - user can use smart import
+        toast('Prompt copied - use "Import Feedback" to paste XML response.', 'success');
       }
     } catch {
       toast('Failed to copy prompt', 'error');
@@ -294,9 +370,9 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       return true; // Success
     } catch (err) {
       console.error('[XML-import]', err);
-      const errorMsg = err instanceof Error ? err.message : 'Invalid XML format';
-      toast(`Import failed: ${errorMsg}`, 'error');
+      toast(`Import failed: please refer to the instructions below`, 'error');
       setXmlError(true);
+      showHelpInstructions(); // Show instructions when import fails
       return false; // Failure
     }
   };
@@ -1022,6 +1098,61 @@ Expected format:
           </div>
         </ScrollArea>
       </CardContent>
+
+      {/* Clipboard Permission Dialog - Requesting */}
+      {clipboardPermissionDialog === 'requesting' && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50">
+          <div
+            className="max-w-md w-full rounded-lg border bg-card p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clipboard-permission-title"
+          >
+            <h3 id="clipboard-permission-title" className="text-lg font-semibold mb-2">
+              Enhanced Clipboard Feature
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              LeetTracker can read feedback directly from your clipboard for a seamless experience.
+              When you copy XML feedback from ChatGPT or other AI tools, we can automatically paste
+              and parse it for you.
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Your browser will ask for permission to access your clipboard. You can approve or deny
+              this request as you prefer.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={handleClipboardPermissionContinue} autoFocus>
+                Continue
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clipboard Permission Dialog - Thanks */}
+      {clipboardPermissionDialog === 'thanking' && (
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50">
+          <div
+            className="max-w-md w-full rounded-lg border bg-card p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clipboard-thanks-title"
+          >
+            <h3 id="clipboard-thanks-title" className="text-lg font-semibold mb-2">
+              Thanks for confirming!
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              We can now read from your clipboard. This will make importing AI feedback much faster
+              and more convenient.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button onClick={handleClipboardThanks} autoFocus>
+                Continue
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

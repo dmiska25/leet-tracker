@@ -493,3 +493,17 @@ export async function getPrevUser(): Promise<string | undefined> {
 export async function clearPrevUser() {
   await db.deleteAppPref('tutorial.prevUser');
 }
+
+/* ----------------------------------------------------------------------------
+   AI Feedback workflow preference functions
+---------------------------------------------------------------------------- */
+
+export const AI_FEEDBACK_USED_KEY = 'leettracker-ai-feedback-used';
+
+export function markAiFeedbackUsed() {
+  localStorage.setItem(AI_FEEDBACK_USED_KEY, 'true');
+}
+
+export function getAiFeedbackUsed(): boolean {
+  return localStorage.getItem(AI_FEEDBACK_USED_KEY) === 'true';
+}
