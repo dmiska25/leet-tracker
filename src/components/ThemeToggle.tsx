@@ -13,11 +13,20 @@ export function ThemeToggle() {
     <Button
       variant="outline"
       aria-label={getAriaLabel()}
-      className="relative h-8 w-8 p-0 flex items-center justify-center"
+      className="flex items-center gap-2 h-8 px-3"
       onClick={toggleTheme}
     >
-      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      {theme === 'dark' ? (
+        <>
+          <Moon className="h-4 w-4" />
+          <span className="text-sm">Dark Mode</span>
+        </>
+      ) : (
+        <>
+          <Sun className="h-4 w-4" />
+          <span className="text-sm">Light Mode</span>
+        </>
+      )}
     </Button>
   );
 }

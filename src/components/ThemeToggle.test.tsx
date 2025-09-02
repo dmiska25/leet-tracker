@@ -4,7 +4,6 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 import { ThemeToggle } from './ThemeToggle';
-import { ModeBadge } from './ModeBadge';
 
 // Mock localStorage
 const mockLocalStorage = (() => {
@@ -42,19 +41,14 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
-describe('ThemeToggle & ModeBadge', () => {
+describe('ThemeToggle', () => {
   beforeEach(() => {
     mockLocalStorage.clear();
     document.documentElement.className = '';
   });
 
   it('shows correct initial theme state', async () => {
-    render(
-      <>
-        <ThemeToggle />
-        <ModeBadge />
-      </>,
-    );
+    render(<ThemeToggle />);
 
     // Should start with light mode (system default in test)
     expect(screen.getByText('Light Mode')).toBeInTheDocument();
@@ -62,12 +56,7 @@ describe('ThemeToggle & ModeBadge', () => {
 
   it('theme toggle switches between light and dark', async () => {
     const user = userEvent.setup();
-    render(
-      <>
-        <ThemeToggle />
-        <ModeBadge />
-      </>,
-    );
+    render(<ThemeToggle />);
 
     // Should start with light mode
     expect(screen.getByText('Light Mode')).toBeInTheDocument();
