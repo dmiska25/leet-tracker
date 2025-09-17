@@ -8,6 +8,7 @@ import type {
   RunEvent,
   Problem,
 } from '@/types/types';
+import { reconstructWithCache, type ReconCache } from './timelineProcessing';
 
 /**
  * Max tokens for the prompt. Configurable via env, default 32768.
@@ -44,97 +45,6 @@ function iso(tsMs: number | null | undefined): string {
   if (!tsMs || tsMs <= 0) return 'unknown';
   const d = new Date(tsMs);
   return `${d.toISOString().replace('.000Z', 'Z')}`;
-}
-
-/* -------------------------------------------------------------------------- */
-/*                 diff-match-patch: single cached instance                    */
-/* -------------------------------------------------------------------------- */
-
-let _dmpInstance: any | null = null;
-async function getDMP(): Promise<any | null> {
-  if (_dmpInstance) return _dmpInstance;
-  try {
-    const mod: any = await import('diff-match-patch');
-    const Ctor = mod.diff_match_patch || mod;
-    _dmpInstance = new Ctor();
-    return _dmpInstance;
-  } catch {
-    return null;
-  }
-}
-
-/** Apply a dmp patch string to the previous text, or return prev on failure. */
-async function applyPatch(prev: string, patchText: string): Promise<string> {
-  const dmp = await getDMP();
-  if (!dmp) return prev;
-  try {
-    const patches = dmp.patch_fromText(patchText);
-    const [next] = dmp.patch_apply(patches, prev);
-    return typeof next === 'string' ? next : prev;
-  } catch {
-    return prev;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/*            Reconstruction helpers with incremental caching                  */
-/* -------------------------------------------------------------------------- */
-
-type ReconCache = { lastIdx: number; code: string } | null;
-
-/** Return the nearest checkpoint index ≤ target, or -1 if none. */
-function nearestCheckpointIndex(snapshots: CodeSnapshot[], targetIdx: number): number {
-  for (let i = targetIdx; i >= 0; i--) {
-    if (typeof snapshots[i]?.fullCode === 'string') return i;
-  }
-  return -1;
-}
-
-/**
- * Reconstruct code at target index using:
- * 1) incremental cache if it exists and ≤ target, otherwise
- * 2) nearest earlier checkpoint with `fullCode`.
- * Applies patches forward from base to target.
- */
-async function reconstructWithCache(
-  snapshots: CodeSnapshot[],
-  targetIdx: number,
-  cache: ReconCache,
-): Promise<{ code?: string; cache: ReconCache }> {
-  if (targetIdx < 0 || targetIdx >= snapshots.length) return { code: undefined, cache };
-  // Choose base: prefer cache if it's ahead of the nearest checkpoint and ≤ target
-  const cpIdx = nearestCheckpointIndex(snapshots, targetIdx);
-  let baseIdx = cpIdx;
-  let code: string | undefined;
-
-  if (cache && cache.lastIdx >= 0 && cache.lastIdx <= targetIdx) {
-    // If cache is usable and more recent than checkpoint, start from cache
-    if (cache.lastIdx >= cpIdx) {
-      baseIdx = cache.lastIdx;
-      code = cache.code;
-    }
-  }
-
-  if (code === undefined) {
-    if (baseIdx === -1) return { code: undefined, cache }; // no base available
-    code = snapshots[baseIdx].fullCode as string;
-  }
-
-  // Walk forward applying patches or using fullCode checkpoints
-  for (let i = baseIdx + 1; i <= targetIdx; i++) {
-    const s = snapshots[i];
-    if (typeof s.fullCode === 'string') {
-      code = s.fullCode;
-    } else if (s.patchText) {
-      code = await applyPatch(code, s.patchText);
-    } else if (s.patch) {
-      code = await applyPatch(code, s.patch);
-    } else {
-      // no change
-    }
-  }
-
-  return { code, cache: { lastIdx: targetIdx, code } };
 }
 
 /* -------------------------------------------------------------------------- */
