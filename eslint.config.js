@@ -72,6 +72,6 @@ export default defineConfig([
     },
   },
   {
-    ignores: ['dist/*'],
+    ignores: ['dist/*', 'artifacts/**/*'],
   },
 ]);
