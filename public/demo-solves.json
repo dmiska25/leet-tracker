@@ -573,7 +573,153 @@
     "lang": "python3",
     "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n                return root\n        return None",
     "timeUsed": 540,
-    "usedHints": "none"
+    "usedHints": "none",
+    "codingJourney": {
+      "snapshots": [
+        {
+          "timestamp": 1746696120000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        # TODO: implement\n        pass",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746696174000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        # TODO: implement\n        pass",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746696228000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        # TODO: implement\n        pass",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746696282000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n        # TODO: complete",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746696336000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n        # TODO: complete",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746696390000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n        # TODO: return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746696444000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n        # TODO: return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746696498000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n        # TODO: return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746696552000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n                return root\n        return None",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746696606000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n                return root\n        return None",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746696660000,
+          "fullCode": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n                return root\n        return None",
+          "isCheckpoint": true
+        }
+      ],
+      "snapshotCount": 11,
+      "totalCodingTime": 540000,
+      "firstSnapshot": 1746696120000,
+      "lastSnapshot": 1746696660000,
+      "hasDetailedJourney": true
+    },
+    "runEvents": {
+      "count": 4,
+      "firstRun": 1746696187500,
+      "lastRun": 1746696592500,
+      "hasDetailedRuns": true,
+      "runs": [
+        {
+          "id": "run_1758155029479_0",
+          "startedAt": 1746696187500,
+          "statusMsg": "Wrong Answer",
+          "totalCorrect": 46,
+          "totalTestcases": 75,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        # TODO: implement\n        pass",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029479_1",
+          "startedAt": 1746696322500,
+          "statusMsg": "Time Limit Exceeded",
+          "totalCorrect": 44,
+          "totalTestcases": 64,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n        # TODO: complete",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029479_2",
+          "startedAt": 1746696457500,
+          "statusMsg": "Time Limit Exceeded",
+          "totalCorrect": 48,
+          "totalTestcases": 63,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n        # TODO: return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029479_3",
+          "startedAt": 1746696592500,
+          "statusMsg": "Accepted",
+          "totalCorrect": 67,
+          "totalTestcases": 71,
+          "runtimeError": null,
+          "lastTestcase": null,
+          "code": "class Solution:\n    def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':\n        while root:\n            if p.val < root.val and q.val < root.val:\n                root = root.left\n            elif p.val > root.val and q.val > root.val:\n                root = root.right\n            else:\n                return root\n        return None",
+          "compareResult": null,
+          "runtime": 140,
+          "memory": 10
+        }
+      ],
+      "_window": {
+        "startMs": 1746696120000,
+        "endMs": 1746696660000
+      }
+    },
+    "feedback": {
+      "performance": {
+        "time_to_solve": 2,
+        "time_complexity": "O(h)",
+        "space_complexity": "O(1)",
+        "comments": "Slow start with 9min of TODO code, then rushed implementation causing TLE bugs. Timeline shows multiple failed runs before fixing the missing conditions."
+      },
+      "code_quality": {
+        "readability": 4,
+        "correctness": 5,
+        "maintainability": 4,
+        "comments": "Final solution is clean and correct. Code evolution shows good BST property understanding after initial struggle."
+      },
+      "summary": {
+        "final_score": 72,
+        "comments": "Scores: time=2, correctness=5, readability=4, maintainability=4, process=2, algorithmic_efficiency=5, penalties=-1. Timeline reveals planning issues: start coding sooner, test incrementally. The 3 failed runs could be avoided with better edge case consideration."
+      }
+    }
   },
   {
     "slug": "binary-tree-inorder-traversal",
@@ -583,7 +729,176 @@
     "lang": "python3",
     "code": "class Solution:\n    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def inorder(node):\n            if node:\n                inorder(node.left)\n                result.append(node.val)\n                inorder(node.right)\n        \n        inorder(root)\n        return result",
     "timeUsed": 300,
-    "usedHints": "none"
+    "usedHints": "none",
+    "codingJourney": {
+      "snapshots": [
+        {
+          "timestamp": 1746726360000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746726385000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726410000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726435000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726460000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746726485000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726510000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726535000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726560000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726585000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746726610000,
+          "fullCode": "class Solution:\n    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def inorder(node):\n            if node:\n                inorder(node.left)\n                result.append(node.val)\n                inorder(node.right)\n        \n        inorder(root)\n        return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746726635000,
+          "fullCode": "class Solution:\n    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def inorder(node):\n            if node:\n                inorder(node.left)\n                result.append(node.val)\n                inorder(node.right)\n        \n        inorder(root)\n        return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746726660000,
+          "fullCode": "class Solution:\n    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def inorder(node):\n            if node:\n                inorder(node.left)\n                result.append(node.val)\n                inorder(node.right)\n        \n        inorder(root)\n        return result",
+          "isCheckpoint": true
+        }
+      ],
+      "snapshotCount": 13,
+      "totalCodingTime": 300000,
+      "firstSnapshot": 1746726360000,
+      "lastSnapshot": 1746726660000,
+      "hasDetailedJourney": true
+    },
+    "runEvents": {
+      "count": 5,
+      "firstRun": 1746726390000,
+      "lastRun": 1746726630000,
+      "hasDetailedRuns": true,
+      "runs": [
+        {
+          "id": "run_1758155029478_0",
+          "startedAt": 1746726390000,
+          "statusMsg": "Time Limit Exceeded",
+          "totalCorrect": 28,
+          "totalTestcases": 76,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_1",
+          "startedAt": 1746726450000,
+          "statusMsg": "Wrong Answer",
+          "totalCorrect": 20,
+          "totalTestcases": 60,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_2",
+          "startedAt": 1746726510000,
+          "statusMsg": "Runtime Error",
+          "totalCorrect": 58,
+          "totalTestcases": 63,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n        \n        preorder(root)\n        return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_3",
+          "startedAt": 1746726570000,
+          "statusMsg": "Time Limit Exceeded",
+          "totalCorrect": 31,
+          "totalTestcases": 74,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_4",
+          "startedAt": 1746726630000,
+          "statusMsg": "Accepted",
+          "totalCorrect": 64,
+          "totalTestcases": 74,
+          "runtimeError": null,
+          "lastTestcase": null,
+          "code": "class Solution:\n    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def inorder(node):\n            if node:\n                inorder(node.left)\n                result.append(node.val)\n                inorder(node.right)\n        \n        inorder(root)\n        return result",
+          "compareResult": null,
+          "runtime": 99,
+          "memory": 13
+        }
+      ],
+      "_window": {
+        "startMs": 1746726360000,
+        "endMs": 1746726660000
+      }
+    },
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h)",
+        "comments": "Good 5min solve but timeline shows confusion between pre/in/postorder initially. Multiple TLE runs suggest missing base cases or infinite recursion in early attempts."
+      },
+      "code_quality": {
+        "readability": 5,
+        "correctness": 5,
+        "maintainability": 5,
+        "comments": "Clean recursive solution with proper helper function. Timeline evolution shows good debugging process from broken recursion to correct implementation."
+      },
+      "summary": {
+        "final_score": 82,
+        "comments": "Scores: time=3, correctness=5, readability=5, maintainability=5, process=4, algorithmic_efficiency=5. Timeline insight: practice distinguishing traversal types quickly, add base case checks first to avoid TLE iterations."
+      }
+    }
   },
   {
     "slug": "binary-tree-postorder-traversal",
@@ -599,17 +914,135 @@
         "time_to_solve": 2,
         "time_complexity": "O(n)",
         "space_complexity": "O(h)",
-        "comments": "Correct implementation of postorder traversal using recursion."
+        "comments": "Good 5min solve but timeline reveals function name confusion. Spent most time implementing preorderTraversal logic, then had to pivot to correct postorder semantics at the end."
       },
       "code_quality": {
-        "readability": 5,
+        "readability": 4,
         "correctness": 5,
-        "maintainability": 5,
-        "comments": "Well-structured code with clear recursive logic."
+        "maintainability": 4,
+        "comments": "Final solution is correct and clean. Timeline shows methodical development but function name mixup caused 3 failed runs before realizing traversal order issue."
       },
       "summary": {
-        "final_score": 90,
-        "comments": "Excellent understanding of tree traversal techniques."
+        "final_score": 74,
+        "comments": "Scores: time=2, correctness=5, readability=4, maintainability=4, process=2, algorithmic_efficiency=5, penalties=-1. Timeline insight: read problem statement carefully - the entire timeline shows preorder implementation until final correction to postorder."
+      }
+    },
+    "codingJourney": {
+      "snapshots": [
+        {
+          "timestamp": 1746756360000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746756397500,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746756435000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746756472500,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746756510000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746756547500,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746756585000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746756622500,
+          "fullCode": "class Solution:\n    def postorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def postorder(node):\n            if node:\n                postorder(node.left)\n                postorder(node.right)\n                result.append(node.val)\n        \n        postorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746756660000,
+          "fullCode": "class Solution:\n    def postorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def postorder(node):\n            if node:\n                postorder(node.left)\n                postorder(node.right)\n                result.append(node.val)\n        \n        postorder(root)\n        return result",
+          "isCheckpoint": true
+        }
+      ],
+      "snapshotCount": 9,
+      "totalCodingTime": 300000,
+      "firstSnapshot": 1746756360000,
+      "lastSnapshot": 1746756660000,
+      "hasDetailedJourney": true
+    },
+    "runEvents": {
+      "count": 4,
+      "firstRun": 1746756397500,
+      "lastRun": 1746756622500,
+      "hasDetailedRuns": true,
+      "runs": [
+        {
+          "id": "run_1758155029478_0",
+          "startedAt": 1746756397500,
+          "statusMsg": "Runtime Error",
+          "totalCorrect": 41,
+          "totalTestcases": 78,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_1",
+          "startedAt": 1746756472500,
+          "statusMsg": "Runtime Error",
+          "totalCorrect": 36,
+          "totalTestcases": 70,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_2",
+          "startedAt": 1746756547500,
+          "statusMsg": "Wrong Answer",
+          "totalCorrect": 27,
+          "totalTestcases": 71,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_3",
+          "startedAt": 1746756622500,
+          "statusMsg": "Accepted",
+          "totalCorrect": 69,
+          "totalTestcases": 78,
+          "runtimeError": null,
+          "lastTestcase": null,
+          "code": "class Solution:\n    def postorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def postorder(node):\n            if node:\n                postorder(node.left)\n                postorder(node.right)\n                result.append(node.val)\n        \n        postorder(root)\n        return result",
+          "compareResult": null,
+          "runtime": 111,
+          "memory": 12
+        }
+      ],
+      "_window": {
+        "startMs": 1746756360000,
+        "endMs": 1746756660000
       }
     }
   },
@@ -624,20 +1057,148 @@
     "usedHints": "none",
     "feedback": {
       "performance": {
-        "time_to_solve": 2,
+        "time_to_solve": 3,
         "time_complexity": "O(n)",
         "space_complexity": "O(h)",
-        "comments": "Standard tree traversal implemented correctly. Good understanding of recursion."
+        "comments": "Solid 5min solve time but timeline shows incremental build-up. Early snapshots missing recursive calls, causing failed runs until complete implementation emerged."
       },
       "code_quality": {
-        "readability": 5,
+        "readability": 4,
         "correctness": 5,
-        "maintainability": 5,
-        "comments": "Well-structured code with clear recursive logic."
+        "maintainability": 4,
+        "comments": "Clean final solution with proper helper function. Timeline evolution shows methodical development: setup structure first, then add recursive logic step-by-step."
       },
       "summary": {
-        "final_score": 90,
-        "comments": "Excellent implementation of tree traversal techniques."
+        "final_score": 81,
+        "comments": "Scores: time=3, correctness=5, readability=4, maintainability=4, process=4, algorithmic_efficiency=5. Timeline insight: commit to full recursive structure earlier to avoid incomplete-logic runs. The 3 failed attempts show missing left/right calls in intermediate versions."
+      }
+    },
+    "codingJourney": {
+      "snapshots": [
+        {
+          "timestamp": 1746786360000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746786390000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746786420000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746786450000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746786480000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746786510000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746786540000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746786570000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746786600000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746786630000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746786660000,
+          "fullCode": "class Solution:\n    def preorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "isCheckpoint": true
+        }
+      ],
+      "snapshotCount": 11,
+      "totalCodingTime": 300000,
+      "firstSnapshot": 1746786360000,
+      "lastSnapshot": 1746786660000,
+      "hasDetailedJourney": true
+    },
+    "runEvents": {
+      "count": 4,
+      "firstRun": 1746786397500,
+      "lastRun": 1746786622500,
+      "hasDetailedRuns": true,
+      "runs": [
+        {
+          "id": "run_1758155029478_0",
+          "startedAt": 1746786397500,
+          "statusMsg": "Runtime Error",
+          "totalCorrect": 59,
+          "totalTestcases": 77,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        # TODO: implement\n        return []",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_1",
+          "startedAt": 1746786472500,
+          "statusMsg": "Wrong Answer",
+          "totalCorrect": 28,
+          "totalTestcases": 63,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        # TODO: add traversal logic\n        return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_2",
+          "startedAt": 1746786547500,
+          "statusMsg": "Wrong Answer",
+          "totalCorrect": 20,
+          "totalTestcases": 62,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def preorderTraversal(self, root):\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_3",
+          "startedAt": 1746786622500,
+          "statusMsg": "Accepted",
+          "totalCorrect": 73,
+          "totalTestcases": 62,
+          "runtimeError": null,
+          "lastTestcase": null,
+          "code": "class Solution:\n    def preorderTraversal(self, root: Optional[TreeNode]) -> List[int]:\n        result = []\n        \n        def preorder(node):\n            if node:\n                result.append(node.val)\n                preorder(node.left)\n                preorder(node.right)\n        \n        preorder(root)\n        return result",
+          "compareResult": null,
+          "runtime": 91,
+          "memory": 11
+        }
+      ],
+      "_window": {
+        "startMs": 1746786360000,
+        "endMs": 1746786660000
       }
     }
   },
@@ -649,6 +1210,170 @@
     "lang": "python3",
     "code": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        \n        return -1",
     "timeUsed": 360,
-    "usedHints": "none"
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "O(n*m)",
+        "space_complexity": "O(1)",
+        "comments": "Good 6min solve but timeline shows classic off-by-one struggle. Initial implementation had range bounds error causing index out of bounds, fixed after multiple failed runs."
+      },
+      "code_quality": {
+        "readability": 4,
+        "correctness": 5,
+        "maintainability": 4,
+        "comments": "Final solution is clean and correct. Timeline evolution shows methodical debugging: identified range issue and applied proper bounds (len(haystack) - len(needle) + 1)."
+      },
+      "summary": {
+        "final_score": 78,
+        "comments": "Scores: time=3, correctness=5, readability=4, maintainability=4, process=3, algorithmic_efficiency=4. Timeline insight: watch for edge case testing - the multiple failed runs show bounds checking is critical for substring problems."
+      }
+    },
+    "codingJourney": {
+      "snapshots": [
+        {
+          "timestamp": 1746878040000,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        # TODO: implement\n        pass",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746878072727,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        # TODO: implement\n        pass",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746878105454,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        # TODO: implement\n        pass",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746878138181,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        # TODO: add logic",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746878170909,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        # TODO: add logic",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746878203636,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack)):\n            if haystack[i:i+len(needle)] == needle:\n                return i\n        return -1",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746878236363,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack)):\n            if haystack[i:i+len(needle)] == needle:\n                return i\n        return -1",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746878269090,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        # Fix bounds check\n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        return -1",
+          "isCheckpoint": true
+        },
+        {
+          "timestamp": 1746878301818,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        # Fix bounds check\n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        return -1",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746878334545,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        \n        return -1",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746878367272,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        \n        return -1",
+          "isCheckpoint": false
+        },
+        {
+          "timestamp": 1746878400000,
+          "fullCode": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        \n        return -1",
+          "isCheckpoint": true
+        }
+      ],
+      "snapshotCount": 12,
+      "totalCodingTime": 360000,
+      "firstSnapshot": 1746878040000,
+      "lastSnapshot": 1746878400000,
+      "hasDetailedJourney": true
+    },
+    "runEvents": {
+      "count": 5,
+      "firstRun": 1746878076000,
+      "lastRun": 1746878364000,
+      "hasDetailedRuns": true,
+      "runs": [
+        {
+          "id": "run_1758155029478_0",
+          "startedAt": 1746878076000,
+          "statusMsg": "Time Limit Exceeded",
+          "totalCorrect": 34,
+          "totalTestcases": 65,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        # TODO: implement\n        pass",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_1",
+          "startedAt": 1746878148000,
+          "statusMsg": "Time Limit Exceeded",
+          "totalCorrect": 59,
+          "totalTestcases": 79,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        # TODO: add logic",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_2",
+          "startedAt": 1746878220000,
+          "statusMsg": "Runtime Error",
+          "totalCorrect": 44,
+          "totalTestcases": 72,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack)):\n            if haystack[i:i+len(needle)] == needle:\n                return i\n        return -1",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_3",
+          "startedAt": 1746878291999,
+          "statusMsg": "Wrong Answer",
+          "totalCorrect": 30,
+          "totalTestcases": 74,
+          "runtimeError": null,
+          "lastTestcase": "Sample test case that failed",
+          "code": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        # Fix bounds check\n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        return -1",
+          "compareResult": null,
+          "runtime": null,
+          "memory": null
+        },
+        {
+          "id": "run_1758155029478_4",
+          "startedAt": 1746878364000,
+          "statusMsg": "Accepted",
+          "totalCorrect": 69,
+          "totalTestcases": 74,
+          "runtimeError": null,
+          "lastTestcase": null,
+          "code": "class Solution:\n    def strStr(self, haystack: str, needle: str) -> int:\n        if not needle:\n            return 0\n        \n        for i in range(len(haystack) - len(needle) + 1):\n            if haystack[i:i + len(needle)] == needle:\n                return i\n        \n        return -1",
+          "compareResult": null,
+          "runtime": 124,
+          "memory": 18
+        }
+      ],
+      "_window": {
+        "startMs": 1746878040000,
+        "endMs": 1746878400000
+      }
+    }
   }
 ]

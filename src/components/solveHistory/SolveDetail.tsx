@@ -14,6 +14,8 @@ import type { HintType } from '@/types/types';
 import { StatusBadge } from './statusBadge';
 import { trackSolveSaved, trackPromptCopied, trackFeedbackImported } from '@/utils/analytics';
 import { buildFeedbackPrompt } from '@/domain/feedbackPrompt';
+import { hasMeaningfulTimelineData } from '@/domain/timelineProcessing';
+import CodeTimeline from './CodeTimeline';
 
 /* ---------------------------------------------------------- */
 /*  Helpers                                                   */
@@ -103,10 +105,14 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const timeText = useTimeAgo(new Date(solve.timestamp * 1000));
   const toast = useToast();
 
+  /* ---------- code reconstruction cache ---------- */
+
   /* ---------- cancel helpers ---------- */
   const cancelCodeEdit = () => {
     setCode(solve.code ?? '');
     setCodeEdit(false);
+    // Reset timeline to final state when exiting edit mode
+    setCurrentSnapshot(1);
   };
 
   const cancelDetailsEdit = () => {
@@ -146,6 +152,10 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const [clipboardPermissionDialog, setClipboardPermissionDialog] = useState<
     'hidden' | 'requesting' | 'thanking'
   >('hidden');
+
+  /* ---------- code timeline state ---------- */
+  const [currentSnapshot, setCurrentSnapshot] = useState(1);
+  const [timelineCode, setTimelineCode] = useState<string>('');
 
   /** Trigger the help tooltip to show instructions */
   const showHelpInstructions = () => {
@@ -901,6 +911,16 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                   )}
                 </header>
 
+                {/* Code Timeline Component */}
+                {!codeEdit && hasMeaningfulTimelineData(solve) && (
+                  <CodeTimeline
+                    solve={solve}
+                    onCodeChange={setTimelineCode}
+                    currentSnapshot={currentSnapshot}
+                    setCurrentSnapshot={setCurrentSnapshot}
+                  />
+                )}
+
                 {codeEdit ? (
                   <Textarea
                     value={code}
@@ -909,14 +929,26 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                   />
                 ) : (
                   <div className="bg-muted rounded-lg p-4">
-                    <pre className="text-sm overflow-x-auto whitespace-pre">
-                      <code>{showFullCode ? code : truncateLines(code, 5)}</code>
+                    <pre className="text-sm overflow-x-auto whitespace-pre transition-all duration-300">
+                      <code>
+                        {(() => {
+                          // Show timeline code if available, otherwise fallback to solve code
+                          const displayCode = timelineCode || code;
+                          return showFullCode ? displayCode : truncateLines(displayCode, 5);
+                        })()}
+                      </code>
                     </pre>
-                    {!showFullCode && code.split('\n').length > 5 && (
-                      <p className="text-center text-xs text-muted-foreground mt-2">
-                        … {code.split('\n').length - 5} more lines
-                      </p>
-                    )}
+                    {(() => {
+                      const displayCode = timelineCode || code;
+                      return (
+                        !showFullCode &&
+                        displayCode.split('\n').length > 5 && (
+                          <p className="text-center text-xs text-muted-foreground mt-2">
+                            … {displayCode.split('\n').length - 5} more lines
+                          </p>
+                        )
+                      );
+                    })()}
                   </div>
                 )}
               </section>
