@@ -150,7 +150,7 @@ export default function CodeTimeline({
             <div
               className="absolute top-0 left-0 h-2 bg-primary rounded-full transition-all duration-200"
               style={{
-                width: `${((currentSnapshot - 1) / (timelineData.length - 1)) * 100}%`,
+                width: `${((currentSnapshot - 1) / Math.max(1, timelineData.length - 1)) * 100}%`,
               }}
             />
 
@@ -187,7 +187,7 @@ export default function CodeTimeline({
                     index + 1 === currentSnapshot ? 'bg-primary shadow-lg' : 'bg-background'
                   }`}
                   style={{
-                    left: `${(index / (timelineData.length - 1)) * 100}%`,
+                    left: `${(index / Math.max(1, timelineData.length - 1)) * 100}%`,
                     top: '50%',
                     transform: 'translateX(-50%) translateY(-50%)',
                   }}

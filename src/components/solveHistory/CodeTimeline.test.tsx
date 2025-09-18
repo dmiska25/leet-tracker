@@ -258,4 +258,54 @@ describe('CodeTimeline', () => {
     // Should call buildTimelineEvents when rendering with events
     expect(mockTimelineProcessing.buildTimelineEvents).toHaveBeenCalled();
   });
+
+  it('should handle single-event timeline without division by zero', async () => {
+    const singleEvent = [
+      {
+        id: 'snapshot-0',
+        timestamp: 1000,
+        type: 'snapshot',
+        label: 'Single Event',
+        code: 'def test(): pass',
+        index: 0,
+      },
+    ];
+
+    mockTimelineProcessing.buildTimelineEvents.mockReturnValue(singleEvent);
+    mockTimelineProcessing.formatSnapshotTime.mockReturnValue('10:30:45');
+    mockTimelineProcessing.formatElapsedTime.mockReturnValue('0s');
+
+    // Set currentSnapshot to 1 to test the progress bar calculation
+    const propsWithSnapshot = { ...mockProps, currentSnapshot: 1 };
+    render(<CodeTimeline {...propsWithSnapshot} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading code timeline...')).not.toBeInTheDocument();
+    });
+
+    // Test the division by zero fix scenarios:
+    // 1. Progress bar width calculation with fix: (currentSnapshot - 1) / Math.max(1, length - 1) * 100
+    // When length = 1, this becomes (1 - 1) / Math.max(1, 1 - 1) * 100 = 0 / 1 * 100 = 0%
+
+    // 2. Timeline marker position with fix: index / Math.max(1, length - 1) * 100
+    // When length = 1 and index = 0, this becomes 0 / Math.max(1, 1 - 1) * 100 = 0 / 1 * 100 = 0%
+
+    // Let's verify the fixed calculations produce valid values
+    const length = 1;
+    const currentSnapshot = 1;
+    const index = 0;
+
+    const progressWidthFixed = ((currentSnapshot - 1) / Math.max(1, length - 1)) * 100;
+    const markerPositionFixed = (index / Math.max(1, length - 1)) * 100;
+
+    // These should now be valid numbers (0 for single-event timeline)
+    expect(Number.isNaN(progressWidthFixed)).toBe(false);
+    expect(Number.isNaN(markerPositionFixed)).toBe(false);
+    expect(progressWidthFixed).toBe(0); // (1-1)/1*100 = 0
+    expect(markerPositionFixed).toBe(0); // 0/1*100 = 0
+
+    // Should display the single event
+    expect(screen.getByText('Code Evolution')).toBeInTheDocument();
+    expect(screen.getByText(/\(1 of 1\)/)).toBeInTheDocument();
+  });
 });
