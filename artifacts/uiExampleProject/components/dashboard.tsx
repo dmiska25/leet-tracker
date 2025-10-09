@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { RefreshCcw, ExternalLink } from "lucide-react"
+import { RefreshCcw, ExternalLink, RotateCcw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -313,6 +313,12 @@ export default function Dashboard() {
     setActiveProfile(newActiveProfile)
   }
 
+  // Handle reset onboarding
+  const handleResetOnboarding = () => {
+    localStorage.removeItem("leettracker-onboarding-complete")
+    window.location.reload()
+  }
+
   // Avoid hydration mismatch by not rendering theme-dependent UI until mounted
   if (!mounted) {
     return <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-8">Loading...</div>
@@ -353,6 +359,17 @@ export default function Dashboard() {
           </div>
         </div>
         <SolveHistory />
+
+        {/* DEV Reset Onboarding Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResetOnboarding}
+          className="fixed bottom-4 right-4 z-50 border-dashed border-2 border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white bg-transparent gap-2"
+        >
+          <RotateCcw className="h-4 w-4" />
+          DEV: Reset Onboarding
+        </Button>
       </div>
     )
   }
@@ -578,6 +595,17 @@ export default function Dashboard() {
           </Accordion>
         </CardContent>
       </Card>
+
+      {/* DEV Reset Onboarding Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleResetOnboarding}
+        className="fixed bottom-4 right-4 z-50 border-dashed border-2 border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white bg-transparent gap-2"
+      >
+        <RotateCcw className="h-4 w-4" />
+        DEV: Reset Onboarding
+      </Button>
     </div>
   )
 }
