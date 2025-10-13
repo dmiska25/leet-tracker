@@ -944,9 +944,13 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                       return (
                         !showFullCode &&
                         displayCode.split('\n').length > 5 && (
-                          <p className="text-center text-xs text-muted-foreground mt-2">
-                            … {displayCode.split('\n').length - 5} more lines
-                          </p>
+                          <button
+                            onClick={() => setShowFullCode(true)}
+                            className="w-full text-center text-xs text-muted-foreground hover:text-foreground mt-2 cursor-pointer transition-colors"
+                            aria-label="Expand code"
+                          >
+                            … {displayCode.split('\n').length - 5} more lines (click to expand)
+                          </button>
                         )
                       );
                     })()}
