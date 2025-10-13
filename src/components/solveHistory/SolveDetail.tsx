@@ -111,8 +111,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const cancelCodeEdit = () => {
     setCode(solve.code ?? '');
     setCodeEdit(false);
-    // Reset timeline to final state when exiting edit mode
-    setCurrentSnapshot(1);
   };
 
   const cancelDetailsEdit = () => {
@@ -438,6 +436,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     setDetailsEdit(false);
     setFbEdit(false);
     setShowFullCode(false);
+    setTimelineCode('');
   }, [solve]);
 
   /* ---------- persist helpers ---------- */
@@ -450,6 +449,8 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       await db.saveSolve({ ...solve, code });
       onSaved();
       trackSolveSaved(solve.slug, solve.status, !!solve.feedback);
+      setCodeEdit(false);
+      setTimelineCode('');
     } catch (err) {
       cancelCodeEdit();
       console.error(err);
@@ -943,9 +944,13 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                       return (
                         !showFullCode &&
                         displayCode.split('\n').length > 5 && (
-                          <p className="text-center text-xs text-muted-foreground mt-2">
-                            … {displayCode.split('\n').length - 5} more lines
-                          </p>
+                          <button
+                            onClick={() => setShowFullCode(true)}
+                            className="w-full text-center text-xs text-muted-foreground hover:text-foreground mt-2 cursor-pointer transition-colors"
+                            aria-label="Expand code"
+                          >
+                            … {displayCode.split('\n').length - 5} more lines (click to expand)
+                          </button>
                         )
                       );
                     })()}
@@ -953,7 +958,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                 )}
               </section>
 
-              <Separator />
+              <Separator className="my-6" />
 
               {/* -------- Solve Details -------- */}
               <section>
