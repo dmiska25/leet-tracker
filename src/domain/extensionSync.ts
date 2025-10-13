@@ -2,12 +2,6 @@ import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
 import type { Solve } from '../types/types';
 
-interface ChunkMeta {
-  index: number;
-  from: number;
-  to: number;
-}
-
 export { ExtensionUnavailable };
 
 /**
@@ -16,14 +10,14 @@ export { ExtensionUnavailable };
  */
 export async function syncFromExtension(username: string): Promise<number> {
   const lastTs = await db.getExtensionLastTimestamp();
-  const meta: ChunkMeta[] = await getManifestSince(username, lastTs);
+  const manifest = await getManifestSince(username, lastTs);
 
-  if (!meta.length) return 0;
+  if (!manifest.chunks || !manifest.chunks.length) return 0;
 
   let added = 0;
   let newestTs = lastTs;
 
-  for (const m of meta.sort((a, b) => a.index - b.index)) {
+  for (const m of manifest.chunks.sort((a, b) => a.index - b.index)) {
     const rawSolves = await getChunk(username, m.index);
 
     for (const raw of rawSolves) {

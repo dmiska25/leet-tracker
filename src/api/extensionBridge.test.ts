@@ -15,12 +15,14 @@ describe('extensionBridge', () => {
   });
 
   describe('getManifestSince', () => {
-    it('resolves with chunks when extension responds correctly', async () => {
+    it('resolves with manifest object when extension responds correctly', async () => {
       const mockResponse = {
         source: 'leettracker-extension',
         type: 'response_chunk_manifest',
         username: 'testuser',
         chunks: [{ index: 0, from: 0, to: 1234567890 }],
+        total: 100,
+        totalSynced: 50,
       };
 
       const mockEventListener = vi.fn((eventType, handler) => {
@@ -31,9 +33,13 @@ describe('extensionBridge', () => {
 
       window.addEventListener = mockEventListener as any;
 
-      const chunks = await getManifestSince('testuser', 0);
+      const manifest = await getManifestSince('testuser', 0);
 
-      expect(chunks).toEqual([{ index: 0, from: 0, to: 1234567890 }]);
+      expect(manifest).toEqual({
+        chunks: [{ index: 0, from: 0, to: 1234567890 }],
+        total: 100,
+        totalSynced: 50,
+      });
       expect(window.postMessage).toHaveBeenCalledWith(
         {
           type: 'request_chunk_manifest_since',

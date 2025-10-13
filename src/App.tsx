@@ -5,6 +5,7 @@ import SignIn from '@/components/SignIn';
 import SolveHistory from '@/components/solveHistory/SolveHistory';
 import HeaderNav from '@/components/HeaderNav';
 import TutorialPrompt from '@/components/TutorialPrompt';
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { useTutorial } from '@/tutorial/TutorialContext';
 import { buildSteps } from '@/tutorial/steps';
 import { db } from '@/storage/db';
@@ -14,15 +15,21 @@ import {
   getTutorialActive,
   getTutorialStartedWithUser,
   setPrevUser,
+  getOnboardingComplete,
+  markOnboardingComplete,
 } from '@/storage/db';
 
 function App() {
   const { loading, username, extensionInstalled } = useInitApp();
   const [view, setView] = useState<'dashboard' | 'history'>('dashboard');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
 
   const tutorial = useTutorial();
   const [showPrompt, setShowPrompt] = useState(false);
   const [tutorialInitialized, setTutorialInitialized] = useState(false);
+
+  const demoUsername = import.meta.env.VITE_DEMO_USERNAME || 'leet-tracker-demo-user';
 
   const steps = useMemo(
     () =>
@@ -32,6 +39,29 @@ function App() {
       }),
     [extensionInstalled],
   );
+
+  // Check if user needs to see onboarding
+  useEffect(() => {
+    (async () => {
+      if (loading || onboardingChecked) return;
+      if (!username) {
+        setOnboardingChecked(true);
+        return;
+      }
+
+      // Skip onboarding for demo user entirely
+      if (username === demoUsername) {
+        setShowOnboarding(false);
+        setOnboardingChecked(true);
+        return;
+      }
+
+      // Check if this user has completed onboarding
+      const hasCompleted = await getOnboardingComplete(username);
+      setShowOnboarding(!hasCompleted);
+      setOnboardingChecked(true);
+    })();
+  }, [loading, username, onboardingChecked, demoUsername]);
 
   // Handle navigation events from tutorial
   useEffect(() => {
@@ -50,8 +80,6 @@ function App() {
     (async () => {
       if (loading || tutorialInitialized) return;
       if (!username) return; // No prompt on sign-in screen
-
-      const demoUsername = import.meta.env.VITE_DEMO_USERNAME || 'leet-tracker-demo-user';
 
       // If tutorial is already active, check if we need to provide steps
       if (await getTutorialActive()) {
@@ -84,11 +112,10 @@ function App() {
       setShowPrompt(true);
       setTutorialInitialized(true);
     })();
-  }, [loading, username]);
+  }, [loading, username, demoUsername, tutorial, steps, tutorialInitialized]);
 
   const startTutorialFlow = async () => {
     setShowPrompt(false);
-    const demoUsername = import.meta.env.VITE_DEMO_USERNAME || 'leet-tracker-demo-user';
 
     // If the user is already demo, just start the tutorial
     if (username === demoUsername) {
@@ -108,11 +135,23 @@ function App() {
     window.location.reload();
   };
 
-  if (loading) {
+  const handleOnboardingComplete = async () => {
+    if (username) {
+      await markOnboardingComplete(username);
+      setShowOnboarding(false);
+    }
+  };
+
+  if (loading || !onboardingChecked) {
     return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
   }
   if (!username) {
     return <SignIn />;
+  }
+
+  // Show onboarding flow for users who haven't completed it (excluding demo user)
+  if (showOnboarding && username !== demoUsername) {
+    return <OnboardingFlow onComplete={handleOnboardingComplete} username={username} />;
   }
 
   return (

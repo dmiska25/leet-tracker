@@ -25,6 +25,9 @@ export function CardTitle({ children, className }: PropsWithChildren<{ className
   return <h3 className={clsx('text-sm font-medium', className)}>{children}</h3>;
 }
 
-export function CardDescription({ children }: PropsWithChildren) {
-  return <p className="text-xs text-muted-foreground">{children}</p>;
+export function CardDescription({
+  children,
+  className,
+}: PropsWithChildren<{ className?: string }>) {
+  return <p className={clsx('text-xs text-muted-foreground', className)}>{children}</p>;
 }

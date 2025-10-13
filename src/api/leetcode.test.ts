@@ -107,7 +107,13 @@ describe('verifyUser', () => {
   it('returns {exists:true} when API responds with matchedUser', async () => {
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ data: { matchedUser: { username: 'foo' } } }),
+      json: async () => ({
+        data: {
+          matchedUser: {
+            username: 'foo',
+          },
+        },
+      }),
     });
 
     expect(await verifyUser('foo')).toEqual({ exists: true });

@@ -27,6 +27,9 @@ vi.mock('@/storage/db', () => ({
   getPrevUser: vi.fn(),
   setPrevUser: vi.fn(),
   clearPrevUser: vi.fn(),
+  getOnboardingComplete: vi.fn(),
+  markOnboardingComplete: vi.fn(),
+  clearOnboardingComplete: vi.fn(),
 }));
 
 // Mock useInitApp hook
@@ -54,6 +57,7 @@ describe('App Tutorial Integration', () => {
     (db.getTutorialStep as Mock).mockResolvedValue(0);
     (db.getTutorialStartedWithUser as Mock).mockResolvedValue('demo');
     (db.getTutorialSeen as Mock).mockResolvedValue(false);
+    (db.getOnboardingComplete as Mock).mockResolvedValue(true); // Assume onboarding complete
     (db.db.getUsername as Mock).mockResolvedValue('testuser');
     (db.db.getAllGoalProfiles as Mock).mockResolvedValue([]);
     (db.db.getActiveGoalProfileId as Mock).mockResolvedValue(null);

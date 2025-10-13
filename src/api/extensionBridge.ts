@@ -42,9 +42,20 @@ function postMessageWithReply<T extends Req, R>(payload: T): Promise<R> {
 export async function getManifestSince(username: string, since: number) {
   const res = await postMessageWithReply<
     Req,
-    { source: string; type: 'response_chunk_manifest'; username: string; chunks: any[] }
+    {
+      source: string;
+      type: 'response_chunk_manifest';
+      username: string;
+      chunks: any[];
+      total?: number;
+      totalSynced?: number;
+    }
   >({ type: 'request_chunk_manifest_since', username, since });
-  return res.chunks;
+  return {
+    chunks: res.chunks,
+    total: res.total,
+    totalSynced: res.totalSynced,
+  };
 }
 
 export async function getChunk(username: string, index: number) {

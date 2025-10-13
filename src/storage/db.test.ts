@@ -1,5 +1,12 @@
-import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { db, markAiFeedbackUsed, getAiFeedbackUsed, AI_FEEDBACK_USED_KEY } from './db';
+import { describe, it, expect, afterEach } from 'vitest';
+import {
+  db,
+  markAiFeedbackUsed,
+  getAiFeedbackUsed,
+  AI_FEEDBACK_USED_KEY,
+  markOnboardingComplete,
+  getOnboardingComplete,
+} from './db';
 import { Problem, Solve, GoalProfile, Difficulty } from '../types/types';
 
 const exampleProblem: Problem = {
@@ -49,17 +56,11 @@ const exampleProfile: GoalProfile = {
 };
 
 describe('db storage module', () => {
-  beforeEach(() => {
-    // Clear localStorage between tests
-    global.localStorage.clear();
-  });
-
   afterEach(async () => {
     // Reset the username cache
     db._usernameCache = null;
-    // Restore all mocks
-    vi.restoreAllMocks();
-    vi.clearAllMocks();
+    // Clear localStorage to ensure test isolation
+    localStorage.clear();
     // IndexedDB persists across tests — clearing it ensures isolation
     await new Promise<void>((resolve) => {
       const deleteReq = indexedDB.deleteDatabase('leet-tracker-db');
@@ -372,15 +373,15 @@ describe('db storage module', () => {
       let result = getAiFeedbackUsed();
       expect(result).toBe(false); // Should default to false
 
-      // Test setting used to true and verify localStorage call
-      const setItemSpy = vi.spyOn(global.localStorage, 'setItem');
+      // Mark as used
       markAiFeedbackUsed();
-      expect(setItemSpy).toHaveBeenCalledWith(AI_FEEDBACK_USED_KEY, 'true');
-      setItemSpy.mockRestore();
 
       // Test getting true value (localStorage was actually set)
       result = getAiFeedbackUsed();
       expect(result).toBe(true);
+
+      // Verify localStorage has the correct value
+      expect(localStorage.getItem(AI_FEEDBACK_USED_KEY)).toBe('true');
     });
 
     it('should persist across calls', () => {
@@ -393,6 +394,67 @@ describe('db storage module', () => {
 
       // Should remain true on subsequent calls
       expect(getAiFeedbackUsed()).toBe(true);
+    });
+  });
+
+  describe('Onboarding Completion Tracking', () => {
+    it('marks onboarding as complete for a specific user', async () => {
+      await markOnboardingComplete('testuser');
+
+      const isComplete = await getOnboardingComplete('testuser');
+      expect(isComplete).toBe(true);
+    });
+
+    it('returns false when onboarding not completed', async () => {
+      const isComplete = await getOnboardingComplete('newuser');
+      expect(isComplete).toBe(false);
+    });
+
+    it('isolates onboarding status between users', async () => {
+      // Mark complete for user1
+      await markOnboardingComplete('user1');
+
+      // Check user1 - should be true
+      const user1Complete = await getOnboardingComplete('user1');
+      expect(user1Complete).toBe(true);
+
+      // Check user2 - should be false (not marked yet)
+      const user2Complete = await getOnboardingComplete('user2');
+      expect(user2Complete).toBe(false);
+
+      // Mark complete for user2
+      await markOnboardingComplete('user2');
+
+      // Now both should be true
+      const user1AfterUser2 = await getOnboardingComplete('user1');
+      const user2AfterMark = await getOnboardingComplete('user2');
+
+      expect(user1AfterUser2).toBe(true);
+      expect(user2AfterMark).toBe(true);
+    });
+
+    it('can mark multiple users complete independently', async () => {
+      // Mark alice and charlie complete, not bob
+      await markOnboardingComplete('alice');
+      await markOnboardingComplete('charlie');
+
+      expect(await getOnboardingComplete('alice')).toBe(true);
+      expect(await getOnboardingComplete('bob')).toBe(false);
+      expect(await getOnboardingComplete('charlie')).toBe(true);
+    });
+
+    it('handles special characters in usernames', async () => {
+      const specialUsername = 'user-with.special_chars@test';
+
+      await markOnboardingComplete(specialUsername);
+
+      const isComplete = await getOnboardingComplete(specialUsername);
+      expect(isComplete).toBe(true);
+    });
+
+    it('returns false for undefined or empty usernames', async () => {
+      const emptyComplete = await getOnboardingComplete('');
+      expect(emptyComplete).toBe(false);
     });
   });
 });

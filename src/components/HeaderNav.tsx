@@ -2,8 +2,7 @@ import React from 'react';
 import clsx from 'clsx';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
-import { db } from '@/storage/db';
-import { resetUser } from '@/utils/analytics';
+import { signOut } from '@/utils/auth';
 
 type View = 'dashboard' | 'history';
 
@@ -40,18 +39,6 @@ export default function HeaderNav({ view, onChange }: Props) {
     </button>
   );
 
-  const handleSignOut = async () => {
-    if (!window.confirm('Are you sure you want to sign out?')) return;
-    try {
-      await db.clearUsername();
-      await resetUser();
-    } catch (err) {
-      console.error('Failed to clear user data:', err);
-      alert('An error occurred while signing out. Please try again.');
-    }
-    window.location.reload();
-  };
-
   /* ---------- render ---------- */
   return (
     <nav className="border-b bg-card" data-tour="header-nav">
@@ -84,7 +71,7 @@ export default function HeaderNav({ view, onChange }: Props) {
             Help
           </Button>
 
-          <Button variant="ghost" onClick={handleSignOut}>
+          <Button variant="ghost" onClick={() => signOut({ skipConfirm: false })}>
             Sign Out
           </Button>
         </div>
