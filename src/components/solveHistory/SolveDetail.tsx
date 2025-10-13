@@ -111,8 +111,6 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
   const cancelCodeEdit = () => {
     setCode(solve.code ?? '');
     setCodeEdit(false);
-    // Reset timeline to final state when exiting edit mode
-    setCurrentSnapshot(1);
   };
 
   const cancelDetailsEdit = () => {
@@ -438,6 +436,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
     setDetailsEdit(false);
     setFbEdit(false);
     setShowFullCode(false);
+    setTimelineCode('');
   }, [solve]);
 
   /* ---------- persist helpers ---------- */
@@ -450,6 +449,8 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
       await db.saveSolve({ ...solve, code });
       onSaved();
       trackSolveSaved(solve.slug, solve.status, !!solve.feedback);
+      setCodeEdit(false);
+      setTimelineCode('');
     } catch (err) {
       cancelCodeEdit();
       console.error(err);
