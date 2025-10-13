@@ -954,7 +954,7 @@ export default function SolveDetail({ solve, onSaved, onShowList, showListButton
                 )}
               </section>
 
-              <Separator />
+              <Separator className="my-6" />
 
               {/* -------- Solve Details -------- */}
               <section>
