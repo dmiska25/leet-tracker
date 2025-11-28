@@ -71,9 +71,12 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
       // Update progress
       setSyncProgress(result.progress);
 
-      // Handle errors
+      // Handle errors - set error if present, clear if recovered
       if (result.error) {
         setSyncError(result.error);
+      } else if (syncError) {
+        // Clear error state if we've recovered
+        setSyncError(null);
       }
 
       // Check if complete
@@ -91,7 +94,7 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
     // Then poll every 3000ms for progress updates
     const interval = setInterval(checkProgress, 3000);
     return () => clearInterval(interval);
-  }, [syncStatus, totalSolves, onComplete, username]);
+  }, [syncStatus, totalSolves, onComplete, username, syncError]);
 
   const handleGoToLeetCode = () => {
     window.open('https://leetcode.com/problems/two-sum/', '_blank');
@@ -180,7 +183,10 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
               {syncError && (
                 <Alert className="border-orange-500 bg-orange-500/5">
                   <AlertCircle className="h-4 w-4 text-orange-500" />
-                  <AlertDescription className="ml-2">{syncError}</AlertDescription>
+                  <AlertDescription className="ml-2">
+                    Error detected during sync. Please ensure the extension is installed or try
+                    reinstalling it.
+                  </AlertDescription>
                 </Alert>
               )}
 

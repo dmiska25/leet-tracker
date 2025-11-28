@@ -99,7 +99,9 @@ describe('DataSync', () => {
       render(<DataSync onComplete={mockOnComplete} username={mockUsername} />);
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to sync from extension/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/error detected during sync.*ensure the extension is installed/i),
+        ).toBeInTheDocument();
       });
     });
   });
