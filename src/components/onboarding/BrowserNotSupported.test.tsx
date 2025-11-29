@@ -14,7 +14,7 @@ describe('BrowserNotSupported', () => {
     const onTryDemo = vi.fn();
     render(<BrowserNotSupported onTryDemo={onTryDemo} />);
 
-    expect(screen.getByText('Chrome Required')).toBeInTheDocument();
+    expect(screen.getByText('Chromium Browser Required')).toBeInTheDocument();
     expect(
       screen.getByText('LeetTracker requires a Chrome browser extension to function'),
     ).toBeInTheDocument();

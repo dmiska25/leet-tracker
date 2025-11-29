@@ -99,6 +99,17 @@ describe('browserDetection', () => {
 
       expect(isMobileBrowser()).toBe(false);
     });
+
+    it('handles case-insensitive mobile detection', () => {
+      // Test with unusual casing variations
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Linux; ANDROID 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 MOBILE Safari/537.36',
+        configurable: true,
+      });
+
+      expect(isMobileBrowser()).toBe(true);
+    });
   });
 
   describe('isChromiumBrowser', () => {

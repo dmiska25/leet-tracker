@@ -22,7 +22,7 @@ export function BrowserNotSupported({ onTryDemo }: BrowserNotSupportedProps) {
             </div>
           </div>
           <div className="space-y-2">
-            <CardTitle className="text-3xl">Chrome Required</CardTitle>
+            <CardTitle className="text-3xl">Chromium Browser Required</CardTitle>
             <CardDescription>
               LeetTracker requires a Chrome browser extension to function
             </CardDescription>

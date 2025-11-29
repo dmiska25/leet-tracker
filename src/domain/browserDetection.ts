@@ -7,18 +7,18 @@
  * Check if the current browser is running on a mobile device
  */
 export function isMobileBrowser(): boolean {
-  const userAgent = navigator.userAgent;
+  const userAgent = navigator.userAgent.toLowerCase();
 
   // Check for common mobile indicators
   const mobileKeywords = [
-    'Mobile',
-    'Android',
-    'iPhone',
-    'iPad',
-    'iPod',
-    'BlackBerry',
-    'Windows Phone',
-    'webOS',
+    'mobile',
+    'android',
+    'iphone',
+    'ipad',
+    'ipod',
+    'blackberry',
+    'windows phone',
+    'webos',
   ];
 
   return mobileKeywords.some((keyword) => userAgent.includes(keyword));
