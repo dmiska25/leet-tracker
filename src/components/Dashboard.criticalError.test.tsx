@@ -9,7 +9,6 @@ vi.mock('@/storage/db', () => ({
     getAllGoalProfiles: vi.fn().mockResolvedValue([]),
     getActiveGoalProfileId: vi.fn().mockResolvedValue(undefined),
   },
-  clearOnboardingComplete: vi.fn(),
 }));
 
 vi.mock('@/hooks/useInitApp', () => ({

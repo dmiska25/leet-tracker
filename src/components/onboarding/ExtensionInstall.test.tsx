@@ -86,7 +86,7 @@ describe('ExtensionInstall', () => {
       expect(mockOnContinue).toHaveBeenCalledWith(true);
     });
 
-    it('clears username and reloads when Sign Out clicked', async () => {
+    it('calls signOut when Sign Out clicked', async () => {
       const user = userEvent.setup();
 
       render(<ExtensionInstall onContinue={mockOnContinue} />);
