@@ -314,9 +314,9 @@ describe('onboardingSync', () => {
 
         const result = await monitorSyncProgress('testuser');
 
-        // When total is 0, we still return syncing (edge case)
-        expect(result.status).toBe('syncing');
-        expect(result.progress).toBe(0);
+        // When total is 0, we treat it as complete
+        expect(result.status).toBe('complete');
+        expect(result.progress).toBe(100);
         expect(result.total).toBe(0);
       });
 

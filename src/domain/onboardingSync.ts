@@ -140,11 +140,11 @@ export async function monitorSyncProgress(username: string): Promise<SyncStatusR
     }
 
     // Calculate progress
-    const progress = total > 0 ? Math.min(100, Math.round((totalSynced / total) * 100)) : 0;
+    const progress = total > 0 ? Math.min(100, Math.round((totalSynced / total) * 100)) : 100;
     console.log(`[OnboardingSync] Progress: ${totalSynced}/${total} (${progress}%)`);
 
-    // Check if complete
-    if (totalSynced >= total && total > 0) {
+    // Check if complete (including when total is 0)
+    if (totalSynced >= total) {
       console.log('[OnboardingSync] Sync complete!');
       return {
         status: 'complete',
