@@ -179,7 +179,7 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
               onClick={handleTryDemo}
               variant="outline"
               className="flex-1 gap-2 bg-transparent"
-              disabled={isChecking}
+              disabled={isChecking || isExtensionInstalled}
             >
               <ArrowRight className="h-5 w-5" />
               Try Demo Without Extension
