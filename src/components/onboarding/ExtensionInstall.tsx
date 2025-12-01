@@ -20,7 +20,7 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
 
   useEffect(() => {
-    // Check for extension presence
+    // Check for extension presence once on mount
     const checkExtension = async () => {
       const isInstalled = await checkExtensionInstalled();
 
@@ -41,10 +41,6 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
     };
 
     checkExtension();
-
-    // Check periodically for extension installation
-    const interval = setInterval(checkExtension, 3000);
-    return () => clearInterval(interval);
   }, [onContinue]);
 
   const handleInstallExtension = () => {

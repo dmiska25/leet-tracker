@@ -14,11 +14,11 @@ type Req =
 
 /**
  * Post a message to the extension and wait for a reply with exponential backoff retry.
- * Retries with delays: 100ms, 200ms, 400ms, 800ms, 1600ms, 3200ms (total ~6.3s)
+ * Retries with delays: 100ms, 200ms, 400ms (total ~700ms)
  * This handles race conditions where the extension content script hasn't fully loaded yet.
  */
 async function postMessageWithReply<T extends Req, R>(payload: T): Promise<R> {
-  const delays = [100, 200, 400, 800, 1600, 3200];
+  const delays = [100, 200, 400];
   let lastError: Error | undefined;
 
   for (let attemptIndex = 0; attemptIndex < delays.length; attemptIndex++) {
