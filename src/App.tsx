@@ -17,7 +17,9 @@ import {
   setPrevUser,
   getOnboardingComplete,
   markOnboardingComplete,
+  clearOnboardingComplete,
 } from '@/storage/db';
+import { checkExtensionInstalled } from '@/domain/onboardingSync';
 
 function App() {
   const { loading, username, extensionInstalled } = useInitApp();
@@ -56,8 +58,28 @@ function App() {
         return;
       }
 
+      // Check escape hatch for development (allows bypassing extension requirement)
+      const skipExtensionCheck =
+        localStorage.getItem('leet-tracker-skip-extension-check') === 'true';
+
       // Check if this user has completed onboarding
       const hasCompleted = await getOnboardingComplete(username);
+
+      // If user has completed onboarding, verify extension is still installed
+      if (hasCompleted && !skipExtensionCheck) {
+        console.log('[App] Verifying extension installation for onboarded user...');
+        const isInstalled = await checkExtensionInstalled();
+
+        if (!isInstalled) {
+          console.warn('[App] Extension not detected - resetting onboarding for user:', username);
+          // Reset onboarding state to force user through setup again
+          await clearOnboardingComplete(username);
+          setShowOnboarding(true);
+          setOnboardingChecked(true);
+          return;
+        }
+      }
+
       setShowOnboarding(!hasCompleted);
       setOnboardingChecked(true);
     })();

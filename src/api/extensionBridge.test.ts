@@ -7,10 +7,12 @@ describe('extensionBridge', () => {
   beforeEach(() => {
     originalPostMessage = window.postMessage;
     window.postMessage = vi.fn();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
     window.postMessage = originalPostMessage;
   });
 
@@ -33,7 +35,9 @@ describe('extensionBridge', () => {
 
       window.addEventListener = mockEventListener as any;
 
-      const manifest = await getManifestSince('testuser', 0);
+      const promise = getManifestSince('testuser', 0);
+      await vi.advanceTimersByTimeAsync(50); // Advance past the response delay
+      const manifest = await promise;
 
       expect(manifest).toEqual({
         chunks: [{ index: 0, from: 0, to: 1234567890 }],
@@ -56,7 +60,17 @@ describe('extensionBridge', () => {
 
       window.addEventListener = mockEventListener as any;
 
-      await expect(getManifestSince('testuser', 0)).rejects.toThrow(ExtensionUnavailable);
+      const promise = getManifestSince('testuser', 0);
+
+      // Catch the rejection to prevent unhandled promise rejection
+      promise.catch(() => {
+        // Expected rejection, ignore
+      });
+
+      // Run all pending timers to trigger all retry attempts
+      await vi.runAllTimersAsync();
+
+      await expect(promise).rejects.toThrow(ExtensionUnavailable);
 
       expect(window.postMessage).toHaveBeenCalledWith(
         {
@@ -67,7 +81,7 @@ describe('extensionBridge', () => {
         },
         '*',
       );
-    });
+    }, 10000); // Increase timeout for this test with fake timers
   });
 
   describe('getChunk', () => {
@@ -88,7 +102,9 @@ describe('extensionBridge', () => {
 
       window.addEventListener = mockEventListener as any;
 
-      const chunk = await getChunk('testuser', 0);
+      const promise = getChunk('testuser', 0);
+      await vi.advanceTimersByTimeAsync(50); // Advance past the response delay
+      const chunk = await promise;
 
       expect(chunk).toEqual([{ titleSlug: 'two-sum', timestamp: 1234567890 }]);
       expect(window.postMessage).toHaveBeenCalledWith(
@@ -107,7 +123,17 @@ describe('extensionBridge', () => {
 
       window.addEventListener = mockEventListener as any;
 
-      await expect(getChunk('testuser', 0)).rejects.toThrow(ExtensionUnavailable);
+      const promise = getChunk('testuser', 0);
+
+      // Catch the rejection to prevent unhandled promise rejection
+      promise.catch(() => {
+        // Expected rejection, ignore
+      });
+
+      // Run all pending timers to trigger all retry attempts
+      await vi.runAllTimersAsync();
+
+      await expect(promise).rejects.toThrow(ExtensionUnavailable);
 
       expect(window.postMessage).toHaveBeenCalledWith(
         {
@@ -118,6 +144,6 @@ describe('extensionBridge', () => {
         },
         '*',
       );
-    });
+    }, 10000); // Increase timeout for this test with fake timers
   });
 });

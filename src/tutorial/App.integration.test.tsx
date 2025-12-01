@@ -29,6 +29,12 @@ vi.mock('@/storage/db', () => ({
   clearPrevUser: vi.fn(),
   getOnboardingComplete: vi.fn(),
   markOnboardingComplete: vi.fn(),
+  clearOnboardingComplete: vi.fn(),
+}));
+
+// Mock extension detection
+vi.mock('@/domain/onboardingSync', () => ({
+  checkExtensionInstalled: vi.fn().mockResolvedValue(true),
 }));
 
 // Mock useInitApp hook
@@ -50,6 +56,9 @@ describe('App Tutorial Integration', () => {
 
     // Mock environment variables using vi.stubEnv
     vi.stubEnv('VITE_DEMO_USERNAME', 'test-demo-user');
+
+    // Set escape hatch to bypass extension check in tests
+    localStorage.setItem('leet-tracker-skip-extension-check', 'true');
 
     // Default mock implementations
     (db.getTutorialActive as Mock).mockResolvedValue(false);
@@ -91,6 +100,7 @@ describe('App Tutorial Integration', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    localStorage.removeItem('leet-tracker-skip-extension-check');
   });
 
   describe('Tutorial prompt display', () => {

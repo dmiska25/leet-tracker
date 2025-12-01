@@ -208,4 +208,19 @@ describe('initApp', () => {
     // Restore real timers
     vi.useRealTimers();
   });
+
+  it('skips extension sync for demo user', async () => {
+    // Set demo username in env
+    vi.stubEnv('VITE_DEMO_USERNAME', 'test-demo-user');
+    vi.mocked(db.getUsername).mockResolvedValue('test-demo-user');
+
+    const res = await initApp();
+
+    // Should NOT call syncFromExtension for demo user
+    expect(syncFromExtension).not.toHaveBeenCalled();
+    expect(res.extensionInstalled).toBe(false);
+    expect(res.username).toBe('test-demo-user');
+
+    vi.unstubAllEnvs();
+  });
 });

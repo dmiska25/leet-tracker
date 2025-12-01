@@ -513,6 +513,14 @@ export async function getOnboardingComplete(username: string): Promise<boolean> 
   return (await db.getAppPref<boolean>(`onboarding.${username}.complete`)) === true;
 }
 
+/**
+ * Clear the onboarding completion state for a specific user.
+ * Used when forcing a user to re-complete onboarding (e.g., when extension is missing).
+ */
+export async function clearOnboardingComplete(username: string): Promise<void> {
+  await db.deleteAppPref(`onboarding.${username}.complete`);
+}
+
 /* ----------------------------------------------------------------------------
    AI Feedback workflow preference functions
 ---------------------------------------------------------------------------- */
