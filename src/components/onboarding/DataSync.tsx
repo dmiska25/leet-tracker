@@ -145,7 +145,7 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
                     </p>
                   </li>
                   <li className="text-sm">
-                    Ensure you are logged in
+                    Ensure you are logged in as <strong>{username}</strong>
                     <p className="text-muted-foreground ml-6 mt-1">
                       This allows the extension to capture your data
                     </p>
