@@ -68,7 +68,7 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
           <div className="space-y-2">
             <CardTitle className="text-3xl">Welcome to LeetTracker!</CardTitle>
             <CardDescription className="text-base">
-              Get the most out of your LeetCode practice with our Chrome extension
+              To get started, you&apos;ll need our Chrome extension to track your progress
             </CardDescription>
           </div>
         </CardHeader>
@@ -116,7 +116,7 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
 
           {/* Features List */}
           <div className="space-y-4 pt-2">
-            <h3 className="font-semibold text-lg">Why install the extension?</h3>
+            <h3 className="font-semibold text-lg">What the extension does:</h3>
             <div className="grid gap-4">
               <div className="flex items-start gap-3">
                 <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -183,7 +183,8 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
           </div>
 
           <p className="text-center text-sm text-muted-foreground pt-2">
-            Without the extension, many features will be limited or unavailable.
+            The extension is required to automatically track your LeetCode progress and unlock all
+            features.
           </p>
 
           {/* Sign Out Button */}
