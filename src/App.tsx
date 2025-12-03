@@ -63,7 +63,7 @@ function App() {
         localStorage.getItem('leet-tracker-skip-extension-check') === 'true';
 
       // Check if this user has completed onboarding
-      const hasCompleted = await getOnboardingComplete(username);
+      const hasCompleted = skipExtensionCheck ? true : await getOnboardingComplete(username);
 
       // If user has completed onboarding, verify extension is still installed
       if (hasCompleted && !skipExtensionCheck) {
