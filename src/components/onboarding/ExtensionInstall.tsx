@@ -26,6 +26,9 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    let timeoutId: number | undefined;
+
     // Track page view
     const trackView = async () => {
       const username = await db.getUsername();
@@ -39,6 +42,8 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
     const checkExtension = async () => {
       const isInstalled = await checkExtensionInstalled();
 
+      if (!mounted) return;
+
       if (isInstalled) {
         // Extension is installed
         setIsExtensionInstalled(true);
@@ -51,8 +56,10 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
         }
 
         // Auto-continue after a brief delay if extension is detected
-        setTimeout(() => {
-          onContinue(false);
+        timeoutId = window.setTimeout(() => {
+          if (mounted) {
+            onContinue(false);
+          }
         }, 1500);
       } else {
         // Extension not available
@@ -62,6 +69,13 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
     };
 
     checkExtension();
+
+    return () => {
+      mounted = false;
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [onContinue]);
 
   const handleInstallExtension = async () => {

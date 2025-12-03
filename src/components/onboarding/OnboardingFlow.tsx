@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ExtensionInstall } from './ExtensionInstall';
 import { BrowserNotSupported } from './BrowserNotSupported';
 import { MobileNotSupported } from './MobileNotSupported';
@@ -40,36 +40,39 @@ export function OnboardingFlow({ onComplete, username }: OnboardingFlowProps) {
     trackOnboardingStarted(username, false);
   }, [username]);
 
-  const handleExtensionContinue = async (skipped: boolean) => {
-    setSkippedExtension(skipped);
+  const handleExtensionContinue = useCallback(
+    async (skipped: boolean) => {
+      setSkippedExtension(skipped);
 
-    if (skipped) {
-      // User chose to skip and use demo
-      trackDemoModeSelected(username);
-      // Switch to demo user
-      await setPrevUser(username);
-      await db.setUsername(demoUsername);
-      // Mark onboarding complete for demo user
-      await markOnboardingComplete(demoUsername);
-      // Reload to load demo data
-      window.location.reload();
-    } else {
-      // If user installed extension, proceed to sync
-      trackOnboardingStepChanged(username, 'data_sync', 'forward');
-      setCurrentStep('sync');
-    }
-  };
+      if (skipped) {
+        // User chose to skip and use demo
+        trackDemoModeSelected(username);
+        // Switch to demo user
+        await setPrevUser(username);
+        await db.setUsername(demoUsername);
+        // Mark onboarding complete for demo user
+        await markOnboardingComplete(demoUsername);
+        // Reload to load demo data
+        window.location.reload();
+      } else {
+        // If user installed extension, proceed to sync
+        trackOnboardingStepChanged(username, 'data_sync', 'forward');
+        setCurrentStep('sync');
+      }
+    },
+    [username, demoUsername],
+  );
 
-  const handleTryDemo = async () => {
+  const handleTryDemo = useCallback(async () => {
     // Same as skipping extension installation
     await handleExtensionContinue(true);
-  };
+  }, [handleExtensionContinue]);
 
-  const handleSyncComplete = () => {
+  const handleSyncComplete = useCallback(() => {
     const durationMs = Date.now() - onboardingStartTime;
     trackOnboardingCompleted(username, durationMs, skippedExtension);
     onComplete();
-  };
+  }, [onboardingStartTime, username, skippedExtension, onComplete]);
 
   // Show mobile not supported screen first (highest priority)
   if (isMobile) {
