@@ -21,6 +21,8 @@ LeetCode and other platforms are great for improving algorithm skills and learni
 - 🌙 **Dark mode** supported
 - 🗂️ **Solve History & Detail view** with code, notes, hints, solve time, & timestamps
 - 🤖 **One-click AI feedback**: copy a ChatGPT prompt, paste XML back, auto-parses & stores solve feedback
+- 🚀 **Guided onboarding** with browser detection, extension setup, and automatic data sync
+- 📱 **Demo mode** for trying the app without installing the extension
 
 ## Live App
 
@@ -28,11 +30,13 @@ Try the app here: [leet-tracker-log.vercel.app](https://leet-tracker-log.vercel.
 
 ## Chrome Extension
 
-To unlock full LeetCode history install the LeetTracker Chrome Extension:
+Includes and requires the LeetTracker Chrome Extension:
 
 👉 [Install on Chrome Web Store](https://chrome.google.com/webstore/detail/leettracker/aabfdphdfflecolneofmehajjmmpmgeg)
 
 Once installed, the extension runs in the background while you're signed in to LeetCode, automatically syncing your full solve history with the app. This includes older submissions that are not available through the public API, enabling more accurate tracking and smarter recommendations.
+
+**Note:** The onboarding flow will guide you through the extension installation process when you first use the app. You can also use the app in demo mode without the extension, but this will not sync your real LeetCode data.
 
 ## How It Works
 
@@ -112,6 +116,7 @@ npm run dev
 
 - ✅ ~~Chrome extension now supports full solve history syncing~~
 - ✅ ~~Visual timeline of solves across categories and problem tags~~
+- ✅ ~~Guided onboarding flow with browser detection and extension setup~~
 - Support for **exporting** solve history data (JSON format)
 - Support for **importing** past solve history manually (upload-based or paste-in)
 - General pattern feedback from multiple solves (e.g. "You tend to struggle with DP problems because of X" from GPT)
