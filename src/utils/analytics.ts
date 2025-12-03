@@ -84,3 +84,47 @@ export const trackTourStep = (stepId: string, view: 'dashboard' | 'history') =>
 
 export const trackErrorBoundary = (errorMessage: string, stack?: string) =>
   posthog.capture('error_boundary_triggered', { errorMessage, stack });
+
+/* ---------- Onboarding tracking ---------- */
+
+export const trackOnboardingStarted = (username: string, hasExtension: boolean) =>
+  posthog.capture('onboarding_started', { username, hasExtension });
+
+export const trackOnboardingStepChanged = (
+  username: string,
+  step: 'extension_install' | 'data_sync',
+  direction: 'forward' | 'back',
+) => posthog.capture('onboarding_step_changed', { username, step, direction });
+
+export const trackOnboardingCompleted = (
+  username: string,
+  durationMs: number,
+  skippedExtension: boolean,
+) => posthog.capture('onboarding_completed', { username, durationMs, skippedExtension });
+
+export const trackOnboardingAbandoned = (
+  username: string,
+  currentStep: 'extension_install' | 'data_sync',
+) => posthog.capture('onboarding_abandoned', { username, currentStep });
+
+export const trackExtensionInstallViewed = (username: string) =>
+  posthog.capture('extension_install_viewed', { username });
+
+export const trackExtensionInstallClicked = (username: string) =>
+  posthog.capture('extension_install_clicked', { username });
+
+export const trackDataSyncStarted = (username: string) =>
+  posthog.capture('data_sync_started', { username });
+
+export const trackDataSyncCompleted = (
+  username: string,
+  syncTimeMs: number,
+  problemCount: number,
+  solveCount: number,
+) => posthog.capture('data_sync_completed', { username, syncTimeMs, problemCount, solveCount });
+
+export const trackDataSyncError = (username: string, errorMessage: string) =>
+  posthog.capture('data_sync_error', { username, errorMessage });
+
+export const trackDemoModeSelected = (username: string) =>
+  posthog.capture('demo_mode_selected', { username });

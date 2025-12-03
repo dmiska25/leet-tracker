@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ExtensionInstall } from './ExtensionInstall';
 import { BrowserNotSupported } from './BrowserNotSupported';
 import { MobileNotSupported } from './MobileNotSupported';
@@ -6,6 +6,12 @@ import { DataSync } from './DataSync';
 import { db } from '@/storage/db';
 import { setPrevUser, markOnboardingComplete } from '@/storage/db';
 import { isChromiumBrowser, isMobileBrowser } from '@/domain/browserDetection';
+import {
+  trackOnboardingStarted,
+  trackOnboardingStepChanged,
+  trackOnboardingCompleted,
+  trackDemoModeSelected,
+} from '@/utils/analytics';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -23,16 +29,23 @@ interface OnboardingFlowProps {
 export function OnboardingFlow({ onComplete, username }: OnboardingFlowProps) {
   const [currentStep, setCurrentStep] = useState<'extension' | 'sync'>('extension');
   const [skippedExtension, setSkippedExtension] = useState(false);
+  const [onboardingStartTime] = useState(Date.now());
 
   const demoUsername = import.meta.env.VITE_DEMO_USERNAME || 'leet-tracker-demo-user';
   const isChromium = isChromiumBrowser();
   const isMobile = isMobileBrowser();
+
+  // Track onboarding start on mount
+  useEffect(() => {
+    trackOnboardingStarted(username, false);
+  }, [username]);
 
   const handleExtensionContinue = async (skipped: boolean) => {
     setSkippedExtension(skipped);
 
     if (skipped) {
       // User chose to skip and use demo
+      trackDemoModeSelected(username);
       // Switch to demo user
       await setPrevUser(username);
       await db.setUsername(demoUsername);
@@ -42,6 +55,7 @@ export function OnboardingFlow({ onComplete, username }: OnboardingFlowProps) {
       window.location.reload();
     } else {
       // If user installed extension, proceed to sync
+      trackOnboardingStepChanged(username, 'data_sync', 'forward');
       setCurrentStep('sync');
     }
   };
@@ -52,6 +66,8 @@ export function OnboardingFlow({ onComplete, username }: OnboardingFlowProps) {
   };
 
   const handleSyncComplete = () => {
+    const durationMs = Date.now() - onboardingStartTime;
+    trackOnboardingCompleted(username, durationMs, skippedExtension);
     onComplete();
   };
 

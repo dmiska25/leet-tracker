@@ -26,6 +26,7 @@ describe('DataSync', () => {
     vi.mocked(db.setPrevUser).mockResolvedValue(undefined);
     vi.mocked(db.db.setUsername).mockResolvedValue(undefined as any);
     vi.mocked(db.markOnboardingComplete).mockResolvedValue(undefined);
+    vi.mocked(db.db.getAllSolves).mockResolvedValue([]);
   });
 
   describe('Manifest detection and sync monitoring', () => {

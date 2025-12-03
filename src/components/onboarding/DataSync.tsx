@@ -15,6 +15,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { db } from '@/storage/db';
 import { checkForValidManifest, monitorSyncProgress } from '@/domain/onboardingSync';
 import { signOut } from '@/utils/auth';
+import {
+  trackDataSyncStarted,
+  trackDataSyncCompleted,
+  trackDataSyncError,
+} from '@/utils/analytics';
 
 interface DataSyncProps {
   onComplete: () => void;
@@ -31,6 +36,12 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
   const [syncProgress, setSyncProgress] = useState(0);
   const [totalSolves, setTotalSolves] = useState<number | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncStartTime, setSyncStartTime] = useState<number | null>(null);
+
+  // Track data sync started when component mounts
+  useEffect(() => {
+    trackDataSyncStarted(username);
+  }, [username]);
 
   // Poll for manifest to detect when user has visited LeetCode
   useEffect(() => {
@@ -44,6 +55,7 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
         if (total !== null) {
           setTotalSolves(total);
         }
+        setSyncStartTime(Date.now());
         setSyncStatus('syncing');
       }
     };
@@ -73,6 +85,10 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
 
       // Handle errors - set error if present, clear if recovered
       if (result.error) {
+        if (!syncError) {
+          // New error - track it
+          trackDataSyncError(username, result.error);
+        }
         setSyncError(result.error);
       } else if (syncError) {
         // Clear error state if we've recovered
@@ -82,6 +98,14 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
       // Check if complete
       if (result.status === 'complete') {
         setSyncStatus('complete');
+
+        // Track completion - fire and forget (don't block on it)
+        const syncTimeMs = syncStartTime ? Date.now() - syncStartTime : 0;
+        const problemCount = result.total ?? 0;
+        db.getAllSolves().then((solves) => {
+          trackDataSyncCompleted(username, syncTimeMs, problemCount, solves.length);
+        });
+
         setTimeout(() => {
           onComplete();
         }, 1500);
@@ -94,7 +118,7 @@ export function DataSync({ onComplete, username }: DataSyncProps) {
     // Then poll every 3000ms for progress updates
     const interval = setInterval(checkProgress, 3000);
     return () => clearInterval(interval);
-  }, [syncStatus, totalSolves, onComplete, username, syncError]);
+  }, [syncStatus, totalSolves, onComplete, username, syncError, syncStartTime]);
 
   const handleGoToLeetCode = () => {
     window.open('https://leetcode.com/problems/two-sum/', '_blank');

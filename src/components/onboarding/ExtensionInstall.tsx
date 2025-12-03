@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { checkExtensionInstalled } from '@/domain/onboardingSync';
 import { signOut } from '@/utils/auth';
+import { db } from '@/storage/db';
+import {
+  trackExtensionInstallViewed,
+  trackExtensionInstallClicked,
+  trackExtensionDetected,
+} from '@/utils/analytics';
 
 interface ExtensionInstallProps {
   onContinue: (_skipped: boolean) => void;
@@ -20,6 +26,15 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
 
   useEffect(() => {
+    // Track page view
+    const trackView = async () => {
+      const username = await db.getUsername();
+      if (username) {
+        trackExtensionInstallViewed(username);
+      }
+    };
+    trackView();
+
     // Check for extension presence once on mount
     const checkExtension = async () => {
       const isInstalled = await checkExtensionInstalled();
@@ -28,6 +43,12 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
         // Extension is installed
         setIsExtensionInstalled(true);
         setIsChecking(false);
+
+        // Track detection
+        const username = await db.getUsername();
+        if (username) {
+          trackExtensionDetected();
+        }
 
         // Auto-continue after a brief delay if extension is detected
         setTimeout(() => {
@@ -43,7 +64,11 @@ export function ExtensionInstall({ onContinue }: ExtensionInstallProps) {
     checkExtension();
   }, [onContinue]);
 
-  const handleInstallExtension = () => {
+  const handleInstallExtension = async () => {
+    const username = await db.getUsername();
+    if (username) {
+      trackExtensionInstallClicked(username);
+    }
     const installUrl = import.meta.env.VITE_EXTENSION_URL;
     window.open(installUrl, '_blank');
   };
