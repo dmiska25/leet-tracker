@@ -12,7 +12,6 @@ import { trackSyncCompleted } from '@/utils/analytics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { ExtensionWarning } from '@/components/ExtensionWarning';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import ProblemCards from './ProblemCards';
@@ -22,7 +21,7 @@ export const RANDOM_TAG: Category = 'Random';
 const initialSuggestions = {} as Record<Category, CategoryRecommendation>;
 
 export default function Dashboard() {
-  const { loading, username, progress, refresh, criticalError, extensionInstalled } = useInitApp();
+  const { loading, username, progress, refresh, criticalError } = useInitApp();
   const [open, setOpen] = useState<Category | null>(null);
   const [suggestions, setSuggestions] =
     useState<Record<Category, CategoryRecommendation>>(initialSuggestions);
@@ -117,7 +116,8 @@ export default function Dashboard() {
       await refresh();
       const afterCount = (await db.getAllSolves()).length;
       const durationMs = performance.now() - start;
-      trackSyncCompleted(afterCount - beforeCount, durationMs, extensionInstalled);
+      // Extension is now required, so always true
+      trackSyncCompleted(afterCount - beforeCount, durationMs, true);
       setLastSynced(new Date());
     } finally {
       setSyncing(false);
@@ -155,8 +155,6 @@ export default function Dashboard() {
 
       {/* ───────── Main Content ───────── */}
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {/* Chrome extension banner */}
-        <ExtensionWarning extensionInstalled={extensionInstalled} />
         {/* Header */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

@@ -495,6 +495,33 @@ export async function clearPrevUser() {
 }
 
 /* ----------------------------------------------------------------------------
+   Onboarding preference functions (per-user)
+---------------------------------------------------------------------------- */
+
+/**
+ * Mark onboarding as complete for a specific user.
+ * Uses per-user key to track onboarding separately for each account.
+ */
+export async function markOnboardingComplete(username: string) {
+  await db.setAppPref(`onboarding.${username}.complete`, true);
+}
+
+/**
+ * Check if onboarding has been completed for a specific user.
+ */
+export async function getOnboardingComplete(username: string): Promise<boolean> {
+  return (await db.getAppPref<boolean>(`onboarding.${username}.complete`)) === true;
+}
+
+/**
+ * Clear the onboarding completion state for a specific user.
+ * Used when forcing a user to re-complete onboarding (e.g., when extension is missing).
+ */
+export async function clearOnboardingComplete(username: string): Promise<void> {
+  await db.deleteAppPref(`onboarding.${username}.complete`);
+}
+
+/* ----------------------------------------------------------------------------
    AI Feedback workflow preference functions
 ---------------------------------------------------------------------------- */
 

@@ -22,6 +22,8 @@ vi.mock('@/storage/db', () => ({
   getPrevUser: vi.fn(),
   setPrevUser: vi.fn(),
   clearPrevUser: vi.fn(),
+  getOnboardingComplete: vi.fn(),
+  markOnboardingComplete: vi.fn(),
 }));
 
 vi.mock('@/tutorial/steps', () => ({

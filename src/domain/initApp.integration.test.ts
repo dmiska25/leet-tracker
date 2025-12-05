@@ -278,7 +278,11 @@ describe('initApp (integration with fake‑indexeddb)', () => {
 
   it('sets extensionInstalled when extension returns no new solves', async () => {
     /* Extension responds but has no new data */
-    vi.mocked(getManifestSince).mockResolvedValue([{ index: 0, from: 0, to: 0 }]);
+    vi.mocked(getManifestSince).mockResolvedValue({
+      chunks: [{ index: 0, from: 0, to: 0 }],
+      total: 0,
+      totalSynced: 0,
+    });
     vi.mocked(getChunk).mockResolvedValue([]);
 
     const result = await initApp();
@@ -313,10 +317,14 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       },
     ];
 
-    vi.mocked(getManifestSince).mockResolvedValue([
-      { index: 0, from: 0, to: recentTimestamp1 },
-      { index: 1, from: recentTimestamp1 + 1, to: recentTimestamp2 },
-    ]);
+    vi.mocked(getManifestSince).mockResolvedValue({
+      chunks: [
+        { index: 0, from: 0, to: recentTimestamp1 },
+        { index: 1, from: recentTimestamp1 + 1, to: recentTimestamp2 },
+      ],
+      total: 2,
+      totalSynced: 2,
+    });
 
     vi.mocked(getChunk).mockImplementation(async (_username: string, idx: number) => {
       return idx === 0 ? chunk0 : chunk1;

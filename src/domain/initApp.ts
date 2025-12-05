@@ -129,15 +129,18 @@ export async function initApp(): Promise<{
   const updateSolvesErrors = await updateSolves(username);
   errors.push(...updateSolvesErrors);
 
-  /* 2b. Try to pull supplementary data from browser extension */
-  try {
-    const added = await syncFromExtension(username);
-    extensionInstalled = true;
-    if (added) console.log(`[initApp] Added ${added} solves via extension`);
-  } catch (err: any) {
-    if (err?.code !== 'EXTENSION_UNAVAILABLE') {
-      console.warn('[initApp] Extension sync failed', err);
-      errors.push('An unexpected error occurred while syncing with the extension.');
+  /* 2b. Try to pull supplementary data from browser extension (skip for demo user) */
+  const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
+  if (username !== DEMO_USERNAME) {
+    try {
+      const added = await syncFromExtension(username);
+      extensionInstalled = true;
+      if (added) console.log(`[initApp] Added ${added} solves via extension`);
+    } catch (err: any) {
+      if (err?.code !== 'EXTENSION_UNAVAILABLE') {
+        console.warn('[initApp] Extension sync failed', err);
+        errors.push('An unexpected error occurred while syncing with the extension.');
+      }
     }
   }
 

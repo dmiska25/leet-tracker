@@ -46,7 +46,11 @@ describe('syncFromExtension', () => {
     vi.mocked(db.setExtensionLastTimestamp).mockResolvedValue('');
 
     /* extensionBridge mocks */
-    vi.mocked(getManifestSince).mockResolvedValue([{ index: 0, from: 0, to: 1234567890 }]);
+    vi.mocked(getManifestSince).mockResolvedValue({
+      chunks: [{ index: 0, from: 0, to: 1234567890 }],
+      total: undefined,
+      totalSynced: undefined,
+    });
     vi.mocked(getChunk).mockResolvedValue(mockSolves);
   });
 
@@ -78,7 +82,11 @@ describe('syncFromExtension', () => {
   });
 
   it('handles no new solves gracefully', async () => {
-    vi.mocked(getManifestSince).mockResolvedValue([]); // No new chunks
+    vi.mocked(getManifestSince).mockResolvedValue({
+      chunks: [],
+      total: undefined,
+      totalSynced: undefined,
+    }); // No new chunks
 
     const added = await syncFromExtension('testuser');
 

@@ -1,2 +1,5 @@
-path_filters:
-  - '!artifacts/**'
+language: 'en-US'
+early_access: false
+reviews:
+  path_filters:
+    - '!artifacts/**'

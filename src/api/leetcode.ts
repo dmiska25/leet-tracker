@@ -113,11 +113,19 @@ query getUserProfile($username: String!) {
  */
 export async function verifyUser(username: string): Promise<{ exists: boolean }> {
   try {
-    const data = await leetcodeGraphQL<{ matchedUser: { username: string } | null }>(
-      DOES_USER_EXIST,
-      { username },
-    );
-    return { exists: Boolean(data?.matchedUser) };
+    type UserProfileData = {
+      matchedUser: {
+        username: string;
+      } | null;
+    };
+
+    const data = await leetcodeGraphQL<UserProfileData>(DOES_USER_EXIST, { username });
+
+    if (!data?.matchedUser) {
+      return { exists: false };
+    }
+
+    return { exists: true };
   } catch (error) {
     // Handle the specific "user doesn't exist" error
     if (error instanceof Error && error.message === 'That user does not exist.') {
