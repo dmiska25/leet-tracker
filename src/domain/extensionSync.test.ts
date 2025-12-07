@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
 import { syncFromExtension } from './extensionSync';
-import { Difficulty, Problem, Solve } from '../types/types';
+import { Difficulty, Problem, Solve, HINT_TYPES } from '../types/types';
 
 vi.mock('../storage/db');
 vi.mock('../api/extensionBridge');
@@ -361,7 +361,7 @@ describe('syncFromExtension', () => {
   });
 
   it('handles all valid HintType values', async () => {
-    const hintTypes = ['none', 'leetcode_hint', 'solution_peek', 'gpt_help'];
+    const hintTypes = [...HINT_TYPES];
 
     for (const hintType of hintTypes) {
       vi.mocked(getChunk).mockResolvedValue([

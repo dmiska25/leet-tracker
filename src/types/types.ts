@@ -186,7 +186,8 @@ export interface RunEventsSummary {
 /* -------------------------------------------------------------------------- */
 
 // Single user solve attempt
-export type HintType = 'none' | 'leetcode_hint' | 'solution_peek' | 'gpt_help';
+export const HINT_TYPES = ['none', 'leetcode_hint', 'solution_peek', 'gpt_help'] as const;
+export type HintType = (typeof HINT_TYPES)[number];
 export interface Solve {
   slug: string;
   title: string;

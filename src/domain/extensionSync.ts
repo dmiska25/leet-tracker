@@ -1,6 +1,7 @@
 import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
 import type { Solve, HintType } from '../types/types';
+import { HINT_TYPES } from '../types/types';
 
 export { ExtensionUnavailable };
 
@@ -10,8 +11,7 @@ export { ExtensionUnavailable };
  */
 function mapToHintType(raw: unknown): HintType | undefined {
   if (typeof raw !== 'string') return undefined;
-  const validHints: HintType[] = ['none', 'leetcode_hint', 'solution_peek', 'gpt_help'];
-  return validHints.includes(raw as HintType) ? (raw as HintType) : undefined;
+  return HINT_TYPES.includes(raw as HintType) ? (raw as HintType) : undefined;
 }
 
 /**
