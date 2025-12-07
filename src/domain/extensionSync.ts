@@ -1,8 +1,18 @@
 import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
-import type { Solve } from '../types/types';
+import type { Solve, HintType } from '../types/types';
+import { HINT_TYPES } from '../types/types';
 
 export { ExtensionUnavailable };
+
+/**
+ * Attempts to map a raw string value to HintType.
+ * Returns undefined if the value is not a valid HintType.
+ */
+function mapToHintType(raw: unknown): HintType | undefined {
+  if (typeof raw !== 'string') return undefined;
+  return HINT_TYPES.includes(raw as HintType) ? (raw as HintType) : undefined;
+}
 
 /**
  * Pulls new solves (and problem descriptions) from the extension,
@@ -64,6 +74,7 @@ export async function syncFromExtension(username: string): Promise<number> {
         problemNote: existingSolve?.problemNote ?? (raw as any).problemNote ?? undefined,
         codingJourney: (raw as any).codingJourney ?? existingSolve?.codingJourney,
         runEvents: (raw as any).runEvents ?? existingSolve?.runEvents,
+        usedHints: existingSolve?.usedHints ?? mapToHintType((raw as any).usedHints) ?? 'none',
       };
 
       await db.saveSolve(solve);

@@ -295,6 +295,17 @@ describe('initApp (integration with fake‑indexeddb)', () => {
   });
 
   it('merges solves from multiple extension chunks', async () => {
+    // Clear the database completely before this test
+    const allSolveKeys = await testDb.getAllKeys('solves');
+    for (const key of allSolveKeys) {
+      await testDb.delete('solves', key);
+    }
+
+    // Reset recent solves timestamp to force API fetch
+    const username = await testDb.get('leetcode-username', 'username');
+    await testDb.delete('solves-metadata', `${username}|recentSolvesLastUpdated`);
+    await testDb.delete('extension-sync', `${username}|lastTimestamp`);
+
     // Use recent timestamps (within last 30 days) to ensure progress calculation works
     const now = Math.floor(Date.now() / 1000);
     const recentTimestamp1 = now - 24 * 60 * 60; // 1 day ago

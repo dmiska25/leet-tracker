@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
 import { syncFromExtension } from './extensionSync';
-import { Difficulty, Problem, Solve } from '../types/types';
+import { Difficulty, Problem, Solve, HINT_TYPES } from '../types/types';
 
 vi.mock('../storage/db');
 vi.mock('../api/extensionBridge');
@@ -76,6 +76,7 @@ describe('syncFromExtension', () => {
         code: 'console.log("solution");',
         difficulty: Difficulty.Easy,
         tags: ['Array'],
+        usedHints: 'none', // Defaults to 'none' when not provided
       }),
     );
     expect(db.setExtensionLastTimestamp).toHaveBeenCalledWith(1234567890);
@@ -251,5 +252,135 @@ describe('syncFromExtension', () => {
 
     // Newest timestamp should be updated
     expect(db.setExtensionLastTimestamp).toHaveBeenCalledWith(enrichedTs);
+  });
+
+  it('ingests usedHints when provided with valid HintType value', async () => {
+    const solveWithHints = {
+      titleSlug: 'p1',
+      timestamp: 1234567892,
+      statusDisplay: 'Accepted',
+      lang: 'ts',
+      usedHints: 'leetcode_hint', // Valid HintType
+    };
+
+    vi.mocked(getChunk).mockResolvedValue([solveWithHints]);
+
+    const added = await syncFromExtension('testuser');
+    expect(added).toBe(1);
+
+    expect(db.saveSolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usedHints: 'leetcode_hint',
+      }),
+    );
+  });
+
+  it('defaults to none when value is invalid and no existing value', async () => {
+    const solveWithInvalidHints = {
+      titleSlug: 'p1',
+      timestamp: 1234567893,
+      statusDisplay: 'Accepted',
+      lang: 'ts',
+      usedHints: 'invalid_hint_type', // Invalid value
+    };
+
+    vi.mocked(getChunk).mockResolvedValue([solveWithInvalidHints]);
+
+    const added = await syncFromExtension('testuser');
+    expect(added).toBe(1);
+
+    expect(db.saveSolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usedHints: 'none', // Defaults to 'none'
+      }),
+    );
+  });
+
+  it('preserves existing usedHints when not provided in new data', async () => {
+    const existingSolve = {
+      slug: 'p1',
+      title: 'p1',
+      timestamp: 1234567894,
+      status: 'Accepted',
+      lang: 'ts',
+      usedHints: 'gpt_help' as const,
+    };
+
+    vi.mocked(db.getSolve).mockResolvedValue(existingSolve);
+
+    const solveWithoutHints = {
+      titleSlug: 'p1',
+      timestamp: 1234567894,
+      statusDisplay: 'Accepted',
+      lang: 'ts',
+      // No usedHints field
+    };
+
+    vi.mocked(getChunk).mockResolvedValue([solveWithoutHints]);
+
+    const added = await syncFromExtension('testuser');
+    expect(added).toBe(1);
+
+    expect(db.saveSolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usedHints: 'gpt_help', // Preserved from existing
+      }),
+    );
+  });
+
+  it('does not override existing usedHints with new data', async () => {
+    const existingSolve = {
+      slug: 'p1',
+      title: 'p1',
+      timestamp: 1234567895,
+      status: 'Accepted',
+      lang: 'ts',
+      usedHints: 'solution_peek' as const,
+    };
+
+    vi.mocked(db.getSolve).mockResolvedValue(existingSolve);
+
+    const solveWithDifferentHints = {
+      titleSlug: 'p1',
+      timestamp: 1234567895,
+      statusDisplay: 'Accepted',
+      lang: 'ts',
+      usedHints: 'leetcode_hint', // Different value
+    };
+
+    vi.mocked(getChunk).mockResolvedValue([solveWithDifferentHints]);
+
+    const added = await syncFromExtension('testuser');
+    expect(added).toBe(1);
+
+    expect(db.saveSolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        usedHints: 'solution_peek', // Preserved from existing, not overridden
+      }),
+    );
+  });
+
+  it('handles all valid HintType values', async () => {
+    const hintTypes = [...HINT_TYPES];
+
+    for (const hintType of hintTypes) {
+      vi.mocked(getChunk).mockResolvedValue([
+        {
+          titleSlug: 'p1',
+          timestamp: 1234567890 + hintTypes.indexOf(hintType),
+          statusDisplay: 'Accepted',
+          lang: 'ts',
+          usedHints: hintType,
+        },
+      ]);
+
+      await syncFromExtension('testuser');
+
+      expect(db.saveSolve).toHaveBeenCalledWith(
+        expect.objectContaining({
+          usedHints: hintType,
+        }),
+      );
+    }
   });
 });
