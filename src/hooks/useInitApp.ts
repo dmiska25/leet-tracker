@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { initApp, resetRecentSolvesCache } from '@/domain/initApp';
 import type { CategoryProgress } from '@/types/progress';
@@ -47,9 +47,9 @@ export function useInitApp() {
     load();
   }, []);
 
-  /*
-   * Public helper – used by the "Sync Now" button
-   * DEPRECATED: With automatic polling, prefer using silentRefresh() instead
+  /**
+   * Public helper – used by the "Sync Now" button.
+   * @deprecated With automatic polling, prefer using silentRefresh() instead.
    */
   const refresh = async () => {
     setState((s) => ({ ...s, loading: true, criticalError: false }));
@@ -61,7 +61,7 @@ export function useInitApp() {
    * Silent refresh - updates data without showing loading spinner.
    * Used by automatic polling system to update UI seamlessly.
    */
-  const silentRefresh = async () => {
+  const silentRefresh = useCallback(async () => {
     // Don't set loading state - just update the data in background
     try {
       const { username, progress, errors, extensionInstalled } = await initApp();
@@ -80,7 +80,7 @@ export function useInitApp() {
       console.error('[useInitApp] silentRefresh failed', err);
       // Don't show critical error on silent refresh - just log it
     }
-  };
+  }, [toast]);
 
   return { ...state, refresh, silentRefresh };
 }
