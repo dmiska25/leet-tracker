@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '../storage/db';
 import { fetchProblemCatalog } from '../api/leetcode';
+import { syncDemoSolves } from '../api/demo';
 import { Difficulty, Problem, Solve, GoalProfile } from '../types/types';
 import { syncFromExtension } from './extensionSync';
 import { initApp } from './initApp';
 
 vi.mock('../storage/db');
 vi.mock('../api/leetcode');
+vi.mock('../api/demo');
 vi.mock('./extensionSync');
 
 const mockProblems: Problem[] = [
@@ -125,17 +127,23 @@ describe('initApp', () => {
     expect(res.errors).toContain('An unexpected error occurred while syncing with the extension.');
   });
 
-  it('skips extension sync for demo user', async () => {
+  it('loads demo data for demo user instead of extension sync', async () => {
     // Set demo username in env
     vi.stubEnv('VITE_DEMO_USERNAME', 'test-demo-user');
     vi.mocked(db.getUsername).mockResolvedValue('test-demo-user');
+
+    // Mock syncDemoSolves to return number of saved solves
+    vi.mocked(syncDemoSolves).mockResolvedValue(5);
 
     const res = await initApp();
 
     // Should NOT call syncFromExtension for demo user
     expect(syncFromExtension).not.toHaveBeenCalled();
+    // Should call syncDemoSolves with db instance
+    expect(syncDemoSolves).toHaveBeenCalledWith(db);
     expect(res.extensionInstalled).toBe(false);
     expect(res.username).toBe('test-demo-user');
+    expect(res.errors).toEqual([]);
 
     vi.unstubAllEnvs();
   });

@@ -1,5 +1,6 @@
 import { db } from '../storage/db';
 import { fetchProblemCatalog } from '../api/leetcode';
+import { syncDemoSolves } from '../api/demo';
 import { Category, GoalProfile } from '../types/types';
 import { evaluateCategoryProgress } from './progress';
 import { identifyUser, trackExtensionDetected } from '@/utils/analytics';
@@ -95,7 +96,16 @@ export async function initApp(): Promise<{
 
   // 2. Extension sync is the PRIMARY data source for solve data
   const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
-  if (username !== DEMO_USERNAME) {
+  if (username === DEMO_USERNAME) {
+    // Demo user: Load and sync demo data from demo-solves.json
+    try {
+      await syncDemoSolves(db);
+    } catch (err: any) {
+      console.error('[initApp] Failed to sync demo solves:', err);
+      errors.push('Failed to load demo data.');
+    }
+  } else {
+    // Regular user: Sync from extension
     try {
       const added = await syncFromExtension(username);
       extensionInstalled = true;
