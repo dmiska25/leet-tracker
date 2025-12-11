@@ -130,4 +130,64 @@ describe('useInitApp', () => {
 
     expect(result.current.loading).toBe(false);
   });
+
+  it('silentRefresh() updates data without setting loading state', async () => {
+    // First init call
+    initApp.mockResolvedValueOnce({
+      username: 'dave',
+      progress: [{ tag: 'Array' } as any],
+      errors: [],
+      extensionInstalled: false,
+    });
+
+    const { result } = renderHook(() => useInitApp());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.progress).toHaveLength(1);
+
+    // Second init call (for silentRefresh)
+    initApp.mockResolvedValueOnce({
+      username: 'dave',
+      progress: [{ tag: 'Array' } as any, { tag: 'Hash Table' } as any],
+      errors: [],
+      extensionInstalled: true,
+    });
+
+    // Run silentRefresh
+    await act(async () => {
+      await result.current.silentRefresh();
+    });
+
+    // Loading should never have been set to true during silentRefresh
+    expect(result.current.loading).toBe(false);
+    // Data should be updated
+    expect(result.current.progress).toHaveLength(2);
+    expect(result.current.extensionInstalled).toBe(true);
+    expect(initApp).toHaveBeenCalledTimes(2);
+  });
+
+  it('silentRefresh() handles errors gracefully without showing critical error', async () => {
+    // First init call
+    initApp.mockResolvedValueOnce({
+      username: 'eve',
+      progress: [],
+      errors: [],
+      extensionInstalled: false,
+    });
+
+    const { result } = renderHook(() => useInitApp());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    // Second init call fails
+    initApp.mockRejectedValueOnce(new Error('silent refresh failed'));
+
+    // Run silentRefresh
+    await act(async () => {
+      await result.current.silentRefresh();
+    });
+
+    // Should not show critical error (just logs it)
+    expect(result.current.criticalError).toBe(false);
+    expect(result.current.loading).toBe(false);
+  });
 });

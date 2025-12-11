@@ -9,15 +9,28 @@ import { db } from '@/storage/db';
 /*  Mock useInitApp so Dashboard mounts instantly with stub refresh   */
 /* ------------------------------------------------------------------ */
 const refreshMock = vi.fn().mockResolvedValue(undefined);
+const silentRefreshMock = vi.fn().mockResolvedValue(undefined);
 const hookState = {
   loading: false,
   username: 'testuser',
   progress: [],
   refresh: refreshMock,
+  silentRefresh: silentRefreshMock,
 };
 
 vi.mock('@/hooks/useInitApp', () => ({
   useInitApp: () => hookState,
+}));
+
+/* ------------------------------------------------------------------ */
+/*  Mock triggerManualSync from extensionPoller                      */
+/* ------------------------------------------------------------------ */
+const { triggerManualSyncMock } = vi.hoisted(() => ({
+  triggerManualSyncMock: vi.fn().mockResolvedValue(0),
+}));
+
+vi.mock('@/domain/extensionPoller', () => ({
+  triggerManualSync: triggerManualSyncMock,
 }));
 
 /* ------------------------------------------------------------------ */
@@ -33,6 +46,9 @@ describe('Dashboard buttons', () => {
 
   beforeEach(() => {
     refreshMock.mockClear();
+    silentRefreshMock.mockClear();
+    triggerManualSyncMock.mockClear();
+    triggerManualSyncMock.mockResolvedValue(0); // Default: no new solves
 
     /* confirm dialog */
     confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true) as Mock;
@@ -78,6 +94,9 @@ describe('Dashboard buttons', () => {
 
   it('calls refresh when Sync Now button is clicked', async () => {
     const user = userEvent.setup();
+    // Mock triggerManualSync to return 1 new solve so refresh is called
+    triggerManualSyncMock.mockResolvedValueOnce(1);
+
     render(<Dashboard />);
 
     const button = screen.getByRole('button', { name: /sync now/i });
@@ -85,7 +104,11 @@ describe('Dashboard buttons', () => {
 
     await user.click(button);
 
-    await waitFor(() => expect(refreshMock).toHaveBeenCalledTimes(1));
+    // triggerManualSync is called first, then refresh if new solves found
+    await waitFor(() => {
+      expect(triggerManualSyncMock).toHaveBeenCalledTimes(1);
+      expect(refreshMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('changes active profile when dropdown item clicked', async () => {

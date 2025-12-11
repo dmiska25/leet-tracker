@@ -1,5 +1,5 @@
 import { db } from '../storage/db';
-import { fetchProblemCatalog, fetchRecentSolves } from '../api/leetcode';
+import { fetchProblemCatalog } from '../api/leetcode';
 import { Category, GoalProfile } from '../types/types';
 import { evaluateCategoryProgress } from './progress';
 import { identifyUser, trackExtensionDetected } from '@/utils/analytics';
@@ -20,10 +20,29 @@ function isStale(epoch: number | undefined, maxAgeMinutes: number): boolean {
 }
 
 /**
+ * Initializes the problem catalog on app startup (independent of user sign-in).
+ * This runs once when the app loads, not on every sign-in.
+ * Should be called from main.tsx or App.tsx before user authentication.
+ */
+export async function initProblemCatalog(): Promise<void> {
+  try {
+    console.log('[initProblemCatalog] Checking problem catalog...');
+    const errors = await updateProblemList();
+    if (errors.length > 0) {
+      console.warn('[initProblemCatalog] Catalog update had errors:', errors);
+    }
+  } catch (err) {
+    // Silently handle errors during catalog init (won't block app startup)
+    console.error('[initProblemCatalog] Failed to initialize catalog:', err);
+  }
+}
+
+/**
  * Fetches the problem catalog from the given URL and updates the local database.
+ * This function can be called independently of user sign-in for lazy loading.
  * @returns Promise<string[]> - A list of error messages
  */
-async function updateProblemList(): Promise<string[]> {
+export async function updateProblemList(): Promise<string[]> {
   const lastUpdated = await db.getProblemListLastUpdated();
   if (isStale(lastUpdated, 24 * 60)) {
     // 24 hours in minutes
@@ -50,55 +69,59 @@ async function updateProblemList(): Promise<string[]> {
   return [];
 }
 
-async function updateSolves(username: string): Promise<string[]> {
-  const lastSynced = await db.getRecentSolvesLastUpdated();
+/**
+ * Code for LeetCode API solve fetching has been disabled.
+ * All solve data now comes from the Chrome extension.
+ */
+// async function updateSolves(username: string): Promise<string[]> {
+//   const lastSynced = await db.getRecentSolvesLastUpdated();
 
-  // Skip sync if recently updated
-  if (!isStale(lastSynced, 30)) {
-    // 30 minutes
-    console.log('[initApp] Recent solves are up to date, skipping API call');
-    return [];
-  }
+//   // Skip sync if recently updated
+//   if (!isStale(lastSynced, 30)) {
+//     // 30 minutes
+//     console.log('[initApp] Recent solves are up to date, skipping API call');
+//     return [];
+//   }
 
-  try {
-    console.log('[initApp] Fetching recent solves from LeetCode API...');
-    const recent = await fetchRecentSolves(username);
+//   try {
+//     console.log('[initApp] Fetching recent solves from LeetCode API...');
+//     const recent = await fetchRecentSolves(username);
 
-    for (const solve of recent) {
-      // Fetch problem from DB to enrich tags/difficulty
-      const problem = await db.getProblem(solve.slug);
-      if (!problem) {
-        console.warn(`[initApp] Problem ${solve.slug} not found in local database, skipping solve`);
-        continue;
-      }
+//     for (const solve of recent) {
+//       // Fetch problem from DB to enrich tags/difficulty
+//       const problem = await db.getProblem(solve.slug);
+//       if (!problem) {
+//         console.warn(`[initApp] Problem ${solve.slug} not found in local database, skipping solve`);
+//         continue;
+//       }
 
-      // Attach canonical tags & difficulty
-      solve.tags = problem.tags;
-      solve.difficulty = problem.difficulty;
+//       // Attach canonical tags & difficulty
+//       solve.tags = problem.tags;
+//       solve.difficulty = problem.difficulty;
 
-      // Skip if already present for this user
-      const existing = await db.getSolve(solve.slug, solve.timestamp);
-      if (existing) continue;
+//       // Skip if already present for this user
+//       const existing = await db.getSolve(solve.slug, solve.timestamp);
+//       if (existing) continue;
 
-      // Persist via centralized DB API (namespacing handled inside db.ts)
-      await db.saveSolve(solve);
-    }
+//       // Persist via centralized DB API (namespacing handled inside db.ts)
+//       await db.saveSolve(solve);
+//     }
 
-    // Set the per-user sync timestamp (namespacing handled inside db.ts)
-    await db.setRecentSolvesLastUpdated(Date.now());
+//     // Set the per-user sync timestamp (namespacing handled inside db.ts)
+//     await db.setRecentSolvesLastUpdated(Date.now());
 
-    console.log(`[initApp] Synced ${recent.length} recent solves`);
-    return [];
-  } catch (err: any) {
-    if (err?.code === 'RATE_LIMITED') {
-      console.warn('[initApp] Rate limited by LeetCode API');
-      return ['LeetCode API rate limit hit — recent solves are temporarily unavailable.'];
-    } else {
-      console.error('[initApp] Failed to sync recent solves:', err);
-      return ['An unexpected error occurred, recent solves are temporarily unavailable.'];
-    }
-  }
-}
+//     console.log(`[initApp] Synced ${recent.length} recent solves`);
+//     return [];
+//   } catch (err: any) {
+//     if (err?.code === 'RATE_LIMITED') {
+//       console.warn('[initApp] Rate limited by LeetCode API');
+//       return ['LeetCode API rate limit hit — recent solves are temporarily unavailable.'];
+//     } else {
+//       console.error('[initApp] Failed to sync recent solves:', err);
+//       return ['An unexpected error occurred, recent solves are temporarily unavailable.'];
+//     }
+//   }
+// }
 
 export async function initApp(): Promise<{
   username: string | undefined;
@@ -121,15 +144,10 @@ export async function initApp(): Promise<{
 
   console.log(`[initApp] Username found: ${username}`);
 
-  // 1. Update problem list if needed
-  const updateProblemListErrors = await updateProblemList();
-  errors.push(...updateProblemListErrors);
+  // 1. Problem catalog is loaded separately on app startup (lazy loading)
+  // No need to block sign-in on catalog load
 
-  // 2. Sync recent solves (handle rate limiting gracefully)
-  const updateSolvesErrors = await updateSolves(username);
-  errors.push(...updateSolvesErrors);
-
-  /* 2b. Try to pull supplementary data from browser extension (skip for demo user) */
+  // 2. Extension sync is the PRIMARY data source for solve data
   const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
   if (username !== DEMO_USERNAME) {
     try {

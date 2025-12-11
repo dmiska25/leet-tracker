@@ -47,12 +47,40 @@ export function useInitApp() {
     load();
   }, []);
 
-  /* Public helper – used by the "Sync Now” button */
+  /*
+   * Public helper – used by the "Sync Now" button
+   * DEPRECATED: With automatic polling, prefer using silentRefresh() instead
+   */
   const refresh = async () => {
     setState((s) => ({ ...s, loading: true, criticalError: false }));
     await resetRecentSolvesCache();
     await load();
   };
 
-  return { ...state, refresh };
+  /**
+   * Silent refresh - updates data without showing loading spinner.
+   * Used by automatic polling system to update UI seamlessly.
+   */
+  const silentRefresh = async () => {
+    // Don't set loading state - just update the data in background
+    try {
+      const { username, progress, errors, extensionInstalled } = await initApp();
+
+      errors.map((error) => {
+        toast(error, 'error');
+      });
+
+      setState((prevState) => ({
+        ...prevState,
+        username,
+        progress: progress ?? [],
+        extensionInstalled,
+      }));
+    } catch (err: any) {
+      console.error('[useInitApp] silentRefresh failed', err);
+      // Don't show critical error on silent refresh - just log it
+    }
+  };
+
+  return { ...state, refresh, silentRefresh };
 }

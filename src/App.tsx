@@ -20,6 +20,8 @@ import {
   clearOnboardingComplete,
 } from '@/storage/db';
 import { checkExtensionInstalled } from '@/domain/onboardingSync';
+import { initProblemCatalog } from '@/domain/initApp';
+import { useExtensionPoller } from '@/hooks/useExtensionPoller';
 
 function App() {
   const { loading, username, extensionInstalled } = useInitApp();
@@ -41,6 +43,20 @@ function App() {
       }),
     [extensionInstalled],
   );
+
+  // Initialize problem catalog on app startup (runs once, independent of user sign-in)
+  useEffect(() => {
+    initProblemCatalog();
+  }, []); // Empty dependency array = runs once on mount
+
+  // GLOBAL POLLER: Single instance of extension polling for entire app
+  // Components (Dashboard, SolveHistory) listen to 'solves-updated' events passively
+  const { triggerSync: _triggerSync } = useExtensionPoller({
+    onSolvesUpdated: (count) => {
+      console.log(`[App] ${count} new solves detected from global poller`);
+      // Event is dispatched by poller - components will handle their own updates
+    },
+  });
 
   // Check if user needs to see onboarding
   useEffect(() => {
@@ -188,7 +204,13 @@ function App() {
           setShowPrompt(false);
         }}
       />
-      {view === 'dashboard' ? <Dashboard /> : <SolveHistory />}
+      {/* Render both components to preserve state, hide inactive one with CSS */}
+      <div style={{ display: view === 'dashboard' ? 'block' : 'none' }}>
+        <Dashboard />
+      </div>
+      <div style={{ display: view === 'history' ? 'block' : 'none' }}>
+        <SolveHistory />
+      </div>
     </>
   );
 }

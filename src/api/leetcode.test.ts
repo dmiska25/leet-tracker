@@ -1,10 +1,5 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  mapTagsToCategories,
-  fetchProblemCatalog,
-  fetchRecentSolves,
-  verifyUser,
-} from './leetcode';
+import { mapTagsToCategories, fetchProblemCatalog, verifyUser } from './leetcode';
 
 /* ------------------------------------------------------------------ */
 /*  mapTagsToCategories                                                */
@@ -173,74 +168,74 @@ describe('verifyUser', () => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  fetchRecentSolves                                                  */
+/*  fetchRecentSolves (disabled - extension-only mode)                */
 /* ------------------------------------------------------------------ */
-describe('fetchRecentSolves', () => {
-  beforeEach(() => {
-    global.fetch = vi.fn();
-  });
+// describe('fetchRecentSolves', () => {
+//   beforeEach(() => {
+//     global.fetch = vi.fn();
+//   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+//   afterEach(() => {
+//     vi.restoreAllMocks();
+//   });
 
-  it('maps raw submission data to Solve type', async () => {
-    const mockGraphQLResponse = {
-      data: {
-        recentSubmissionList: [
-          {
-            title: 'Minimum Window Substring',
-            titleSlug: 'minimum-window-substring',
-            timestamp: '1746032384',
-            statusDisplay: 'Accepted',
-            lang: 'python3',
-          },
-          {
-            title: 'Sliding Window Maximum',
-            titleSlug: 'sliding-window-maximum',
-            timestamp: '1746031189',
-            statusDisplay: 'Accepted',
-            lang: 'python3',
-          },
-        ],
-      },
-    };
+//   it('maps raw submission data to Solve type', async () => {
+//     const mockGraphQLResponse = {
+//       data: {
+//         recentSubmissionList: [
+//           {
+//             title: 'Minimum Window Substring',
+//             titleSlug: 'minimum-window-substring',
+//             timestamp: '1746032384',
+//             statusDisplay: 'Accepted',
+//             lang: 'python3',
+//           },
+//           {
+//             title: 'Sliding Window Maximum',
+//             titleSlug: 'sliding-window-maximum',
+//             timestamp: '1746031189',
+//             statusDisplay: 'Accepted',
+//             lang: 'python3',
+//           },
+//         ],
+//       },
+//     };
 
-    (fetch as any).mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => mockGraphQLResponse,
-    });
+//     (fetch as any).mockResolvedValueOnce({
+//       ok: true,
+//       status: 200,
+//       json: async () => mockGraphQLResponse,
+//     });
 
-    const result = await fetchRecentSolves('dmiska25');
+//     const result = await fetchRecentSolves('dmiska25');
 
-    expect(result).toEqual([
-      {
-        slug: 'minimum-window-substring',
-        title: 'Minimum Window Substring',
-        timestamp: 1746032384,
-        status: 'Accepted',
-        lang: 'python3',
-      },
-      {
-        slug: 'sliding-window-maximum',
-        title: 'Sliding Window Maximum',
-        timestamp: 1746031189,
-        status: 'Accepted',
-        lang: 'python3',
-      },
-    ]);
-  });
+//     expect(result).toEqual([
+//       {
+//         slug: 'minimum-window-substring',
+//         title: 'Minimum Window Substring',
+//         timestamp: 1746032384,
+//         status: 'Accepted',
+//         lang: 'python3',
+//       },
+//       {
+//         slug: 'sliding-window-maximum',
+//         title: 'Sliding Window Maximum',
+//         timestamp: 1746031189,
+//         status: 'Accepted',
+//         lang: 'python3',
+//       },
+//     ]);
+//   });
 
-  it('rejects with RATE_LIMITED error when HTTP 429', async () => {
-    (fetch as any).mockResolvedValueOnce({ ok: false, status: 429 });
+//   it('rejects with RATE_LIMITED error when HTTP 429', async () => {
+//     (fetch as any).mockResolvedValueOnce({ ok: false, status: 429 });
 
-    await expect(fetchRecentSolves('foo')).rejects.toMatchObject({ code: 'RATE_LIMITED' });
-  });
+//     await expect(fetchRecentSolves('foo')).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+//   });
 
-  it('throws generic error for non‑ok status', async () => {
-    (fetch as any).mockResolvedValueOnce({ ok: false, status: 500 });
+//   it('throws generic error for non‑ok status', async () => {
+//     (fetch as any).mockResolvedValueOnce({ ok: false, status: 500 });
 
-    await expect(fetchRecentSolves('foo')).rejects.toThrow('HTTP 500');
-  });
-});
+//     await expect(fetchRecentSolves('foo')).rejects.toThrow('HTTP 500');
+//   });
+// });

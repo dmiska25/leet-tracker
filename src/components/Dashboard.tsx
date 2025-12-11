@@ -8,6 +8,7 @@ import { getCategorySuggestions, getRandomSuggestions } from '@/domain/recommend
 import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
 import { trackSyncCompleted } from '@/utils/analytics';
+import { triggerManualSync } from '@/domain/extensionPoller';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress';
@@ -21,13 +22,27 @@ export const RANDOM_TAG: Category = 'Random';
 const initialSuggestions = {} as Record<Category, CategoryRecommendation>;
 
 export default function Dashboard() {
-  const { loading, username, progress, refresh, criticalError } = useInitApp();
+  const { loading, username, progress, refresh, silentRefresh, criticalError } = useInitApp();
   const [open, setOpen] = useState<Category | null>(null);
   const [suggestions, setSuggestions] =
     useState<Record<Category, CategoryRecommendation>>(initialSuggestions);
   const [syncing, setSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [profileManagerOpen, setProfileManagerOpen] = useState(false);
+
+  // Listen for updates from the global poller (managed by App.tsx)
+  // Use silentRefresh to avoid loading spinner flash when data updates automatically
+  useEffect(() => {
+    const handleSolvesUpdated = async (event: Event) => {
+      const count = (event as CustomEvent<number>).detail;
+      console.log(`[Dashboard] ${count} new solves detected, refreshing UI silently`);
+      await silentRefresh();
+      setLastSynced(new Date());
+    };
+
+    window.addEventListener('solves-updated', handleSolvesUpdated);
+    return () => window.removeEventListener('solves-updated', handleSolvesUpdated);
+  }, [silentRefresh]);
 
   // Profile selector
   const [profiles, setProfiles] = useState<GoalProfile[]>([]);
@@ -113,7 +128,14 @@ export default function Dashboard() {
     const beforeCount = (await db.getAllSolves()).length;
     const start = performance.now();
     try {
-      await refresh();
+      // Trigger manual sync via the global poller
+      const newSolvesCount = await triggerManualSync();
+
+      if (newSolvesCount > 0) {
+        // Only refresh if new solves were found
+        await refresh();
+      }
+
       const afterCount = (await db.getAllSolves()).length;
       const durationMs = performance.now() - start;
       // Extension is now required, so always true

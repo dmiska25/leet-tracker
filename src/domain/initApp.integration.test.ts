@@ -209,6 +209,10 @@ describe('initApp (integration with fake‑indexeddb)', () => {
   });
 
   it('should fetch and store real problem catalog and solves', async () => {
+    // Catalog is loaded separately, so explicitly load it for this test
+    const { updateProblemList } = await import('./initApp');
+    await updateProblemList();
+
     const result = await initApp();
 
     // Verify username
@@ -233,14 +237,17 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       expect(category.adjustedScore).toBeLessThanOrEqual(1);
     }
 
-    // verify the specific categories from the sample data are non zero
+    // Since we no longer fetch solves via LeetCode API, scores will be 0
+    // (Extension-only mode - solves only come from extension)
+    // Verify the specific categories from the sample data are present with valid scores
     const categoriesToCheck = ['Array', 'Hash Table', 'Linked List', 'Math', 'Recursion'];
     for (const category of categoriesToCheck) {
       const progress = result.progress?.find((p) => p.tag === category);
       expect(progress).toBeDefined();
-      expect(progress?.estimatedScore).toBeGreaterThan(0);
-      expect(progress?.confidenceLevel).toBeGreaterThan(0);
-      expect(progress?.adjustedScore).toBeGreaterThan(0);
+      // Changed from toBeGreaterThan(0) to toBeGreaterThanOrEqual(0) since no solves are loaded
+      expect(progress?.estimatedScore).toBeGreaterThanOrEqual(0);
+      expect(progress?.confidenceLevel).toBeGreaterThanOrEqual(0);
+      expect(progress?.adjustedScore).toBeGreaterThanOrEqual(0);
     }
 
     // Verify real data was stored
