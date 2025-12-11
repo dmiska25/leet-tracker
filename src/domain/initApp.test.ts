@@ -101,26 +101,6 @@ describe('initApp', () => {
     expect(res.errors).toEqual([]);
   });
 
-  // Tests for fetchRecentSolves removed (extension-only mode)
-  // it('continues when recent solve sync fails and returns error message', async () => {
-  //   vi.mocked(fetchRecentSolves).mockRejectedValue(new Error('api down'));
-  //   const res = await initApp();
-  //   expect(res.progress?.length).toBeGreaterThan(0);
-  //   expect(res.errors).toContain(
-  //     'An unexpected error occurred, recent solves are temporarily unavailable.',
-  //   );
-  // });
-
-  // it('maps RATE_LIMITED error to user‑friendly message', async () => {
-  //   const err: any = new Error('Rate limited');
-  //   err.code = 'RATE_LIMITED';
-  //   vi.mocked(fetchRecentSolves).mockRejectedValue(err);
-
-  //   const res = await initApp();
-  //   expect(res.errors).toContain(
-  //     'LeetCode API rate limit hit — recent solves are temporarily unavailable.',
-  //   );
-  // });
   it('handles successful extension sync', async () => {
     vi.mocked(syncFromExtension).mockResolvedValue(5); // Simulate 5 solves added via extension
     const res = await initApp();
@@ -144,71 +124,6 @@ describe('initApp', () => {
     expect(res.extensionInstalled).toBe(false);
     expect(res.errors).toContain('An unexpected error occurred while syncing with the extension.');
   });
-
-  // Cache-related tests removed (extension-only mode - no LeetCode API solve sync)
-  // it('skips recent solves fetch when cache is fresh', async () => {
-  //   // Mock fresh timestamp (within 30 minutes)
-  //   const recentTimestamp = Date.now() - 15 * 60 * 1000; // 15 minutes ago
-  //   vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(recentTimestamp);
-
-  //   const res = await initApp();
-
-  //   // Should not have called fetchRecentSolves due to cache hit
-  //   expect(fetchRecentSolves).not.toHaveBeenCalled();
-  //   expect(res.errors).toEqual([]);
-  //   expect(res.username).toBe('user');
-  // });
-
-  // it('fetches recent solves when cache is stale', async () => {
-  //   // Mock stale timestamp (older than 30 minutes)
-  //   const staleTimestamp = Date.now() - 45 * 60 * 1000; // 45 minutes ago
-  //   vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(staleTimestamp);
-  //   vi.mocked(db.setRecentSolvesLastUpdated).mockResolvedValue('key');
-
-  //   const res = await initApp();
-
-  //   // Should have called fetchRecentSolves due to stale cache
-  //   expect(fetchRecentSolves).toHaveBeenCalledWith('user');
-  //   expect(res.errors).toEqual([]);
-  //   expect(res.username).toBe('user');
-
-  //   // Should have updated the timestamp after a stale fetch
-  //   expect(db.setRecentSolvesLastUpdated).toHaveBeenCalled();
-  //   const setTimestampCall = vi.mocked(db.setRecentSolvesLastUpdated).mock.calls[0];
-  //   expect(setTimestampCall).toBeDefined();
-  //   const [persistedTimestamp] = setTimestampCall!;
-  //   expect(typeof persistedTimestamp).toBe('number');
-  //   expect(persistedTimestamp).toBeGreaterThan(staleTimestamp);
-  // });
-
-  // it('skips recent solves fetch when cache is exactly 30 minutes old', async () => {
-  //   // Use fake timers for deterministic testing
-  //   vi.useFakeTimers();
-  //   const now = 1723456789000; // Fixed timestamp for deterministic tests
-  //   vi.setSystemTime(now);
-
-  //   // Mock timestamp exactly 30 minutes ago (boundary case)
-  //   const boundaryTimestamp = now - 30 * 60 * 1000; // Exactly 30 minutes ago
-  //   vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(boundaryTimestamp);
-
-  //   // Mock the transaction to capture put calls (should not be called)
-  //   const mockPut = vi.fn();
-  //   vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
-  //     cb({ objectStore: () => ({ put: mockPut, get: vi.fn() }) } as any),
-  //   );
-
-  //   const res = await initApp();
-
-  //   // Should NOT call fetchRecentSolves (exactly 30 minutes is not stale yet)
-  //   expect(fetchRecentSolves).not.toHaveBeenCalled();
-  //   // Should NOT persist recent solves timestamp since we didn't fetch
-  //   expect(mockPut).not.toHaveBeenCalledWith(expect.any(Number), 'recentSolvesLastUpdated');
-  //   expect(res.errors).toEqual([]);
-  //   expect(res.username).toBe('user');
-
-  //   // Restore real timers
-  //   vi.useRealTimers();
-  // });
 
   it('skips extension sync for demo user', async () => {
     // Set demo username in env

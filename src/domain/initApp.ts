@@ -69,60 +69,6 @@ export async function updateProblemList(): Promise<string[]> {
   return [];
 }
 
-/**
- * Code for LeetCode API solve fetching has been disabled.
- * All solve data now comes from the Chrome extension.
- */
-// async function updateSolves(username: string): Promise<string[]> {
-//   const lastSynced = await db.getRecentSolvesLastUpdated();
-
-//   // Skip sync if recently updated
-//   if (!isStale(lastSynced, 30)) {
-//     // 30 minutes
-//     console.log('[initApp] Recent solves are up to date, skipping API call');
-//     return [];
-//   }
-
-//   try {
-//     console.log('[initApp] Fetching recent solves from LeetCode API...');
-//     const recent = await fetchRecentSolves(username);
-
-//     for (const solve of recent) {
-//       // Fetch problem from DB to enrich tags/difficulty
-//       const problem = await db.getProblem(solve.slug);
-//       if (!problem) {
-//         console.warn(`[initApp] Problem ${solve.slug} not found in local database, skipping solve`);
-//         continue;
-//       }
-
-//       // Attach canonical tags & difficulty
-//       solve.tags = problem.tags;
-//       solve.difficulty = problem.difficulty;
-
-//       // Skip if already present for this user
-//       const existing = await db.getSolve(solve.slug, solve.timestamp);
-//       if (existing) continue;
-
-//       // Persist via centralized DB API (namespacing handled inside db.ts)
-//       await db.saveSolve(solve);
-//     }
-
-//     // Set the per-user sync timestamp (namespacing handled inside db.ts)
-//     await db.setRecentSolvesLastUpdated(Date.now());
-
-//     console.log(`[initApp] Synced ${recent.length} recent solves`);
-//     return [];
-//   } catch (err: any) {
-//     if (err?.code === 'RATE_LIMITED') {
-//       console.warn('[initApp] Rate limited by LeetCode API');
-//       return ['LeetCode API rate limit hit — recent solves are temporarily unavailable.'];
-//     } else {
-//       console.error('[initApp] Failed to sync recent solves:', err);
-//       return ['An unexpected error occurred, recent solves are temporarily unavailable.'];
-//     }
-//   }
-// }
-
 export async function initApp(): Promise<{
   username: string | undefined;
   progress: CategoryProgress[] | undefined;
