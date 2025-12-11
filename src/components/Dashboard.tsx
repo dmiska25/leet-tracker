@@ -8,7 +8,7 @@ import { getCategorySuggestions, getRandomSuggestions } from '@/domain/recommend
 import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
 import { trackSyncCompleted } from '@/utils/analytics';
-import { triggerManualSync } from '@/domain/extensionPoller';
+import { triggerManualSync, SOLVES_UPDATED_EVENT } from '@/domain/extensionPoller';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress';
@@ -34,14 +34,14 @@ export default function Dashboard() {
   // Use silentRefresh to avoid loading spinner flash when data updates automatically
   useEffect(() => {
     const handleSolvesUpdated = async (event: Event) => {
-      const count = (event as CustomEvent<number>).detail;
-      console.log(`[Dashboard] ${count} new solves detected, refreshing UI silently`);
+      const newSolvesCount = (event as CustomEvent<{ count: number }>).detail.count;
+      console.log(`[Dashboard] ${newSolvesCount} new solves detected, refreshing UI silently`);
       await silentRefresh();
       setLastSynced(new Date());
     };
 
-    window.addEventListener('solves-updated', handleSolvesUpdated);
-    return () => window.removeEventListener('solves-updated', handleSolvesUpdated);
+    window.addEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
+    return () => window.removeEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
   }, [silentRefresh]);
 
   // Profile selector

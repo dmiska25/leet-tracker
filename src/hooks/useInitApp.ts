@@ -25,7 +25,7 @@ export function useInitApp() {
     try {
       const { username, progress, errors, extensionInstalled } = await initApp();
 
-      errors.map((error) => {
+      errors.forEach((error) => {
         toast(error, 'error');
       });
 
@@ -66,7 +66,7 @@ export function useInitApp() {
     try {
       const { username, progress, errors, extensionInstalled } = await initApp();
 
-      errors.map((error) => {
+      errors.forEach((error) => {
         toast(error, 'error');
       });
 

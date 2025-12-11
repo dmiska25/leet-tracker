@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useExtensionPoller } from './useExtensionPoller';
 import {
@@ -19,16 +19,6 @@ describe('useExtensionPoller', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(triggerManualSync).mockResolvedValue(0);
-  });
-
-  afterEach(() => {
-    // Clean up any lingering event listeners
-    const listeners = (window as any).getEventListeners?.(SOLVES_UPDATED_EVENT);
-    if (listeners) {
-      listeners.forEach((listener: any) => {
-        window.removeEventListener(SOLVES_UPDATED_EVENT, listener);
-      });
-    }
   });
 
   describe('polling lifecycle', () => {
@@ -95,10 +85,9 @@ describe('useExtensionPoller', () => {
         }),
       );
 
-      // No assertion needed - just checking it doesn't crash
-      await waitFor(() => {
-        // Give it time to process
-      });
+      // Give async handlers time to process
+      await Promise.resolve();
+      // Test passes if no error is thrown
     });
 
     it('removes event listener on unmount', async () => {

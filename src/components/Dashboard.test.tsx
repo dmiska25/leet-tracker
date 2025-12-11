@@ -31,6 +31,7 @@ const { triggerManualSyncMock } = vi.hoisted(() => ({
 
 vi.mock('@/domain/extensionPoller', () => ({
   triggerManualSync: triggerManualSyncMock,
+  SOLVES_UPDATED_EVENT: 'solves-updated',
 }));
 
 /* ------------------------------------------------------------------ */

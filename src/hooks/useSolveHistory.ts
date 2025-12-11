@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/storage/db';
 import type { Solve } from '@/types/types';
+import { SOLVES_UPDATED_EVENT } from '@/domain/extensionPoller';
 
 // We aren't handling errors here, we let the error boundary catch them.
 interface State {
@@ -35,13 +36,13 @@ export function useSolveHistory() {
   // Listen for updates from the global poller (managed by App.tsx)
   useEffect(() => {
     const handleSolvesUpdated = async (event: Event) => {
-      const count = (event as CustomEvent<number>).detail;
-      console.log(`[useSolveHistory] ${count} new solves detected, refreshing solve list`);
+      const newSolvesCount = (event as CustomEvent<{ count: number }>).detail.count;
+      console.log(`[useSolveHistory] ${newSolvesCount} new solves detected, refreshing solve list`);
       await load(); // Refresh without setting loading state (silent refresh)
     };
 
-    window.addEventListener('solves-updated', handleSolvesUpdated);
-    return () => window.removeEventListener('solves-updated', handleSolvesUpdated);
+    window.addEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
+    return () => window.removeEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
   }, [load]);
 
   return { ...state, refresh };
