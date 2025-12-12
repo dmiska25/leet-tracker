@@ -1,5 +1,5 @@
 import { getManifestSince } from '@/api/extensionBridge';
-import { syncFromExtension } from './extensionSync';
+import { syncSolveData } from './syncSolveData';
 
 /**
  * Manifest response structure from the extension
@@ -65,7 +65,7 @@ export async function monitorSyncProgress(username: string): Promise<SyncStatusR
 
       // Sync from extension (this updates IndexedDB in the background)
       try {
-        const addedCount = await syncFromExtension(username);
+        const addedCount = await syncSolveData(username);
         if (addedCount > 0) {
           console.log(`[OnboardingSync] Synced ${addedCount} new solves from extension`);
         }
@@ -123,7 +123,7 @@ export async function monitorSyncProgress(username: string): Promise<SyncStatusR
 
     // Sync from extension (this updates IndexedDB in the background)
     try {
-      const addedCount = await syncFromExtension(username);
+      const addedCount = await syncSolveData(username);
       if (addedCount > 0) {
         console.log(`[OnboardingSync] Synced ${addedCount} new solves from extension`);
       }

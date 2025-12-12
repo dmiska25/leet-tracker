@@ -20,7 +20,7 @@ import {
   clearOnboardingComplete,
 } from '@/storage/db';
 import { checkExtensionInstalled } from '@/api/extensionBridge';
-import { initProblemCatalog } from '@/domain/initApp';
+import { syncProblemCatalog } from '@/domain/syncProblemCatalog';
 import { useExtensionPoller } from '@/hooks/useExtensionPoller';
 
 function App() {
@@ -47,7 +47,7 @@ function App() {
 
   // Initialize problem catalog on app startup (runs once, independent of user sign-in)
   useEffect(() => {
-    initProblemCatalog();
+    syncProblemCatalog();
   }, []); // Empty dependency array = runs once on mount
 
   // Check extension installation status when user is loaded
@@ -220,7 +220,7 @@ function App() {
       />
       {/* Render both components to preserve state, hide inactive one with CSS */}
       <div style={{ display: view === 'dashboard' ? 'block' : 'none' }}>
-        <Dashboard />
+        <Dashboard username={username} />
       </div>
       <div style={{ display: view === 'history' ? 'block' : 'none' }}>
         <SolveHistory />

@@ -7,10 +7,10 @@ import {
   _resetForTesting,
   SOLVES_UPDATED_EVENT,
 } from './extensionPoller';
-import { syncFromExtension } from './extensionSync';
+import { syncSolveData } from './syncSolveData';
 import { db } from '@/storage/db';
 
-vi.mock('./extensionSync');
+vi.mock('./syncSolveData');
 vi.mock('@/storage/db');
 
 describe('extensionPoller', () => {
@@ -18,7 +18,7 @@ describe('extensionPoller', () => {
     vi.resetAllMocks();
     _resetForTesting();
     vi.useFakeTimers();
-    vi.mocked(syncFromExtension).mockResolvedValue(0);
+    vi.mocked(syncSolveData).mockResolvedValue(0);
     vi.mocked(db.getUsername).mockResolvedValue('testuser');
   });
 
@@ -29,32 +29,32 @@ describe('extensionPoller', () => {
 
   describe('startPolling', () => {
     it('starts polling and performs immediate sync', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(0);
+      vi.mocked(syncSolveData).mockResolvedValue(0);
       startPolling();
 
       // Should perform immediate sync on start - wait for the async operation
       await Promise.resolve();
-      expect(syncFromExtension).toHaveBeenCalledTimes(1);
+      expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       const state = getPollingState();
       expect(state.intervalId).not.toBeNull();
     });
 
     it('performs sync every 10 seconds', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(0);
+      vi.mocked(syncSolveData).mockResolvedValue(0);
       startPolling();
 
-      // Initial sync - wait for promises (getUsername + syncFromExtension)
+      // Initial sync - wait for promises (getUsername + syncSolveData)
       await vi.advanceTimersByTimeAsync(0);
-      expect(syncFromExtension).toHaveBeenCalledTimes(1);
+      expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       // Advance 10 seconds - should sync again
       await vi.advanceTimersByTimeAsync(10000);
-      expect(syncFromExtension).toHaveBeenCalledTimes(2);
+      expect(syncSolveData).toHaveBeenCalledTimes(2);
 
       // Advance another 10 seconds
       await vi.advanceTimersByTimeAsync(10000);
-      expect(syncFromExtension).toHaveBeenCalledTimes(3);
+      expect(syncSolveData).toHaveBeenCalledTimes(3);
     });
 
     it('does nothing if already polling', () => {
@@ -71,19 +71,19 @@ describe('extensionPoller', () => {
 
   describe('stopPolling', () => {
     it('stops the polling interval', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(0);
+      vi.mocked(syncSolveData).mockResolvedValue(0);
       startPolling();
 
       // Initial sync - wait for promises
       await Promise.resolve();
-      expect(syncFromExtension).toHaveBeenCalledTimes(1);
+      expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       stopPolling();
 
       // Advance time - should not sync anymore
       vi.advanceTimersByTime(10000);
       await Promise.resolve();
-      expect(syncFromExtension).toHaveBeenCalledTimes(1); // Still 1, no new syncs
+      expect(syncSolveData).toHaveBeenCalledTimes(1); // Still 1, no new syncs
 
       const state = getPollingState();
       expect(state.intervalId).toBeNull();
@@ -97,16 +97,16 @@ describe('extensionPoller', () => {
 
   describe('triggerManualSync', () => {
     it('performs a sync outside the polling schedule', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(3);
+      vi.mocked(syncSolveData).mockResolvedValue(3);
 
       const result = await triggerManualSync();
 
       expect(result).toBe(3);
-      expect(syncFromExtension).toHaveBeenCalledTimes(1);
+      expect(syncSolveData).toHaveBeenCalledTimes(1);
     });
 
-    it('returns the count from syncFromExtension', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(5);
+    it('returns the count from syncSolveData', async () => {
+      vi.mocked(syncSolveData).mockResolvedValue(5);
 
       const count = await triggerManualSync();
 
@@ -114,7 +114,7 @@ describe('extensionPoller', () => {
     });
 
     it('returns -1 on error', async () => {
-      vi.mocked(syncFromExtension).mockRejectedValue(new Error('Extension unavailable'));
+      vi.mocked(syncSolveData).mockRejectedValue(new Error('Extension unavailable'));
 
       const count = await triggerManualSync();
 
@@ -124,50 +124,50 @@ describe('extensionPoller', () => {
 
   describe('overlapping sync prevention', () => {
     it('prevents overlapping syncs during polling', async () => {
-      // Make syncFromExtension take a long time (longer than polling interval)
+      // Make syncSolveData take a long time (longer than polling interval)
       let resolveSync: (_value: number) => void;
       const longSync = new Promise<number>((resolve) => {
         resolveSync = resolve;
       });
-      vi.mocked(syncFromExtension).mockReturnValueOnce(longSync);
+      vi.mocked(syncSolveData).mockReturnValueOnce(longSync);
 
       startPolling();
 
       // Initial sync starts (but doesn't complete yet)
       await Promise.resolve(); // Let the sync start
-      expect(syncFromExtension).toHaveBeenCalledTimes(1);
+      expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       // Advance 10 seconds - should attempt another sync
       vi.advanceTimersByTime(10000);
       await Promise.resolve(); // Let it attempt
 
       // Should still be only 1 call (second attempt was skipped due to overlap)
-      expect(syncFromExtension).toHaveBeenCalledTimes(1);
+      expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       // Now resolve the first sync and set up next sync to complete quickly
-      vi.mocked(syncFromExtension).mockResolvedValueOnce(0);
+      vi.mocked(syncSolveData).mockResolvedValueOnce(0);
       resolveSync!(0);
       await Promise.resolve(); // Let promises resolve
 
       // Advance another 10 seconds - should now sync again
       vi.advanceTimersByTime(10000);
       await Promise.resolve();
-      expect(syncFromExtension).toHaveBeenCalledTimes(2);
+      expect(syncSolveData).toHaveBeenCalledTimes(2);
     });
 
     it('allows manual sync even if polling sync is in progress', async () => {
-      // Make syncFromExtension take a long time
+      // Make syncSolveData take a long time
       let resolveSync: (_value: number) => void;
       const longSync = new Promise<number>((resolve) => {
         resolveSync = resolve;
       });
-      vi.mocked(syncFromExtension).mockReturnValueOnce(longSync);
+      vi.mocked(syncSolveData).mockReturnValueOnce(longSync);
 
       startPolling();
 
       // Initial sync starts
       await Promise.resolve(); // Let the sync start
-      expect(syncFromExtension).toHaveBeenCalledTimes(1);
+      expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       // Try manual sync while first is still in progress
       const manualPromise = triggerManualSync();
@@ -175,7 +175,7 @@ describe('extensionPoller', () => {
       // Should be skipped (returns 0 immediately)
       const result = await manualPromise;
       expect(result).toBe(0);
-      expect(syncFromExtension).toHaveBeenCalledTimes(1); // Still just the first call
+      expect(syncSolveData).toHaveBeenCalledTimes(1); // Still just the first call
 
       // Resolve the original sync
       resolveSync!(2);
@@ -185,7 +185,7 @@ describe('extensionPoller', () => {
 
   describe('event emission', () => {
     it('emits solves-updated event when new solves are added', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(3);
+      vi.mocked(syncSolveData).mockResolvedValue(3);
 
       const eventListener = vi.fn();
       window.addEventListener(SOLVES_UPDATED_EVENT, eventListener);
@@ -203,7 +203,7 @@ describe('extensionPoller', () => {
     });
 
     it('does not emit event when no new solves are added', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(0);
+      vi.mocked(syncSolveData).mockResolvedValue(0);
 
       const eventListener = vi.fn();
       window.addEventListener(SOLVES_UPDATED_EVENT, eventListener);
@@ -216,7 +216,7 @@ describe('extensionPoller', () => {
     });
 
     it('does not emit event on sync error', async () => {
-      vi.mocked(syncFromExtension).mockRejectedValue(new Error('Extension error'));
+      vi.mocked(syncSolveData).mockRejectedValue(new Error('Extension error'));
 
       const eventListener = vi.fn();
       window.addEventListener(SOLVES_UPDATED_EVENT, eventListener);
@@ -254,7 +254,7 @@ describe('extensionPoller', () => {
 
   describe('lastSyncTime tracking', () => {
     it('updates lastSyncTime after successful sync', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(1);
+      vi.mocked(syncSolveData).mockResolvedValue(1);
 
       const stateBefore = getPollingState();
       expect(stateBefore.lastSyncTime).toBe(0);
@@ -266,7 +266,7 @@ describe('extensionPoller', () => {
     });
 
     it('tracks lastSyncTime across multiple syncs', async () => {
-      vi.mocked(syncFromExtension).mockResolvedValue(0);
+      vi.mocked(syncSolveData).mockResolvedValue(0);
 
       await triggerManualSync();
       const time1 = getPollingState().lastSyncTime;

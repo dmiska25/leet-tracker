@@ -2,7 +2,7 @@ import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
 import type { Solve, HintType } from '../types/types';
 import { HINT_TYPES } from '../types/types';
-import { initProblemCatalog } from './initApp';
+import { syncProblemCatalog } from './syncProblemCatalog';
 
 export { ExtensionUnavailable };
 
@@ -39,7 +39,7 @@ export async function syncFromExtension(username: string): Promise<number> {
         console.warn(
           `[extensionSync] Problem ${raw.titleSlug} not found in local DB, fetching full catalog...`,
         );
-        await initProblemCatalog();
+        await syncProblemCatalog();
 
         // Retry getting the problem after catalog update
         p = await db.getProblem(raw.titleSlug);

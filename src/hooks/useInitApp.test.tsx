@@ -26,7 +26,6 @@ describe('useInitApp', () => {
   it('loads data, forwards warnings via toast and clears loading/criticalError', async () => {
     initApp.mockResolvedValue({
       username: 'alice',
-      progress: [],
       errors: ['warn‑1', 'warn‑2'],
     });
 
@@ -62,7 +61,6 @@ describe('useInitApp', () => {
     // First init call
     initApp.mockResolvedValueOnce({
       username: 'bob',
-      progress: [],
       errors: [],
     });
 
@@ -72,7 +70,6 @@ describe('useInitApp', () => {
     // Second init call (for refresh)
     initApp.mockResolvedValueOnce({
       username: 'bob',
-      progress: [],
       errors: [],
     });
 
@@ -91,19 +88,15 @@ describe('useInitApp', () => {
     // First init call
     initApp.mockResolvedValueOnce({
       username: 'dave',
-      progress: [{ tag: 'Array' } as any],
       errors: [],
     });
 
     const { result } = renderHook(() => useInitApp());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.progress).toHaveLength(1);
-
     // Second init call (for silentRefresh)
     initApp.mockResolvedValueOnce({
       username: 'dave',
-      progress: [{ tag: 'Array' } as any, { tag: 'Hash Table' } as any],
       errors: [],
     });
 
@@ -114,8 +107,6 @@ describe('useInitApp', () => {
 
     // Loading should never have been set to true during silentRefresh
     expect(result.current.loading).toBe(false);
-    // Data should be updated
-    expect(result.current.progress).toHaveLength(2);
     expect(initApp).toHaveBeenCalledTimes(2);
   });
 
@@ -123,7 +114,6 @@ describe('useInitApp', () => {
     // First init call
     initApp.mockResolvedValueOnce({
       username: 'eve',
-      progress: [],
       errors: [],
     });
 

@@ -1,29 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '../storage/db';
-import { fetchProblemCatalog } from '../api/leetcode';
-import { syncDemoSolves } from '../api/demo';
-import { Difficulty, Problem, Solve, GoalProfile } from '../types/types';
-import { syncFromExtension } from './extensionSync';
+import { Difficulty, Solve } from '../types/types';
 import { initApp } from './initApp';
+import { syncSolveData } from './syncSolveData';
 
 vi.mock('../storage/db');
-vi.mock('../api/leetcode');
-vi.mock('../api/demo');
-vi.mock('./extensionSync');
+vi.mock('./syncSolveData');
 
-const mockProblems: Problem[] = [
-  {
-    slug: 'p',
-    title: 'P',
-    tags: ['Array'],
-    description: '',
-    difficulty: Difficulty.Easy,
-    popularity: 0.8,
-    isPaid: false,
-    isFundamental: true,
-    createdAt: 0,
-  },
-];
 const now = Math.floor(Date.now() / 1000);
 const mockSolves: Solve[] = [
   {
@@ -43,16 +26,10 @@ describe('initApp', () => {
 
     /* db mocks */
     vi.mocked(db.getUsername).mockResolvedValue('user');
-    vi.mocked(db.getProblemListLastUpdated).mockResolvedValue(undefined);
-    vi.mocked(db.saveGoalProfile).mockResolvedValue('default');
-    vi.mocked(db.setActiveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.getAllSolves).mockResolvedValue(mockSolves);
-    vi.mocked(db.withTransaction).mockImplementation(async (_, cb) =>
-      cb({ objectStore: () => ({ put: vi.fn(), get: vi.fn() }) } as any),
-    );
 
-    /* API mocks */
-    vi.mocked(fetchProblemCatalog).mockResolvedValue(mockProblems);
+    /* syncSolveData mock */
+    vi.mocked(syncSolveData).mockResolvedValue(0);
   });
 
   it('handles missing username path', async () => {
@@ -60,82 +37,40 @@ describe('initApp', () => {
     const res = await initApp();
     expect(res).toEqual({
       username: undefined,
-      progress: undefined,
       errors: [],
     });
   });
 
-  it('returns progress with default goals when no profile', async () => {
-    vi.mocked(db.getActiveGoalProfileId).mockResolvedValue(undefined);
-    const res = await initApp();
-    const arr = res.progress?.find((p) => p.tag === 'Array');
-    expect(arr?.goal).toBeCloseTo(0.6);
-    expect(res.errors).toEqual([]);
-  });
-
-  it('applies goal profile override', async () => {
-    const profile: GoalProfile = {
-      id: 'g',
-      name: 'Goals',
-      description: '',
-      goals: { Array: 0.9 } as any,
-      createdAt: '',
-      isEditable: true,
-    };
-    vi.mocked(db.getActiveGoalProfileId).mockResolvedValue('g');
-    vi.mocked(db.getGoalProfile).mockResolvedValue(profile);
-    const res = await initApp();
-    const arr = res.progress?.find((p) => p.tag === 'Array');
-    expect(arr?.goal).toBeCloseTo(0.9);
-    expect(res.errors).toEqual([]);
-  });
-
-  it('continues when catalog fetch fails (catalog loaded separately now)', async () => {
-    // Catalog is now loaded separately via initProblemCatalog(), not in initApp()
-    // So catalog failures don't appear in initApp() errors anymore
-    vi.mocked(fetchProblemCatalog).mockRejectedValue(new Error('network'));
+  it('successfully initializes for valid user', async () => {
     const res = await initApp();
     expect(res.username).toBe('user');
-    expect(res.progress).toBeDefined();
     expect(res.errors).toEqual([]);
-  });
-
-  it('handles successful extension sync', async () => {
-    vi.mocked(syncFromExtension).mockResolvedValue(5); // Simulate 5 solves added via extension
-    const res = await initApp();
-    expect(res.errors).toEqual([]);
+    expect(syncSolveData).toHaveBeenCalledWith('user');
   });
 
   it('throws error when extension unavailable', async () => {
     const err: any = new Error('Extension unavailable');
     err.code = 'EXTENSION_UNAVAILABLE';
-    vi.mocked(syncFromExtension).mockRejectedValue(err);
+    vi.mocked(syncSolveData).mockRejectedValue(err);
 
     await expect(initApp()).rejects.toThrow('Extension not available');
   });
 
-  it('handles unexpected extension sync errors', async () => {
-    vi.mocked(syncFromExtension).mockRejectedValue(new Error('Unexpected error'));
+  it('handles unexpected sync errors', async () => {
+    vi.mocked(syncSolveData).mockRejectedValue(new Error('Unexpected error'));
     const res = await initApp();
-    expect(res.errors).toContain('An unexpected error occurred while syncing with the extension.');
+    expect(res.errors).toContain('An unexpected error occurred while loading solve data.');
   });
 
-  it('loads demo data for demo user instead of extension sync', async () => {
-    // Set demo username in env
+  it('loads demo data for demo user', async () => {
     vi.stubEnv('VITE_DEMO_USERNAME', 'test-demo-user');
     vi.mocked(db.getUsername).mockResolvedValue('test-demo-user');
-
-    // Mock syncDemoSolves to return number of saved solves
-    vi.mocked(syncDemoSolves).mockResolvedValue(5);
+    vi.mocked(syncSolveData).mockResolvedValue(5);
 
     const res = await initApp();
-
-    // Should NOT call syncFromExtension for demo user
-    expect(syncFromExtension).not.toHaveBeenCalled();
-    // Should call syncDemoSolves with db instance
-    expect(syncDemoSolves).toHaveBeenCalledWith(db);
     expect(res.username).toBe('test-demo-user');
     expect(res.errors).toEqual([]);
+    expect(syncSolveData).toHaveBeenCalledWith('test-demo-user');
 
     vi.unstubAllEnvs();
   });

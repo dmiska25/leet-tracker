@@ -1,12 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { initApp } from '@/domain/initApp';
-import type { CategoryProgress } from '@/types/progress';
 
 interface InitState {
-  loading: boolean;
+  loading: boolean; // Top-level loading ONLY (for initial App.tsx load)
   username?: string;
-  progress: CategoryProgress[];
   criticalError: boolean;
 }
 
@@ -14,30 +12,27 @@ export function useInitApp() {
   const toast = useToast();
   const [state, setState] = useState<InitState>({
     loading: true,
-    progress: [],
     criticalError: false,
   });
 
   /* Shared loader so we can call it from useEffect, refresh(), and silentRefresh() */
   const load = async (dontShowCriticalError: boolean = false) => {
     try {
-      const { username, progress, errors } = await initApp();
+      const { username, errors } = await initApp();
 
       errors.forEach((error) => {
         toast(error, 'error');
       });
 
-      setState((prevState) => ({
-        ...prevState,
+      setState({
         loading: false,
         username,
-        progress: progress ?? [],
         criticalError: false,
-      }));
+      });
     } catch (err: any) {
       console.error('[useInitApp] initApp failed', err);
       if (!dontShowCriticalError) {
-        setState({ loading: false, progress: [], criticalError: true });
+        setState({ loading: false, criticalError: true });
       }
       // Silent refresh: don't show critical error, just log it
     }

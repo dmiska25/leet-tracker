@@ -12,7 +12,7 @@
  * - Proper cleanup on stop
  */
 
-import { syncFromExtension } from './extensionSync';
+import { syncSolveData } from './syncSolveData';
 import { db } from '@/storage/db';
 
 // Event name for notifying components of new solves
@@ -99,7 +99,8 @@ async function performSync(): Promise<number> {
       return 0;
     }
 
-    const newSolvesCount = await syncFromExtension(username);
+    // Use centralized solve sync function
+    const newSolvesCount = await syncSolveData(username);
     state.lastSyncTime = Date.now();
 
     const duration = Date.now() - startTime;
