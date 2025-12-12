@@ -129,16 +129,6 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     vi.mocked(db.getProblemListLastUpdated).mockImplementation(() =>
       testDb.get('problem-metadata', 'lastUpdated'),
     );
-    vi.mocked(db.getRecentSolvesLastUpdated).mockImplementation(async () => {
-      const username = await testDb.get('leetcode-username', 'username');
-      const key = `${username}|recentSolvesLastUpdated`;
-      return testDb.get('solves-metadata', key);
-    });
-    vi.mocked(db.setRecentSolvesLastUpdated).mockImplementation(async (epochMs) => {
-      const username = await testDb.get('leetcode-username', 'username');
-      const key = `${username}|recentSolvesLastUpdated`;
-      return testDb.put('solves-metadata', epochMs, key);
-    });
     vi.mocked(db.getExtensionLastTimestamp).mockImplementation(async () => {
       const username = await testDb.get('leetcode-username', 'username');
       const key = `${username}|lastTimestamp`;
@@ -308,9 +298,8 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       await testDb.delete('solves', key);
     }
 
-    // Reset recent solves timestamp to force API fetch
+    // Reset extension timestamp
     const username = await testDb.get('leetcode-username', 'username');
-    await testDb.delete('solves-metadata', `${username}|recentSolvesLastUpdated`);
     await testDb.delete('extension-sync', `${username}|lastTimestamp`);
 
     // Use recent timestamps (within last 30 days) to ensure progress calculation works

@@ -44,8 +44,6 @@ describe('initApp', () => {
     /* db mocks */
     vi.mocked(db.getUsername).mockResolvedValue('user');
     vi.mocked(db.getProblemListLastUpdated).mockResolvedValue(undefined);
-    vi.mocked(db.getRecentSolvesLastUpdated).mockResolvedValue(undefined);
-    vi.mocked(db.setRecentSolvesLastUpdated).mockResolvedValue('');
     vi.mocked(db.saveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.setActiveGoalProfile).mockResolvedValue('default');
     vi.mocked(db.getAllSolves).mockResolvedValue(mockSolves);

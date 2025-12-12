@@ -132,11 +132,3 @@ export async function initApp(): Promise<{
 
   return { username, progress, errors, extensionInstalled };
 }
-
-/**
- * Reset the recent solves sync timestamp to force a fresh sync on next initApp call.
- * Useful when user explicitly wants to sync fresh data.
- */
-export async function resetRecentSolvesCache(): Promise<void> {
-  await db.setRecentSolvesLastUpdated(0);
-}

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
-import { initApp, resetRecentSolvesCache } from '@/domain/initApp';
+import { initApp } from '@/domain/initApp';
 import type { CategoryProgress } from '@/types/progress';
 
 interface InitState {
@@ -57,7 +57,6 @@ export function useInitApp() {
    */
   const refresh = async () => {
     setState((s) => ({ ...s, loading: true, criticalError: false }));
-    await resetRecentSolvesCache();
     await load();
   };
 
