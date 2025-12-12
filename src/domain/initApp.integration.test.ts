@@ -210,8 +210,8 @@ describe('initApp (integration with fake‑indexeddb)', () => {
 
   it('should fetch and store real problem catalog and solves', async () => {
     // Catalog is loaded separately, so explicitly load it for this test
-    const { updateProblemList } = await import('./initApp');
-    await updateProblemList();
+    const { initProblemCatalog } = await import('./initApp');
+    await initProblemCatalog();
 
     const result = await initApp();
 

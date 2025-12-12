@@ -26,28 +26,12 @@ function isStale(epoch: number | undefined, maxAgeMinutes: number): boolean {
  * Should be called from main.tsx or App.tsx before user authentication.
  */
 export async function initProblemCatalog(): Promise<void> {
-  try {
-    console.log('[initProblemCatalog] Checking problem catalog...');
-    const errors = await updateProblemList();
-    if (errors.length > 0) {
-      console.warn('[initProblemCatalog] Catalog update had errors:', errors);
-    }
-  } catch (err) {
-    // Silently handle errors during catalog init (won't block app startup)
-    console.error('[initProblemCatalog] Failed to initialize catalog:', err);
-  }
-}
-
-/**
- * Fetches the problem catalog from the given URL and updates the local database.
- * This function can be called independently of user sign-in for lazy loading.
- * @returns Promise<string[]> - A list of error messages
- */
-export async function updateProblemList(): Promise<string[]> {
+  console.log('[initProblemCatalog] Checking problem catalog...');
   const lastUpdated = await db.getProblemListLastUpdated();
+
   if (isStale(lastUpdated, 24 * 60)) {
     // 24 hours in minutes
-    console.log('[initApp] Fetching latest problem catalog...');
+    console.log('[initProblemCatalog] Fetching latest problem catalog...');
     try {
       const remoteProblems = await fetchProblemCatalog(PROBLEM_CATALOG_URL);
       const newProblems = remoteProblems.filter(
@@ -59,15 +43,15 @@ export async function updateProblemList(): Promise<string[]> {
           await tx.objectStore('problem-list').put!(problem, problem.slug);
         }
         await tx.objectStore('problem-metadata').put!(Date.now(), 'lastUpdated');
-        console.log(`[initApp] Catalog updated — ${newProblems.length} new problems added`);
+        console.log(
+          `[initProblemCatalog] Catalog updated — ${newProblems.length} new problems added`,
+        );
       });
-      return [];
     } catch (err) {
-      console.error('[initApp] Failed to fetch problem catalog:', err);
-      return ['An unexpected error occurred, new problems are temporarily unavailable.'];
+      console.error('[initProblemCatalog] Failed to fetch problem catalog:', err);
+      console.error('[initProblemCatalog] New problems are temporarily unavailable');
     }
   }
-  return [];
 }
 
 export async function initApp(): Promise<{
@@ -91,10 +75,7 @@ export async function initApp(): Promise<{
 
   console.log(`[initApp] Username found: ${username}`);
 
-  // 1. Problem catalog is loaded separately on app startup (lazy loading)
-  // No need to block sign-in on catalog load
-
-  // 2. Extension sync is the PRIMARY data source for solve data
+  // 1. Extension sync is the PRIMARY data source for solve data
   const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
   if (username === DEMO_USERNAME) {
     // Demo user: Load and sync demo data from demo-solves.json
@@ -118,7 +99,7 @@ export async function initApp(): Promise<{
     }
   }
 
-  // 3. Load solve history + goal profile in one shot
+  // 2. Load solve history + goal profile in one shot
   const solves = await db.getAllSolves();
   // clear recommendation cache and set solves
   clearCache();
@@ -137,7 +118,7 @@ export async function initApp(): Promise<{
   });
   if (extensionInstalled) trackExtensionDetected();
 
-  // 4. Compute progress only for the categories present in the profile
+  // 3. Compute progress only for the categories present in the profile
   const profileTags = Object.keys(goals) as Category[];
   const progress = profileTags.map((tag) => {
     const tagSolves = solves.filter((s) => s.tags?.includes(tag));

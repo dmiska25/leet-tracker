@@ -20,8 +20,8 @@ export function useInitApp() {
     extensionInstalled: false,
   });
 
-  /* Shared loader so we can call it from useEffect and refresh() */
-  const load = async () => {
+  /* Shared loader so we can call it from useEffect, refresh(), and silentRefresh() */
+  const load = async (dontShowCriticalError: boolean = false) => {
     try {
       const { username, progress, errors, extensionInstalled } = await initApp();
 
@@ -29,16 +29,20 @@ export function useInitApp() {
         toast(error, 'error');
       });
 
-      setState({
+      setState((prevState) => ({
+        ...prevState,
         loading: false,
         username,
         progress: progress ?? [],
         criticalError: false,
         extensionInstalled,
-      });
+      }));
     } catch (err: any) {
       console.error('[useInitApp] initApp failed', err);
-      setState({ loading: false, progress: [], criticalError: true, extensionInstalled: false });
+      if (!dontShowCriticalError) {
+        setState({ loading: false, progress: [], criticalError: true, extensionInstalled: false });
+      }
+      // Silent refresh: don't show critical error, just log it
     }
   };
 
@@ -63,23 +67,7 @@ export function useInitApp() {
    */
   const silentRefresh = useCallback(async () => {
     // Don't set loading state - just update the data in background
-    try {
-      const { username, progress, errors, extensionInstalled } = await initApp();
-
-      errors.forEach((error) => {
-        toast(error, 'error');
-      });
-
-      setState((prevState) => ({
-        ...prevState,
-        username,
-        progress: progress ?? [],
-        extensionInstalled,
-      }));
-    } catch (err: any) {
-      console.error('[useInitApp] silentRefresh failed', err);
-      // Don't show critical error on silent refresh - just log it
-    }
+    await load(true);
   }, [toast]);
 
   return { ...state, refresh, silentRefresh };
