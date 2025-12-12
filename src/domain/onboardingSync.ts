@@ -168,19 +168,3 @@ export async function monitorSyncProgress(username: string): Promise<SyncStatusR
     };
   }
 }
-
-/**
- * Check if the extension is installed by attempting to communicate with it
- */
-export async function checkExtensionInstalled(): Promise<boolean> {
-  try {
-    // Try to get manifest with a very old timestamp to detect extension presence
-    await getManifestSince('test', 0);
-    return true;
-  } catch (err: any) {
-    if (err?.code === 'EXTENSION_UNAVAILABLE') {
-      return false;
-    }
-    return false;
-  }
-}

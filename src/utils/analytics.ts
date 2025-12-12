@@ -21,7 +21,7 @@ let identified = false;
  */
 export async function identifyUser(
   username: string,
-  props: { extensionInstalled: boolean; profileId: string; lastSync: number },
+  props: { extensionInstalled?: boolean; profileId: string; lastSync: number },
 ) {
   if (!username || identified || username == DEMO_USERNAME) return;
   try {

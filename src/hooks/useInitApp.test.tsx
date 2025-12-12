@@ -28,7 +28,6 @@ describe('useInitApp', () => {
       username: 'alice',
       progress: [],
       errors: ['warn‑1', 'warn‑2'],
-      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());
@@ -65,7 +64,6 @@ describe('useInitApp', () => {
       username: 'bob',
       progress: [],
       errors: [],
-      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());
@@ -76,7 +74,6 @@ describe('useInitApp', () => {
       username: 'bob',
       progress: [],
       errors: [],
-      extensionInstalled: false,
     });
 
     // Run the entire refresh flow inside act so all state updates are flushed
@@ -96,7 +93,6 @@ describe('useInitApp', () => {
       username: 'dave',
       progress: [{ tag: 'Array' } as any],
       errors: [],
-      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());
@@ -109,7 +105,6 @@ describe('useInitApp', () => {
       username: 'dave',
       progress: [{ tag: 'Array' } as any, { tag: 'Hash Table' } as any],
       errors: [],
-      extensionInstalled: true,
     });
 
     // Run silentRefresh
@@ -121,7 +116,6 @@ describe('useInitApp', () => {
     expect(result.current.loading).toBe(false);
     // Data should be updated
     expect(result.current.progress).toHaveLength(2);
-    expect(result.current.extensionInstalled).toBe(true);
     expect(initApp).toHaveBeenCalledTimes(2);
   });
 
@@ -131,7 +125,6 @@ describe('useInitApp', () => {
       username: 'eve',
       progress: [],
       errors: [],
-      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());

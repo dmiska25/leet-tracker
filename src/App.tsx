@@ -19,15 +19,16 @@ import {
   markOnboardingComplete,
   clearOnboardingComplete,
 } from '@/storage/db';
-import { checkExtensionInstalled } from '@/domain/onboardingSync';
+import { checkExtensionInstalled } from '@/api/extensionBridge';
 import { initProblemCatalog } from '@/domain/initApp';
 import { useExtensionPoller } from '@/hooks/useExtensionPoller';
 
 function App() {
-  const { loading, username, extensionInstalled } = useInitApp();
+  const { loading, username } = useInitApp();
   const [view, setView] = useState<'dashboard' | 'history'>('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [extensionInstalled, setExtensionInstalled] = useState(false);
 
   const tutorial = useTutorial();
   const [showPrompt, setShowPrompt] = useState(false);
@@ -48,6 +49,19 @@ function App() {
   useEffect(() => {
     initProblemCatalog();
   }, []); // Empty dependency array = runs once on mount
+
+  // Check extension installation status when user is loaded
+  useEffect(() => {
+    (async () => {
+      if (!username) return;
+      if (username === demoUsername) {
+        setExtensionInstalled(false);
+        return;
+      }
+      const isInstalled = await checkExtensionInstalled();
+      setExtensionInstalled(isInstalled);
+    })();
+  }, [username, demoUsername]);
 
   // GLOBAL POLLER: Single instance of extension polling for entire app
   // Components (Dashboard, SolveHistory) listen to 'solves-updated' events passively

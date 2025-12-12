@@ -3,7 +3,7 @@ import { fetchProblemCatalog } from '../api/leetcode';
 import { syncDemoSolves } from '../api/demo';
 import { Category, GoalProfile } from '../types/types';
 import { evaluateCategoryProgress } from './progress';
-import { identifyUser, trackExtensionDetected } from '@/utils/analytics';
+import { identifyUser } from '@/utils/analytics';
 import { CategoryProgress } from '../types/progress';
 import { clearCache, primeData, setSolves } from './recommendations';
 import { getActiveOrInitProfile } from './goalProfiles';
@@ -58,18 +58,15 @@ export async function initApp(): Promise<{
   username: string | undefined;
   progress: CategoryProgress[] | undefined;
   errors: string[];
-  extensionInstalled: boolean;
 }> {
   const errors: string[] = [];
   const username = await db.getUsername();
-  var extensionInstalled = false;
   if (!username) {
     console.log('[initApp] No username — app not initialized');
     return {
       username: undefined,
       progress: undefined,
       errors: [],
-      extensionInstalled: extensionInstalled,
     };
   }
 
@@ -89,13 +86,14 @@ export async function initApp(): Promise<{
     // Regular user: Sync from extension
     try {
       const added = await syncFromExtension(username);
-      extensionInstalled = true;
       if (added) console.log(`[initApp] Added ${added} solves via extension`);
     } catch (err: any) {
-      if (err?.code !== 'EXTENSION_UNAVAILABLE') {
-        console.warn('[initApp] Extension sync failed', err);
-        errors.push('An unexpected error occurred while syncing with the extension.');
+      if (err?.code === 'EXTENSION_UNAVAILABLE') {
+        // Extension not available is a critical error for non-demo users
+        throw new Error('Extension not available');
       }
+      console.warn('[initApp] Extension sync failed', err);
+      errors.push('An unexpected error occurred while syncing with the extension.');
     }
   }
 
@@ -112,11 +110,9 @@ export async function initApp(): Promise<{
 
   // Identify user & track app open
   await identifyUser(username, {
-    extensionInstalled,
     profileId: profile.id,
     lastSync: Date.now(),
   });
-  if (extensionInstalled) trackExtensionDetected();
 
   // 3. Compute progress only for the categories present in the profile
   const profileTags = Object.keys(goals) as Category[];
@@ -130,5 +126,5 @@ export async function initApp(): Promise<{
     };
   });
 
-  return { username, progress, errors, extensionInstalled };
+  return { username, progress, errors };
 }

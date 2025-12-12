@@ -269,11 +269,10 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       username: undefined,
       progress: undefined,
       errors: [],
-      extensionInstalled: false,
     });
   });
 
-  it('sets extensionInstalled when extension returns no new solves', async () => {
+  it('succeeds when extension returns no new solves', async () => {
     /* Extension responds but has no new data */
     vi.mocked(getManifestSince).mockResolvedValue({
       chunks: [{ index: 0, from: 0, to: 0 }],
@@ -284,8 +283,8 @@ describe('initApp (integration with fake‑indexeddb)', () => {
 
     const result = await initApp();
 
-    /* Flag should still indicate extension presence         */
-    expect(result.extensionInstalled).toBe(true);
+    /* Should successfully complete */
+    expect(result.username).toBe('testuser');
     /* Solve list should remain API-only (≤20)               */
     const solves = await db.getAllSolves();
     expect(solves.length).toBeLessThanOrEqual(20);
@@ -337,12 +336,11 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       return idx === 0 ? chunk0 : chunk1;
     });
 
-    const result = await initApp();
+    await initApp();
 
     const solves = await db.getAllSolves();
     expect(solves.length).toBe(2);
     const slugs = solves.map((s) => s.slug);
     expect(slugs).toEqual(expect.arrayContaining(['two-sum', 'add-two-numbers']));
-    expect(result.extensionInstalled).toBe(true);
   });
 });

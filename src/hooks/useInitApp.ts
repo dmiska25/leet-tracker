@@ -8,7 +8,6 @@ interface InitState {
   username?: string;
   progress: CategoryProgress[];
   criticalError: boolean;
-  extensionInstalled: boolean;
 }
 
 export function useInitApp() {
@@ -17,13 +16,12 @@ export function useInitApp() {
     loading: true,
     progress: [],
     criticalError: false,
-    extensionInstalled: false,
   });
 
   /* Shared loader so we can call it from useEffect, refresh(), and silentRefresh() */
   const load = async (dontShowCriticalError: boolean = false) => {
     try {
-      const { username, progress, errors, extensionInstalled } = await initApp();
+      const { username, progress, errors } = await initApp();
 
       errors.forEach((error) => {
         toast(error, 'error');
@@ -35,12 +33,11 @@ export function useInitApp() {
         username,
         progress: progress ?? [],
         criticalError: false,
-        extensionInstalled,
       }));
     } catch (err: any) {
       console.error('[useInitApp] initApp failed', err);
       if (!dontShowCriticalError) {
-        setState({ loading: false, progress: [], criticalError: true, extensionInstalled: false });
+        setState({ loading: false, progress: [], criticalError: true });
       }
       // Silent refresh: don't show critical error, just log it
     }

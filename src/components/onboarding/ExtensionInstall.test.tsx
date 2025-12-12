@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ExtensionInstall } from './ExtensionInstall';
-import * as onboardingSync from '@/domain/onboardingSync';
+import * as extensionBridge from '@/api/extensionBridge';
 import * as authModule from '@/utils/auth';
 
-vi.mock('@/domain/onboardingSync');
+vi.mock('@/api/extensionBridge');
 vi.mock('@/utils/auth', () => ({
   signOut: vi.fn().mockResolvedValue(undefined),
 }));
@@ -19,22 +19,22 @@ describe('ExtensionInstall', () => {
     delete (window as any).location;
     (window as any).location = { reload: vi.fn() };
 
-    vi.mocked(onboardingSync.checkExtensionInstalled).mockResolvedValue(false);
+    vi.mocked(extensionBridge.checkExtensionInstalled).mockResolvedValue(false);
   });
 
   describe('Extension detection', () => {
     it('checks for extension on mount', async () => {
-      vi.mocked(onboardingSync.checkExtensionInstalled).mockResolvedValue(false);
+      vi.mocked(extensionBridge.checkExtensionInstalled).mockResolvedValue(false);
 
       render(<ExtensionInstall onContinue={mockOnContinue} />);
 
       await waitFor(() => {
-        expect(onboardingSync.checkExtensionInstalled).toHaveBeenCalled();
+        expect(extensionBridge.checkExtensionInstalled).toHaveBeenCalled();
       });
     });
 
     it('calls onContinue(false) when extension detected', async () => {
-      vi.mocked(onboardingSync.checkExtensionInstalled).mockResolvedValue(true);
+      vi.mocked(extensionBridge.checkExtensionInstalled).mockResolvedValue(true);
 
       render(<ExtensionInstall onContinue={mockOnContinue} />);
 
@@ -49,7 +49,7 @@ describe('ExtensionInstall', () => {
 
   describe('User interactions', () => {
     beforeEach(() => {
-      vi.mocked(onboardingSync.checkExtensionInstalled).mockResolvedValue(false);
+      vi.mocked(extensionBridge.checkExtensionInstalled).mockResolvedValue(false);
     });
 
     it('opens install URL when Install Extension clicked', async () => {
