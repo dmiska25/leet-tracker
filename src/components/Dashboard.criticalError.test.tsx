@@ -8,23 +8,32 @@ vi.mock('@/storage/db', () => ({
   db: {
     getAllGoalProfiles: vi.fn().mockResolvedValue([]),
     getActiveGoalProfileId: vi.fn().mockResolvedValue(undefined),
+    saveGoalProfile: vi.fn().mockResolvedValue('default'),
+    setActiveGoalProfile: vi.fn().mockResolvedValue('default'),
   },
 }));
 
-vi.mock('@/hooks/useInitApp', () => ({
-  useInitApp: () => ({
+// Mock useDashboard to provide test data
+vi.mock('@/hooks/useDashboard', () => ({
+  useDashboard: () => ({
     loading: false,
-    username: 'tester',
+    syncing: false,
     progress: [],
-    criticalError: true,
-    refresh: vi.fn(),
+    profiles: [],
+    activeProfileId: undefined,
+    profile: null,
+    refreshProgress: vi.fn(),
+    reloadProfiles: vi.fn(),
   }),
 }));
 
 describe('<Dashboard> critical error state', () => {
-  it('displays the critical error notice', () => {
-    render(<Dashboard />);
+  it('no longer displays critical error (handled by App.tsx now)', () => {
+    // Dashboard no longer handles critical errors - they are handled by App.tsx
+    // This test verifies Dashboard renders normally even if progress is empty
+    render(<Dashboard username="testuser" />);
 
-    expect(screen.getByText(/Progress data could not be loaded/i)).toBeInTheDocument();
+    // Dashboard should render without critical error UI
+    expect(screen.queryByText(/Progress data could not be loaded/i)).not.toBeInTheDocument();
   });
 });

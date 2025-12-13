@@ -198,12 +198,6 @@ export const db = {
     return `${prefix}${slug}|${timestamp}`;
   },
 
-  /** Build namespaced per-user metadata key (keep 'lastUpdated' global). */
-  async nsRecentSolvesKey(): Promise<string> {
-    const prefix = await this.getUserPrefixOrThrow();
-    return `${prefix}recentSolvesLastUpdated`;
-  },
-
   /** Build namespaced extension last-timestamp key. */
   async nsExtensionLastTsKey(): Promise<string> {
     const prefix = await this.getUserPrefixOrThrow();
@@ -318,16 +312,6 @@ export const db = {
         await store.delete!(key);
       }
     });
-  },
-
-  // Per-user recent-solves metadata
-  async setRecentSolvesLastUpdated(epochMs: number): Promise<string> {
-    const key = await this.nsRecentSolvesKey();
-    return (await dbPromise).put('solves-metadata', epochMs, key);
-  },
-  async getRecentSolvesLastUpdated(): Promise<number | undefined> {
-    const key = await this.nsRecentSolvesKey();
-    return (await dbPromise).get('solves-metadata', key);
   },
 
   // Goal profiles (per user)

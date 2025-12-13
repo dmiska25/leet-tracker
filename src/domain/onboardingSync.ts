@@ -1,5 +1,5 @@
 import { getManifestSince } from '@/api/extensionBridge';
-import { syncFromExtension } from './extensionSync';
+import { syncSolveData } from './syncSolveData';
 
 /**
  * Manifest response structure from the extension
@@ -65,7 +65,7 @@ export async function monitorSyncProgress(username: string): Promise<SyncStatusR
 
       // Sync from extension (this updates IndexedDB in the background)
       try {
-        const addedCount = await syncFromExtension(username);
+        const addedCount = await syncSolveData(username);
         if (addedCount > 0) {
           console.log(`[OnboardingSync] Synced ${addedCount} new solves from extension`);
         }
@@ -123,7 +123,7 @@ export async function monitorSyncProgress(username: string): Promise<SyncStatusR
 
     // Sync from extension (this updates IndexedDB in the background)
     try {
-      const addedCount = await syncFromExtension(username);
+      const addedCount = await syncSolveData(username);
       if (addedCount > 0) {
         console.log(`[OnboardingSync] Synced ${addedCount} new solves from extension`);
       }
@@ -166,21 +166,5 @@ export async function monitorSyncProgress(username: string): Promise<SyncStatusR
       total: null,
       error: 'Failed to monitor sync progress',
     };
-  }
-}
-
-/**
- * Check if the extension is installed by attempting to communicate with it
- */
-export async function checkExtensionInstalled(): Promise<boolean> {
-  try {
-    // Try to get manifest with a very old timestamp to detect extension presence
-    await getManifestSince('test', 0);
-    return true;
-  } catch (err: any) {
-    if (err?.code === 'EXTENSION_UNAVAILABLE') {
-      return false;
-    }
-    return false;
   }
 }

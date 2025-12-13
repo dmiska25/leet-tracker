@@ -7,19 +7,32 @@ import Dashboard from './Dashboard';
 import { db } from '@/storage/db';
 
 /* ------------------------------------------------------------------ */
-/*  Mock useInitApp so Dashboard mounts instantly with stub refresh   */
+/*  Mock useDashboard so Dashboard mounts instantly with stub refresh   */
 /* ------------------------------------------------------------------ */
-const refreshMock = vi.fn().mockResolvedValue(undefined);
-const hookState = {
+const refreshProgressMock = vi.fn().mockResolvedValue(undefined);
+const reloadProfilesMock = vi.fn().mockResolvedValue(undefined);
+const dashboardHookState = {
   loading: false,
-  username: 'testuser',
+  syncing: false,
   progress: [],
-  criticalError: false,
-  refresh: refreshMock,
+  profiles: [
+    {
+      id: 'default',
+      name: 'Default',
+      description: '',
+      goals: {},
+      createdAt: '',
+      isEditable: false,
+    },
+  ],
+  activeProfileId: 'default',
+  profile: null,
+  refreshProgress: refreshProgressMock,
+  reloadProfiles: reloadProfilesMock,
 };
 
-vi.mock('@/hooks/useInitApp', () => ({
-  useInitApp: () => hookState,
+vi.mock('@/hooks/useDashboard', () => ({
+  useDashboard: () => dashboardHookState,
 }));
 
 /* ------------------------------------------------------------------ */
@@ -53,7 +66,7 @@ describe('Dashboard – Manage Profiles modal', () => {
 
   it('opens and closes the Manage Profiles modal', async () => {
     const user = userEvent.setup();
-    render(<Dashboard />);
+    render(<Dashboard username="testuser" />);
 
     /* open modal */
     const openBtn = screen.getByRole('button', { name: /manage profiles/i });

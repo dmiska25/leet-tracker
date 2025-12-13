@@ -3,7 +3,7 @@ import { Chrome, Download, Loader2, ArrowRight, RefreshCw, LogOut } from 'lucide
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { checkExtensionInstalled } from '@/domain/onboardingSync';
+import { checkExtensionInstalled } from '@/api/extensionBridge';
 import { signOut } from '@/utils/auth';
 import { db } from '@/storage/db';
 import {

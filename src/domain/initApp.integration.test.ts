@@ -9,6 +9,7 @@ import path from 'path';
 // Mock the database module
 vi.mock('../storage/db');
 vi.mock('../api/extensionBridge');
+vi.mock('./syncSolveData');
 
 describe('initApp (integration with fake‑indexeddb)', () => {
   let testDb: IDBPDatabase<LeetTrackerDB>;
@@ -129,16 +130,6 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     vi.mocked(db.getProblemListLastUpdated).mockImplementation(() =>
       testDb.get('problem-metadata', 'lastUpdated'),
     );
-    vi.mocked(db.getRecentSolvesLastUpdated).mockImplementation(async () => {
-      const username = await testDb.get('leetcode-username', 'username');
-      const key = `${username}|recentSolvesLastUpdated`;
-      return testDb.get('solves-metadata', key);
-    });
-    vi.mocked(db.setRecentSolvesLastUpdated).mockImplementation(async (epochMs) => {
-      const username = await testDb.get('leetcode-username', 'username');
-      const key = `${username}|recentSolvesLastUpdated`;
-      return testDb.put('solves-metadata', epochMs, key);
-    });
     vi.mocked(db.getExtensionLastTimestamp).mockImplementation(async () => {
       const username = await testDb.get('leetcode-username', 'username');
       const key = `${username}|lastTimestamp`;
@@ -208,49 +199,33 @@ describe('initApp (integration with fake‑indexeddb)', () => {
     vi.resetModules();
   });
 
-  it('should fetch and store real problem catalog and solves', async () => {
+  it('should initialize app and sync solves', async () => {
+    // Mock syncSolveData to avoid extension/demo logic
+    const { syncSolveData } = await import('./syncSolveData');
+    vi.mocked(syncSolveData).mockResolvedValue(0);
+
+    // Catalog is loaded separately via syncProblemCatalog(), not in initApp()
+    const { syncProblemCatalog } = await import('./syncProblemCatalog');
+    await syncProblemCatalog();
+
     const result = await initApp();
 
     // Verify username
     expect(result.username).toBe('testuser');
 
-    // Verify progress
-    expect(result.progress).toBeDefined();
-    expect(result.progress?.length).toBeGreaterThan(0);
+    // Verify no errors
+    expect(result.errors).toEqual([]);
 
-    // Verify progress for all categories
-    for (const category of result.progress!) {
-      expect(category).toHaveProperty('tag');
-      expect(category).toHaveProperty('goal');
-      expect(category).toHaveProperty('estimatedScore');
-      expect(category).toHaveProperty('confidenceLevel');
-      expect(category).toHaveProperty('adjustedScore');
-      expect(category.estimatedScore).toBeGreaterThanOrEqual(0);
-      expect(category.estimatedScore).toBeLessThanOrEqual(1);
-      expect(category.confidenceLevel).toBeGreaterThanOrEqual(0);
-      expect(category.confidenceLevel).toBeLessThanOrEqual(1);
-      expect(category.adjustedScore).toBeGreaterThanOrEqual(0);
-      expect(category.adjustedScore).toBeLessThanOrEqual(1);
-    }
-
-    // verify the specific categories from the sample data are non zero
-    const categoriesToCheck = ['Array', 'Hash Table', 'Linked List', 'Math', 'Recursion'];
-    for (const category of categoriesToCheck) {
-      const progress = result.progress?.find((p) => p.tag === category);
-      expect(progress).toBeDefined();
-      expect(progress?.estimatedScore).toBeGreaterThan(0);
-      expect(progress?.confidenceLevel).toBeGreaterThan(0);
-      expect(progress?.adjustedScore).toBeGreaterThan(0);
-    }
-
-    // Verify real data was stored
+    // Verify catalog was loaded
     const problems = await db.getAllProblems();
     expect(problems.length).toBeGreaterThan(0);
     expect(problems[0]).toHaveProperty('slug');
     expect(problems[0]).toHaveProperty('title');
 
+    // Since we no longer fetch solves via LeetCode API in initApp,
+    // solves only come from extension (mocked via syncSolveData)
     const solves = await db.getAllSolves();
-    expect(solves.length).toBeLessThanOrEqual(20); // API returns max 20 solves
+    expect(solves.length).toBeGreaterThanOrEqual(0); // No solves without extension in test
     if (solves.length > 0) {
       expect(solves[0]).toHaveProperty('slug');
       expect(solves[0]).toHaveProperty('timestamp');
@@ -272,11 +247,10 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       username: undefined,
       progress: undefined,
       errors: [],
-      extensionInstalled: false,
     });
   });
 
-  it('sets extensionInstalled when extension returns no new solves', async () => {
+  it('succeeds when extension returns no new solves', async () => {
     /* Extension responds but has no new data */
     vi.mocked(getManifestSince).mockResolvedValue({
       chunks: [{ index: 0, from: 0, to: 0 }],
@@ -287,8 +261,8 @@ describe('initApp (integration with fake‑indexeddb)', () => {
 
     const result = await initApp();
 
-    /* Flag should still indicate extension presence         */
-    expect(result.extensionInstalled).toBe(true);
+    /* Should successfully complete */
+    expect(result.username).toBe('testuser');
     /* Solve list should remain API-only (≤20)               */
     const solves = await db.getAllSolves();
     expect(solves.length).toBeLessThanOrEqual(20);
@@ -301,9 +275,8 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       await testDb.delete('solves', key);
     }
 
-    // Reset recent solves timestamp to force API fetch
+    // Reset extension timestamp
     const username = await testDb.get('leetcode-username', 'username');
-    await testDb.delete('solves-metadata', `${username}|recentSolvesLastUpdated`);
     await testDb.delete('extension-sync', `${username}|lastTimestamp`);
 
     // Use recent timestamps (within last 30 days) to ensure progress calculation works
@@ -341,12 +314,18 @@ describe('initApp (integration with fake‑indexeddb)', () => {
       return idx === 0 ? chunk0 : chunk1;
     });
 
-    const result = await initApp();
+    // Mock syncSolveData to call the real extension sync for this test
+    const { syncSolveData } = await import('./syncSolveData');
+    const { syncFromExtension } = await import('./extensionSync');
+    vi.mocked(syncSolveData).mockImplementation(async (username) => {
+      return await syncFromExtension(username);
+    });
+
+    await initApp();
 
     const solves = await db.getAllSolves();
     expect(solves.length).toBe(2);
     const slugs = solves.map((s) => s.slug);
     expect(slugs).toEqual(expect.arrayContaining(['two-sum', 'add-two-numbers']));
-    expect(result.extensionInstalled).toBe(true);
   });
 });

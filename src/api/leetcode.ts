@@ -1,7 +1,4 @@
-import { allCategories, Category, Difficulty, Problem, Solve } from '../types/types';
-import { loadDemoSolves } from './demo';
-
-const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
+import { allCategories, Category, Difficulty, Problem } from '../types/types';
 
 /** LeetCode GraphQL proxy endpoint (serverless function) see: api/leetcode-graphql.ts */
 const GRAPHQL_URL = '/api/leetcode-graphql';
@@ -87,17 +84,6 @@ async function leetcodeGraphQL<T>(query: string, variables: Record<string, unkno
 }
 
 /* --------------------------------- Queries --------------------------------- */
-const GET_RECENT_SUBMISSIONS = `#graphql
-query getRecentSubmissions($username: String!, $limit: Int) {
-  recentSubmissionList(username: $username, limit: $limit) {
-    title
-    titleSlug
-    timestamp
-    statusDisplay
-    lang
-  }
-}
-`;
 
 const DOES_USER_EXIST = `#graphql
 query getUserProfile($username: String!) {
@@ -134,39 +120,4 @@ export async function verifyUser(username: string): Promise<{ exists: boolean }>
     // Re-throw other errors (like rate limiting, network issues, etc.)
     throw error;
   }
-}
-
-/**
- * Fetch recent solves for a given LeetCode username (last 20 submissions).
- * Preserves DEMO user override and RATE_LIMITED error signaling.
- */
-export async function fetchRecentSolves(username: string): Promise<Solve[]> {
-  if (username === DEMO_USERNAME) {
-    return loadDemoSolves();
-  }
-
-  type RecentSub = {
-    title: string;
-    titleSlug: string;
-    timestamp: string | number;
-    statusDisplay: string;
-    lang: string;
-  };
-
-  const data = await leetcodeGraphQL<{ recentSubmissionList: RecentSub[] }>(
-    GET_RECENT_SUBMISSIONS,
-    {
-      username,
-      limit: 20,
-    },
-  );
-
-  const list = data.recentSubmissionList ?? [];
-  return list.map((s) => ({
-    slug: s.titleSlug,
-    title: s.title,
-    timestamp: Number(s.timestamp),
-    status: s.statusDisplay,
-    lang: s.lang,
-  }));
 }

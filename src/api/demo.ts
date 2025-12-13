@@ -1,4 +1,4 @@
-import { Solve } from '@/types/types';
+import { Solve, Problem } from '@/types/types';
 
 /**
  * Adjusts demo solve timestamps to fit within the previous two-week period.
@@ -97,4 +97,78 @@ export async function loadDemoSolves(): Promise<Solve[]> {
   });
 
   return scaledSolves;
+}
+
+/**
+ * Loads demo solves, enriches them with problem metadata (tags, difficulty),
+ * and saves them to the database. Uses an all-or-nothing approach:
+ * - If no existing solves, load all demo data
+ * - If existing data is older than 30 days, delete all and reload fresh data
+ * - Otherwise, skip (demo data is already up to date)
+ *
+ * @param db - Database instance with methods for checking and saving solves
+ * @returns Promise resolving to the number of demo solves saved
+ */
+export async function syncDemoSolves(db: {
+  getAllSolves: () => Promise<Solve[]>;
+  getProblem: (_slug: string) => Promise<Problem | undefined>;
+  saveSolve: (_solve: Solve) => Promise<string>;
+  clearSolves: () => Promise<void>;
+}): Promise<number> {
+  console.log('[syncDemoSolves] Checking existing demo data...');
+
+  // Check if we need to refresh demo data
+  const existingSolves = await db.getAllSolves();
+
+  if (existingSolves.length > 0) {
+    // Find the most recent solve
+    const mostRecentTimestamp = Math.max(...existingSolves.map((s) => s.timestamp));
+    const mostRecentDate = new Date(mostRecentTimestamp * 1000); // Convert seconds to milliseconds
+    const now = new Date();
+    const daysSinceLastSolve = (now.getTime() - mostRecentDate.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (daysSinceLastSolve < 30) {
+      console.log(
+        '[syncDemoSolves] Demo data is fresh (most recent solve is less than 30 days old), skipping refresh',
+      );
+      return 0;
+    }
+
+    // Data is stale, delete all existing solves
+    console.log(
+      '[syncDemoSolves] Demo data is stale (>30 days old), deleting all existing solves...',
+    );
+    await db.clearSolves();
+  }
+
+  // Load and process fresh demo data
+  console.log('[syncDemoSolves] Loading fresh demo solves...');
+  const demoSolves = await loadDemoSolves();
+  let savedCount = 0;
+
+  // Enrich and save demo solves to database
+  for (const solve of demoSolves) {
+    // Fetch problem metadata to enrich tags & difficulty (same as extensionSync)
+    const problem = await db.getProblem(solve.slug);
+
+    if (!problem) {
+      console.warn(
+        `[syncDemoSolves] Problem ${solve.slug} not found in local DB for demo solve, skipping`,
+      );
+      continue;
+    }
+
+    // Enrich solve with problem metadata
+    const enrichedSolve = {
+      ...solve,
+      tags: problem.tags,
+      difficulty: problem.difficulty,
+    };
+
+    await db.saveSolve(enrichedSolve);
+    savedCount++;
+  }
+
+  console.log(`[syncDemoSolves] Demo solves processed: ${savedCount} new solves saved`);
+  return savedCount;
 }

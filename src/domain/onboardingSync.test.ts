@@ -1,10 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  checkForValidManifest,
-  monitorSyncProgress,
-  checkExtensionInstalled,
-  ManifestResponse,
-} from './onboardingSync';
+import { checkForValidManifest, monitorSyncProgress, ManifestResponse } from './onboardingSync';
 import * as extensionBridge from '@/api/extensionBridge';
 import * as extensionSync from './extensionSync';
 
@@ -401,44 +396,6 @@ describe('onboardingSync', () => {
       expect(result.status).toBe('syncing');
       expect(result.progress).toBe(0);
       expect(result.total).toBe(null);
-    });
-  });
-
-  describe('checkExtensionInstalled', () => {
-    it('returns true when extension responds', async () => {
-      const mockManifest: ManifestResponse = {
-        chunks: [],
-        total: undefined,
-        totalSynced: undefined,
-      };
-
-      vi.mocked(extensionBridge.getManifestSince).mockResolvedValue(mockManifest as any);
-
-      const result = await checkExtensionInstalled();
-
-      expect(result).toBe(true);
-      expect(extensionBridge.getManifestSince).toHaveBeenCalledWith('test', 0);
-    });
-
-    it('returns false when extension unavailable', async () => {
-      const error = new Error('Extension unavailable');
-      (error as any).code = 'EXTENSION_UNAVAILABLE';
-
-      vi.mocked(extensionBridge.getManifestSince).mockRejectedValue(error);
-
-      const result = await checkExtensionInstalled();
-
-      expect(result).toBe(false);
-    });
-
-    it('returns false on other errors', async () => {
-      const error = new Error('Network error');
-
-      vi.mocked(extensionBridge.getManifestSince).mockRejectedValue(error);
-
-      const result = await checkExtensionInstalled();
-
-      expect(result).toBe(false);
     });
   });
 });

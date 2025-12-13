@@ -19,10 +19,7 @@ let identified = false;
 /**
  * Identify the current user (once per page load) and emit the `app_opened` event.
  */
-export async function identifyUser(
-  username: string,
-  props: { extensionInstalled: boolean; profileId: string; lastSync: number },
-) {
+export async function identifyUser(username: string, props: { lastSync: number }): Promise<void> {
   if (!username || identified || username == DEMO_USERNAME) return;
   try {
     const distinctId = await sha256(username);

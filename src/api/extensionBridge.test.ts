@@ -146,4 +146,50 @@ describe('extensionBridge', () => {
       );
     }, 10000); // Increase timeout for this test with fake timers
   });
+
+  describe('checkExtensionInstalled', () => {
+    it('returns true when extension responds', async () => {
+      const mockResponse = {
+        source: 'leettracker-extension',
+        type: 'response_chunk_manifest',
+        username: 'test',
+        chunks: [],
+        total: 0,
+        totalSynced: 0,
+      };
+
+      const mockEventListener = vi.fn((eventType, handler) => {
+        if (eventType === 'message') {
+          setTimeout(() => handler({ data: mockResponse }), 10);
+        }
+      });
+
+      window.addEventListener = mockEventListener as any;
+
+      const { checkExtensionInstalled } = await import('./extensionBridge');
+      const promise = checkExtensionInstalled();
+      await vi.advanceTimersByTimeAsync(50);
+      const result = await promise;
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false when extension unavailable (timeout)', async () => {
+      const mockEventListener = vi.fn();
+      window.addEventListener = mockEventListener as any;
+
+      const { checkExtensionInstalled } = await import('./extensionBridge');
+      const promise = checkExtensionInstalled();
+
+      // Catch the rejection to prevent unhandled promise rejection
+      promise.catch(() => {
+        // Expected behavior
+      });
+
+      await vi.runAllTimersAsync();
+      const result = await promise;
+
+      expect(result).toBe(false);
+    });
+  });
 });
