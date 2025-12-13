@@ -65,7 +65,7 @@ function App() {
 
   // GLOBAL POLLER: Single instance of extension polling for entire app
   // Components (Dashboard, SolveHistory) listen to 'solves-updated' events passively
-  const { triggerSync: _triggerSync } = useExtensionPoller({
+  useExtensionPoller({
     onSolvesUpdated: (count) => {
       console.log(`[App] ${count} new solves detected from global poller`);
       // Event is dispatched by poller - components will handle their own updates

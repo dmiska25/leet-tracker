@@ -113,31 +113,27 @@ describe('computeDashboardProgress', () => {
     // evaluateCategoryProgress should be called 3 times (once per category)
     expect(evaluateCategoryProgress).toHaveBeenCalledTimes(3);
 
-    // Build a map of category -> solves slugs from all calls
-    const callsByCategory = new Map<string, string[]>();
-    for (const call of vi.mocked(evaluateCategoryProgress).mock.calls) {
-      const solves = call[0];
-      const tags = solves[0]?.tags || [];
-      for (const tag of tags) {
-        if (mockProfile.goals[tag] !== undefined) {
-          callsByCategory.set(
-            tag,
-            solves.map((s) => s.slug),
-          );
-        }
-      }
-    }
+    // Get categories in stable order from profile
+    const categories = Object.keys(mockProfile.goals); // ['Array', 'Hash Table', 'Linked List']
+    const calls = vi.mocked(evaluateCategoryProgress).mock.calls;
 
-    // Check that Array category got the right solve
-    expect(callsByCategory.get('Array')).toHaveLength(1);
-    expect(callsByCategory.get('Array')?.[0]).toBe('two-sum');
+    // Check first call - Array category
+    expect(categories[0]).toBe('Array');
+    const arrayCall = calls[0][0];
+    expect(arrayCall).toHaveLength(1); // Only "two-sum" has Array tag
+    expect(arrayCall[0].slug).toBe('two-sum');
 
-    // Check that Hash Table category got the right solve
-    expect(callsByCategory.get('Hash Table')).toHaveLength(1);
-    expect(callsByCategory.get('Hash Table')?.[0]).toBe('two-sum');
+    // Check second call - Hash Table category
+    expect(categories[1]).toBe('Hash Table');
+    const hashTableCall = calls[1][0];
+    expect(hashTableCall).toHaveLength(1); // Only "two-sum" has Hash Table tag
+    expect(hashTableCall[0].slug).toBe('two-sum');
 
-    // Check that Linked List category got both solves
-    const linkedListSlugs = new Set(callsByCategory.get('Linked List'));
+    // Check third call - Linked List category
+    expect(categories[2]).toBe('Linked List');
+    const linkedListCall = calls[2][0];
+    expect(linkedListCall).toHaveLength(2); // Both linked list problems
+    const linkedListSlugs = new Set(linkedListCall.map((s) => s.slug));
     expect(linkedListSlugs).toEqual(new Set(['reverse-linked-list', 'add-two-numbers']));
   });
 

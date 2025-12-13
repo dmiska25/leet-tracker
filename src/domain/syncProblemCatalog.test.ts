@@ -123,12 +123,33 @@ describe('syncProblemCatalog', () => {
 
     vi.mocked(fetchProblemCatalog).mockResolvedValue([newProblem, oldProblem]);
 
+    // Spy on the objectStore methods to verify what gets saved
+    const problemListPutSpy = vi.fn();
+    const problemMetadataPutSpy = vi.fn();
+
+    withTransactionSpy.mockImplementation(async (_stores: any, callback: any) => {
+      const mockTx = {
+        objectStore: (name: string) => {
+          if (name === 'problem-list') {
+            return { put: problemListPutSpy };
+          }
+          if (name === 'problem-metadata') {
+            return { put: problemMetadataPutSpy };
+          }
+          return { put: vi.fn() };
+        },
+      };
+      await callback(mockTx);
+    });
+
     await syncProblemCatalog();
 
-    expect(db.withTransaction).toHaveBeenCalled();
-    // Verify callback was called
-    const callback = withTransactionSpy.mock.calls[0][1];
-    expect(callback).toBeDefined();
+    // Verify only the new problem was saved to problem-list
+    expect(problemListPutSpy).toHaveBeenCalledWith(newProblem, 'new-problem');
+    expect(problemListPutSpy).not.toHaveBeenCalledWith(oldProblem, 'old-problem');
+
+    // Verify lastUpdated metadata was saved
+    expect(problemMetadataPutSpy).toHaveBeenCalledWith(expect.any(Number), 'lastUpdated');
   });
 
   it('handles fetch errors gracefully (does not throw)', async () => {
