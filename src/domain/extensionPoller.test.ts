@@ -32,8 +32,8 @@ describe('extensionPoller', () => {
       vi.mocked(syncSolveData).mockResolvedValue(0);
       startPolling();
 
-      // Should perform immediate sync on start - wait for the async operation
-      await Promise.resolve();
+      // Should perform immediate sync on start - flush microtasks without advancing time
+      await vi.advanceTimersByTimeAsync(0);
       expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       const state = getPollingState();
@@ -74,15 +74,14 @@ describe('extensionPoller', () => {
       vi.mocked(syncSolveData).mockResolvedValue(0);
       startPolling();
 
-      // Initial sync - wait for promises
-      await Promise.resolve();
+      // Initial sync - flush microtasks without advancing time
+      await vi.advanceTimersByTimeAsync(0);
       expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       stopPolling();
 
       // Advance time - should not sync anymore
-      vi.advanceTimersByTime(10000);
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(10000);
       expect(syncSolveData).toHaveBeenCalledTimes(1); // Still 1, no new syncs
 
       const state = getPollingState();
@@ -134,12 +133,11 @@ describe('extensionPoller', () => {
       startPolling();
 
       // Initial sync starts (but doesn't complete yet)
-      await Promise.resolve(); // Let the sync start
+      await vi.advanceTimersByTimeAsync(0); // Let the sync start without advancing time
       expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       // Advance 10 seconds - should attempt another sync
-      vi.advanceTimersByTime(10000);
-      await Promise.resolve(); // Let it attempt
+      await vi.advanceTimersByTimeAsync(10000);
 
       // Should still be only 1 call (second attempt was skipped due to overlap)
       expect(syncSolveData).toHaveBeenCalledTimes(1);
@@ -147,11 +145,10 @@ describe('extensionPoller', () => {
       // Now resolve the first sync and set up next sync to complete quickly
       vi.mocked(syncSolveData).mockResolvedValueOnce(0);
       resolveSync!(0);
-      await Promise.resolve(); // Let promises resolve
+      await vi.advanceTimersByTimeAsync(0); // Let promises resolve without advancing time
 
       // Advance another 10 seconds - should now sync again
-      vi.advanceTimersByTime(10000);
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(10000);
       expect(syncSolveData).toHaveBeenCalledTimes(2);
     });
 
@@ -166,7 +163,7 @@ describe('extensionPoller', () => {
       startPolling();
 
       // Initial sync starts
-      await Promise.resolve(); // Let the sync start
+      await vi.advanceTimersByTimeAsync(0); // Let the sync start without advancing time
       expect(syncSolveData).toHaveBeenCalledTimes(1);
 
       // Try manual sync while first is still in progress
@@ -179,7 +176,7 @@ describe('extensionPoller', () => {
 
       // Resolve the original sync
       resolveSync!(2);
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(0);
     });
   });
 

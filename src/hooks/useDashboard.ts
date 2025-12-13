@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { computeDashboardProgress } from '@/domain/dashboardProgress';
 import { getActiveOrInitProfile } from '@/domain/goalProfiles';
+import { SOLVES_UPDATED_EVENT } from '@/domain/extensionPoller';
 import { db } from '@/storage/db';
 import type { CategoryProgress } from '@/types/progress';
 import type { GoalProfile } from '@/types/types';
@@ -84,8 +85,8 @@ export function useDashboard() {
       refreshProgress(false); // Silent update (no loading/syncing state)
     };
 
-    window.addEventListener('solves-updated', handleSolvesUpdated);
-    return () => window.removeEventListener('solves-updated', handleSolvesUpdated);
+    window.addEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
+    return () => window.removeEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
   }, [refreshProgress]);
 
   // Manual refresh for "Sync Now" button (shows syncing state)

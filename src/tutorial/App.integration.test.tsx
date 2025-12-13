@@ -52,6 +52,9 @@ vi.mock('@/utils/analytics', () => ({
 }));
 
 describe('App Tutorial Integration', () => {
+  // Fixed timestamp to avoid flakiness from staleness checks
+  const MOCK_NOW = 1700000000000;
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -71,7 +74,7 @@ describe('App Tutorial Integration', () => {
     (db.db.getAllGoalProfiles as Mock).mockResolvedValue([]);
     (db.db.getActiveGoalProfileId as Mock).mockResolvedValue(null);
     (db.db.getAllSolvesSorted as Mock).mockResolvedValue([]);
-    (db.db.getProblemListLastUpdated as Mock).mockResolvedValue(Date.now()); // Mock catalog as recently updated
+    (db.db.getProblemListLastUpdated as Mock).mockResolvedValue(MOCK_NOW); // Mock catalog as recently updated
 
     // Mock useInitApp to return signed-in user
     mockUseInitApp.mockReturnValue({

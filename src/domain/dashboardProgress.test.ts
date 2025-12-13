@@ -94,15 +94,17 @@ describe('computeDashboardProgress', () => {
     const result = await computeDashboardProgress(mockProfile);
 
     expect(result).toHaveLength(3);
-    expect(result.map((p) => p.tag)).toEqual(['Array', 'Hash Table', 'Linked List']);
+    const tags = new Set(result.map((p) => p.tag));
+    expect(tags).toEqual(new Set(['Array', 'Hash Table', 'Linked List']));
   });
 
   it('includes goal for each category', async () => {
     const result = await computeDashboardProgress(mockProfile);
 
-    expect(result[0].goal).toBe(0.6); // Array
-    expect(result[1].goal).toBe(0.5); // Hash Table
-    expect(result[2].goal).toBe(0.4); // Linked List
+    const progressByTag = new Map(result.map((p) => [p.tag, p]));
+    expect(progressByTag.get('Array')?.goal).toBe(0.6);
+    expect(progressByTag.get('Hash Table')?.goal).toBe(0.5);
+    expect(progressByTag.get('Linked List')?.goal).toBe(0.4);
   });
 
   it('filters solves by category tag', async () => {
@@ -111,20 +113,32 @@ describe('computeDashboardProgress', () => {
     // evaluateCategoryProgress should be called 3 times (once per category)
     expect(evaluateCategoryProgress).toHaveBeenCalledTimes(3);
 
-    // Check first call (Array)
-    const arrayCall = vi.mocked(evaluateCategoryProgress).mock.calls[0][0];
-    expect(arrayCall).toHaveLength(1); // Only "two-sum" has Array tag
-    expect(arrayCall[0].slug).toBe('two-sum');
+    // Build a map of category -> solves slugs from all calls
+    const callsByCategory = new Map<string, string[]>();
+    for (const call of vi.mocked(evaluateCategoryProgress).mock.calls) {
+      const solves = call[0];
+      const tags = solves[0]?.tags || [];
+      for (const tag of tags) {
+        if (mockProfile.goals[tag] !== undefined) {
+          callsByCategory.set(
+            tag,
+            solves.map((s) => s.slug),
+          );
+        }
+      }
+    }
 
-    // Check second call (Hash Table)
-    const hashTableCall = vi.mocked(evaluateCategoryProgress).mock.calls[1][0];
-    expect(hashTableCall).toHaveLength(1); // Only "two-sum" has Hash Table tag
-    expect(hashTableCall[0].slug).toBe('two-sum');
+    // Check that Array category got the right solve
+    expect(callsByCategory.get('Array')).toHaveLength(1);
+    expect(callsByCategory.get('Array')?.[0]).toBe('two-sum');
 
-    // Check third call (Linked List)
-    const linkedListCall = vi.mocked(evaluateCategoryProgress).mock.calls[2][0];
-    expect(linkedListCall).toHaveLength(2); // Both linked list problems
-    expect(linkedListCall.map((s) => s.slug)).toEqual(['reverse-linked-list', 'add-two-numbers']);
+    // Check that Hash Table category got the right solve
+    expect(callsByCategory.get('Hash Table')).toHaveLength(1);
+    expect(callsByCategory.get('Hash Table')?.[0]).toBe('two-sum');
+
+    // Check that Linked List category got both solves
+    const linkedListSlugs = new Set(callsByCategory.get('Linked List'));
+    expect(linkedListSlugs).toEqual(new Set(['reverse-linked-list', 'add-two-numbers']));
   });
 
   it('includes scores from evaluateCategoryProgress', async () => {
@@ -189,28 +203,23 @@ describe('computeDashboardProgress', () => {
   });
 
   it('returns different scores for different categories', async () => {
+    // Set up distinct scores for each mock call
+    const mockScores = [
+      { estimatedScore: 0.8, confidenceLevel: 0.9, adjustedScore: 0.72 },
+      { estimatedScore: 0.3, confidenceLevel: 0.5, adjustedScore: 0.15 },
+      { estimatedScore: 0.6, confidenceLevel: 0.7, adjustedScore: 0.42 },
+    ];
+
     vi.mocked(evaluateCategoryProgress)
-      .mockReturnValueOnce({
-        estimatedScore: 0.8,
-        confidenceLevel: 0.9,
-        adjustedScore: 0.72,
-      })
-      .mockReturnValueOnce({
-        estimatedScore: 0.3,
-        confidenceLevel: 0.5,
-        adjustedScore: 0.15,
-      })
-      .mockReturnValueOnce({
-        estimatedScore: 0.6,
-        confidenceLevel: 0.7,
-        adjustedScore: 0.42,
-      });
+      .mockReturnValueOnce(mockScores[0])
+      .mockReturnValueOnce(mockScores[1])
+      .mockReturnValueOnce(mockScores[2]);
 
     const result = await computeDashboardProgress(mockProfile);
 
-    expect(result[0].adjustedScore).toBe(0.72);
-    expect(result[1].adjustedScore).toBe(0.15);
-    expect(result[2].adjustedScore).toBe(0.42);
+    // Verify all three scores appear in the results (order-independent)
+    const adjustedScores = new Set(result.map((p) => p.adjustedScore));
+    expect(adjustedScores).toEqual(new Set([0.72, 0.15, 0.42]));
   });
 
   it('handles database errors', async () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { syncProblemCatalog } from './syncProblemCatalog';
+import { syncProblemCatalog, __resetCatalogPromiseForTests } from './syncProblemCatalog';
 import { db } from '@/storage/db';
 import { fetchProblemCatalog } from '@/api/leetcode';
 import { Difficulty, Problem } from '@/types/types';
@@ -57,8 +57,8 @@ describe('syncProblemCatalog', () => {
   });
 
   afterEach(() => {
-    // Reset the singleton state by clearing the module cache
-    vi.resetModules();
+    // Reset the singleton state for test isolation
+    __resetCatalogPromiseForTests();
   });
 
   it('fetches and stores catalog when never loaded before', async () => {

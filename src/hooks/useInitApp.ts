@@ -16,32 +16,35 @@ export function useInitApp() {
   });
 
   /* Shared loader so we can call it from useEffect, refresh(), and silentRefresh() */
-  const load = async (dontShowCriticalError: boolean = false) => {
-    try {
-      const { username, errors } = await initApp();
+  const load = useCallback(
+    async (dontShowCriticalError: boolean = false) => {
+      try {
+        const { username, errors } = await initApp();
 
-      errors.forEach((error) => {
-        toast(error, 'error');
-      });
+        errors.forEach((error) => {
+          toast(error, 'error');
+        });
 
-      setState({
-        loading: false,
-        username,
-        criticalError: false,
-      });
-    } catch (err: any) {
-      console.error('[useInitApp] initApp failed', err);
-      if (!dontShowCriticalError) {
-        setState({ loading: false, criticalError: true });
+        setState({
+          loading: false,
+          username,
+          criticalError: false,
+        });
+      } catch (err: any) {
+        console.error('[useInitApp] initApp failed', err);
+        if (!dontShowCriticalError) {
+          setState({ loading: false, criticalError: true });
+        }
+        // Silent refresh: don't show critical error, just log it
       }
-      // Silent refresh: don't show critical error, just log it
-    }
-  };
+    },
+    [toast],
+  );
 
   /* Run once on mount */
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   /**
    * Public helper – used by the "Sync Now" button.
@@ -59,7 +62,7 @@ export function useInitApp() {
   const silentRefresh = useCallback(async () => {
     // Don't set loading state - just update the data in background
     await load(true);
-  }, [toast]);
+  }, [load]);
 
   return { ...state, refresh, silentRefresh };
 }

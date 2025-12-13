@@ -174,7 +174,7 @@ describe('extensionBridge', () => {
       expect(result).toBe(true);
     });
 
-    it('returns false when extension unavailable', async () => {
+    it('returns false when extension unavailable (timeout)', async () => {
       const mockEventListener = vi.fn();
       window.addEventListener = mockEventListener as any;
 
@@ -182,24 +182,6 @@ describe('extensionBridge', () => {
       const promise = checkExtensionInstalled();
 
       // Catch the rejection to prevent unhandled promise rejection
-      promise.catch(() => {
-        // Expected behavior
-      });
-
-      await vi.runAllTimersAsync();
-      const result = await promise;
-
-      expect(result).toBe(false);
-    });
-
-    it('returns false on other errors', async () => {
-      // This test covers the case where an error without EXTENSION_UNAVAILABLE code is thrown
-      const mockEventListener = vi.fn();
-      window.addEventListener = mockEventListener as any;
-
-      const { checkExtensionInstalled } = await import('./extensionBridge');
-      const promise = checkExtensionInstalled();
-
       promise.catch(() => {
         // Expected behavior
       });

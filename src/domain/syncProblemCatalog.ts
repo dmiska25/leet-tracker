@@ -6,6 +6,14 @@ const PROBLEM_CATALOG_URL = import.meta.env.VITE_PROBLEM_CATALOG_URL;
 // Singleton promise for catalog loading
 let catalogPromise: Promise<void> | null = null;
 
+/**
+ * Test helper to reset the singleton state.
+ * Should only be used in tests to ensure test isolation.
+ */
+export function __resetCatalogPromiseForTests(): void {
+  catalogPromise = null;
+}
+
 function isStale(epoch: number | undefined, maxAgeMinutes: number): boolean {
   if (!epoch) return true;
   const now = new Date().getTime();

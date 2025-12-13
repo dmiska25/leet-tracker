@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { db } from '../storage/db';
 import { Difficulty, Solve } from '../types/types';
 import { initApp } from './initApp';
@@ -30,6 +30,11 @@ describe('initApp', () => {
 
     /* syncSolveData mock */
     vi.mocked(syncSolveData).mockResolvedValue(0);
+  });
+
+  afterEach(() => {
+    // Always clean up env vars even if test fails
+    vi.unstubAllEnvs();
   });
 
   it('handles missing username path', async () => {
@@ -71,7 +76,5 @@ describe('initApp', () => {
     expect(res.username).toBe('test-demo-user');
     expect(res.errors).toEqual([]);
     expect(syncSolveData).toHaveBeenCalledWith('test-demo-user');
-
-    vi.unstubAllEnvs();
   });
 });

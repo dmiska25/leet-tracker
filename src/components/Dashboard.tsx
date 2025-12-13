@@ -7,7 +7,7 @@ import { getCategorySuggestions, getRandomSuggestions } from '@/domain/recommend
 import { CategoryRecommendation } from '@/types/recommendation';
 import { db } from '@/storage/db';
 import { trackSyncCompleted } from '@/utils/analytics';
-import { triggerManualSync } from '@/domain/extensionPoller';
+import { triggerManualSync, SOLVES_UPDATED_EVENT } from '@/domain/extensionPoller';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress';
@@ -45,8 +45,8 @@ export default function Dashboard({ username }: DashboardProps) {
       setLastSynced(new Date());
     };
 
-    window.addEventListener('solves-updated', handleSolvesUpdated);
-    return () => window.removeEventListener('solves-updated', handleSolvesUpdated);
+    window.addEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
+    return () => window.removeEventListener(SOLVES_UPDATED_EVENT, handleSolvesUpdated);
   }, []);
 
   // Handle click outside and Escape key for profile dropdown
@@ -84,10 +84,6 @@ export default function Dashboard({ username }: DashboardProps) {
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
-  }
-
-  if (!username) {
-    return <p className="p-6">Please sign in to start tracking your solves.</p>;
   }
 
   const sorted = [...progress].sort((a, b) => a.adjustedScore - b.adjustedScore);
