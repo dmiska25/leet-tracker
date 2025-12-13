@@ -98,3 +98,16 @@ export async function getChunk(username: string, index: number) {
   >({ type: 'request_chunk_by_index', username, index });
   return res.data;
 }
+
+/**
+ * Check if the extension is installed by attempting to communicate with it
+ */
+export async function checkExtensionInstalled(): Promise<boolean> {
+  try {
+    // Try to get manifest with a very old timestamp to detect extension presence
+    await getManifestSince('test', 0);
+    return true;
+  } catch {
+    return false;
+  }
+}

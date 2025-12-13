@@ -19,13 +19,16 @@ import {
   markOnboardingComplete,
   clearOnboardingComplete,
 } from '@/storage/db';
-import { checkExtensionInstalled } from '@/domain/onboardingSync';
+import { checkExtensionInstalled } from '@/api/extensionBridge';
+import { syncProblemCatalog } from '@/domain/syncProblemCatalog';
+import { useExtensionPoller } from '@/hooks/useExtensionPoller';
 
 function App() {
-  const { loading, username, extensionInstalled } = useInitApp();
+  const { loading, username } = useInitApp();
   const [view, setView] = useState<'dashboard' | 'history'>('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [extensionInstalled, setExtensionInstalled] = useState(false);
 
   const tutorial = useTutorial();
   const [showPrompt, setShowPrompt] = useState(false);
@@ -41,6 +44,33 @@ function App() {
       }),
     [extensionInstalled],
   );
+
+  // Initialize problem catalog on app startup (runs once, independent of user sign-in)
+  useEffect(() => {
+    syncProblemCatalog();
+  }, []); // Empty dependency array = runs once on mount
+
+  // Check extension installation status when user is loaded
+  useEffect(() => {
+    (async () => {
+      if (!username) return;
+      if (username === demoUsername) {
+        setExtensionInstalled(false);
+        return;
+      }
+      const isInstalled = await checkExtensionInstalled();
+      setExtensionInstalled(isInstalled);
+    })();
+  }, [username, demoUsername]);
+
+  // GLOBAL POLLER: Single instance of extension polling for entire app
+  // Components (Dashboard, SolveHistory) listen to 'solves-updated' events passively
+  useExtensionPoller({
+    onSolvesUpdated: (count) => {
+      console.log(`[App] ${count} new solves detected from global poller`);
+      // Event is dispatched by poller - components will handle their own updates
+    },
+  });
 
   // Check if user needs to see onboarding
   useEffect(() => {
@@ -188,7 +218,13 @@ function App() {
           setShowPrompt(false);
         }}
       />
-      {view === 'dashboard' ? <Dashboard /> : <SolveHistory />}
+      {/* Render both components to preserve state, hide inactive one with CSS */}
+      <div style={{ display: view === 'dashboard' ? 'block' : 'none' }}>
+        <Dashboard username={username} />
+      </div>
+      <div style={{ display: view === 'history' ? 'block' : 'none' }}>
+        <SolveHistory />
+      </div>
     </>
   );
 }

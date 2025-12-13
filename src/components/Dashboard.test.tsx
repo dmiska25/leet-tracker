@@ -6,18 +6,59 @@ import Dashboard from './Dashboard';
 import { db } from '@/storage/db';
 
 /* ------------------------------------------------------------------ */
-/*  Mock useInitApp so Dashboard mounts instantly with stub refresh   */
+/*  Mock useDashboard so Dashboard mounts instantly with stub refresh   */
 /* ------------------------------------------------------------------ */
-const refreshMock = vi.fn().mockResolvedValue(undefined);
-const hookState = {
+const refreshProgressMock = vi.fn().mockResolvedValue(undefined);
+const reloadProfilesMock = vi.fn().mockResolvedValue(undefined);
+const dashboardHookState = {
   loading: false,
-  username: 'testuser',
+  syncing: false,
   progress: [],
-  refresh: refreshMock,
+  profiles: [
+    {
+      id: 'default',
+      name: 'Default',
+      description: '',
+      goals: {},
+      createdAt: '',
+      isEditable: false,
+    },
+    {
+      id: 'alt',
+      name: 'Alt',
+      description: '',
+      goals: {},
+      createdAt: '',
+      isEditable: true,
+    },
+  ],
+  activeProfileId: 'default',
+  profile: {
+    id: 'default',
+    name: 'Default',
+    description: '',
+    goals: {},
+    createdAt: '',
+    isEditable: false,
+  },
+  refreshProgress: refreshProgressMock,
+  reloadProfiles: reloadProfilesMock,
 };
 
-vi.mock('@/hooks/useInitApp', () => ({
-  useInitApp: () => hookState,
+vi.mock('@/hooks/useDashboard', () => ({
+  useDashboard: () => dashboardHookState,
+}));
+
+/* ------------------------------------------------------------------ */
+/*  Mock triggerManualSync from extensionPoller                      */
+/* ------------------------------------------------------------------ */
+const { triggerManualSyncMock } = vi.hoisted(() => ({
+  triggerManualSyncMock: vi.fn().mockResolvedValue(0),
+}));
+
+vi.mock('@/domain/extensionPoller', () => ({
+  triggerManualSync: triggerManualSyncMock,
+  SOLVES_UPDATED_EVENT: 'solves-updated',
 }));
 
 /* ------------------------------------------------------------------ */
@@ -32,7 +73,9 @@ describe('Dashboard buttons', () => {
   const originalLocation = window.location;
 
   beforeEach(() => {
-    refreshMock.mockClear();
+    refreshProgressMock.mockClear();
+    triggerManualSyncMock.mockClear();
+    triggerManualSyncMock.mockResolvedValue(0); // Default: no new solves
 
     /* confirm dialog */
     confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true) as Mock;
@@ -78,19 +121,26 @@ describe('Dashboard buttons', () => {
 
   it('calls refresh when Sync Now button is clicked', async () => {
     const user = userEvent.setup();
-    render(<Dashboard />);
+    // Mock triggerManualSync to return 1 new solve so refresh is called
+    triggerManualSyncMock.mockResolvedValueOnce(1);
+
+    render(<Dashboard username="testuser" />);
 
     const button = screen.getByRole('button', { name: /sync now/i });
     expect(button).toBeEnabled();
 
     await user.click(button);
 
-    await waitFor(() => expect(refreshMock).toHaveBeenCalledTimes(1));
+    // triggerManualSync is called first, then refreshProgress if new solves found
+    await waitFor(() => {
+      expect(triggerManualSyncMock).toHaveBeenCalledTimes(1);
+      expect(refreshProgressMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('changes active profile when dropdown item clicked', async () => {
     const user = userEvent.setup();
-    render(<Dashboard />);
+    render(<Dashboard username="testuser" />);
 
     // Wait for the default profile to appear in the dropdown button
     await waitFor(() => {
@@ -104,7 +154,7 @@ describe('Dashboard buttons', () => {
 
     await waitFor(() => {
       expect(setActiveProfileSpy).toHaveBeenCalledWith('alt');
-      expect(refreshMock).toHaveBeenCalled();
+      expect(refreshProgressMock).toHaveBeenCalled();
     });
   });
 });

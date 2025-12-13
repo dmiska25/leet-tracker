@@ -14,6 +14,7 @@ vi.mock('@/storage/db', () => ({
     getAllGoalProfiles: vi.fn(),
     getActiveGoalProfileId: vi.fn(),
     getAllSolvesSorted: vi.fn(),
+    getProblemListLastUpdated: vi.fn(),
   },
   getTutorialActive: vi.fn(),
   setTutorialActive: vi.fn(),
@@ -33,7 +34,7 @@ vi.mock('@/storage/db', () => ({
 }));
 
 // Mock extension detection
-vi.mock('@/domain/onboardingSync', () => ({
+vi.mock('@/api/extensionBridge', () => ({
   checkExtensionInstalled: vi.fn().mockResolvedValue(true),
 }));
 
@@ -51,6 +52,9 @@ vi.mock('@/utils/analytics', () => ({
 }));
 
 describe('App Tutorial Integration', () => {
+  // Fixed timestamp to avoid flakiness from staleness checks
+  const MOCK_NOW = 1700000000000;
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -70,6 +74,7 @@ describe('App Tutorial Integration', () => {
     (db.db.getAllGoalProfiles as Mock).mockResolvedValue([]);
     (db.db.getActiveGoalProfileId as Mock).mockResolvedValue(null);
     (db.db.getAllSolvesSorted as Mock).mockResolvedValue([]);
+    (db.db.getProblemListLastUpdated as Mock).mockResolvedValue(MOCK_NOW); // Mock catalog as recently updated
 
     // Mock useInitApp to return signed-in user
     mockUseInitApp.mockReturnValue({
@@ -93,7 +98,6 @@ describe('App Tutorial Integration', () => {
         },
       ],
       criticalError: false,
-      extensionInstalled: true,
       refresh: vi.fn(),
     });
   });
@@ -135,7 +139,6 @@ describe('App Tutorial Integration', () => {
       mockUseInitApp.mockReturnValue({
         loading: true,
         username: null,
-        extensionInstalled: false,
       });
 
       render(
@@ -232,7 +235,6 @@ describe('App Tutorial Integration', () => {
         username: 'test-demo-user',
         progress: [],
         criticalError: false,
-        extensionInstalled: true,
         refresh: vi.fn(),
       });
 
@@ -256,7 +258,6 @@ describe('App Tutorial Integration', () => {
         username: 'test-demo-user',
         progress: [],
         criticalError: false,
-        extensionInstalled: true,
         refresh: vi.fn(),
       });
 

@@ -195,11 +195,6 @@ describe('db storage module', () => {
       expect(key).toBe('testuser|active');
     });
 
-    it('generates correct recent solves key', async () => {
-      const key = await db.nsRecentSolvesKey();
-      expect(key).toBe('testuser|recentSolvesLastUpdated');
-    });
-
     it('generates correct extension timestamp key', async () => {
       const key = await db.nsExtensionLastTsKey();
       expect(key).toBe('testuser|lastTimestamp');

@@ -9,12 +9,13 @@ import { getRandomSuggestions, getCategorySuggestions } from '@/domain/recommend
 import { Difficulty } from '@/types/types';
 
 /* ------------------------------------------------------------------ */
-/*  Mock useInitApp so Dashboard mounts instantly with stub refresh   */
+/*  Mock useDashboard so Dashboard mounts instantly with stub refresh   */
 /* ------------------------------------------------------------------ */
-const refreshMock = vi.fn().mockResolvedValue(undefined);
-const hookState = {
+const refreshProgressMock = vi.fn().mockResolvedValue(undefined);
+const reloadProfilesMock = vi.fn().mockResolvedValue(undefined);
+const dashboardHookState = {
   loading: false,
-  username: 'tester',
+  syncing: false,
   progress: [
     {
       tag: 'Array',
@@ -24,12 +25,17 @@ const hookState = {
       adjustedScore: 0.16,
     },
   ],
-  criticalError: false,
-  refresh: refreshMock,
+  profiles: [
+    { id: 'test', name: 'Test', description: '', goals: {}, createdAt: '', isEditable: true },
+  ],
+  activeProfileId: 'test',
+  profile: null,
+  refreshProgress: refreshProgressMock,
+  reloadProfiles: reloadProfilesMock,
 };
 
-vi.mock('@/hooks/useInitApp', () => ({
-  useInitApp: () => hookState,
+vi.mock('@/hooks/useDashboard', () => ({
+  useDashboard: () => dashboardHookState,
 }));
 
 vi.mock('@/domain/recommendations');
@@ -80,7 +86,7 @@ describe('Dashboard \u2013 Random category', () => {
 
   it('calls getRandomSuggestions and hides tags', async () => {
     const user = userEvent.setup();
-    render(<Dashboard />);
+    render(<Dashboard username="testuser" />);
 
     const randomBtn = screen.getByRole('button', { name: RANDOM_TAG });
     expect(randomBtn).toBeInTheDocument();

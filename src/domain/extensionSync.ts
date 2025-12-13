@@ -2,6 +2,7 @@ import { db } from '../storage/db';
 import { getManifestSince, getChunk, ExtensionUnavailable } from '../api/extensionBridge';
 import type { Solve, HintType } from '../types/types';
 import { HINT_TYPES } from '../types/types';
+import { syncProblemCatalog } from './syncProblemCatalog';
 
 export { ExtensionUnavailable };
 
@@ -31,8 +32,25 @@ export async function syncFromExtension(username: string): Promise<number> {
     const rawSolves = await getChunk(username, m.index);
 
     for (const raw of rawSolves) {
-      const p = await db.getProblem(raw.titleSlug);
-      if (!p) continue; // skip if problem not found
+      let p = await db.getProblem(raw.titleSlug);
+
+      // On-demand catalog fetch if problem not found
+      if (!p) {
+        console.warn(
+          `[extensionSync] Problem ${raw.titleSlug} not found in local DB, fetching full catalog...`,
+        );
+        await syncProblemCatalog();
+
+        // Retry getting the problem after catalog update
+        p = await db.getProblem(raw.titleSlug);
+
+        if (!p) {
+          console.error(
+            `[extensionSync] Problem ${raw.titleSlug} still not found after catalog update, skipping solve`,
+          );
+          continue;
+        }
+      }
 
       // Update problem description if provided (handles string or { content } form)
       const descAny = (raw as any).problemDescription;

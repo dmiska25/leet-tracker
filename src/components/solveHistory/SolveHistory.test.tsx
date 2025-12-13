@@ -26,6 +26,13 @@ const makeSolve = (title: string, ts: number): Solve => ({
 /* ------------------------------------------------------------------ */
 vi.mock('@/storage/db');
 
+// Mock useExtensionPoller (polling is tested separately)
+vi.mock('@/hooks/useExtensionPoller', () => ({
+  useExtensionPoller: () => ({
+    triggerSync: vi.fn().mockResolvedValue(0),
+  }),
+}));
+
 describe('<SolveHistory>', () => {
   const solves = [makeSolve('Problem One', now), makeSolve('Problem Two', now - 1000)];
 

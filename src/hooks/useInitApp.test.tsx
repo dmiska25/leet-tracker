@@ -2,7 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 import { useInitApp } from './useInitApp';
-import { initApp as realInitApp, resetRecentSolvesCache as realResetCache } from '@/domain/initApp';
+import { initApp as realInitApp } from '@/domain/initApp';
 
 /* ------------------------------------------------------------------ */
 /*  Mocks                                                              */
@@ -17,7 +17,6 @@ vi.mock('@/components/ui/toast', () => ({
 // Mock initApp itself
 vi.mock('@/domain/initApp');
 const initApp = vi.mocked(realInitApp);
-const resetRecentSolvesCache = vi.mocked(realResetCache);
 
 describe('useInitApp', () => {
   afterEach(() => {
@@ -27,9 +26,7 @@ describe('useInitApp', () => {
   it('loads data, forwards warnings via toast and clears loading/criticalError', async () => {
     initApp.mockResolvedValue({
       username: 'alice',
-      progress: [],
       errors: ['warn‑1', 'warn‑2'],
-      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());
@@ -64,9 +61,7 @@ describe('useInitApp', () => {
     // First init call
     initApp.mockResolvedValueOnce({
       username: 'bob',
-      progress: [],
       errors: [],
-      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());
@@ -75,9 +70,7 @@ describe('useInitApp', () => {
     // Second init call (for refresh)
     initApp.mockResolvedValueOnce({
       username: 'bob',
-      progress: [],
       errors: [],
-      extensionInstalled: false,
     });
 
     // Run the entire refresh flow inside act so all state updates are flushed
@@ -91,43 +84,52 @@ describe('useInitApp', () => {
     expect(initApp).toHaveBeenCalledTimes(2);
   });
 
-  it('refresh() calls resetRecentSolvesCache before reloading', async () => {
+  it('silentRefresh() updates data without setting loading state', async () => {
     // First init call
     initApp.mockResolvedValueOnce({
-      username: 'carol',
-      progress: [],
+      username: 'dave',
       errors: [],
-      extensionInstalled: false,
     });
 
     const { result } = renderHook(() => useInitApp());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    // Reset mocks to track refresh behavior
-    vi.clearAllMocks();
-
-    // Second init call (for refresh)
+    // Second init call (for silentRefresh)
     initApp.mockResolvedValueOnce({
-      username: 'carol',
-      progress: [],
+      username: 'dave',
       errors: [],
-      extensionInstalled: false,
     });
 
-    // Run the refresh
+    // Run silentRefresh
     await act(async () => {
-      await result.current.refresh();
+      await result.current.silentRefresh();
     });
 
-    // Verify resetRecentSolvesCache was called before initApp
-    expect(resetRecentSolvesCache).toHaveBeenCalledTimes(1);
-    expect(initApp).toHaveBeenCalledTimes(1);
+    // Loading should never have been set to true during silentRefresh
+    expect(result.current.loading).toBe(false);
+    expect(initApp).toHaveBeenCalledTimes(2);
+  });
 
-    // Assert that resetRecentSolvesCache was invoked before initApp
-    expect(resetRecentSolvesCache.mock.invocationCallOrder[0]).toBeLessThan(
-      initApp.mock.invocationCallOrder[0],
-    );
+  it('silentRefresh() handles errors gracefully without showing critical error', async () => {
+    // First init call
+    initApp.mockResolvedValueOnce({
+      username: 'eve',
+      errors: [],
+    });
 
+    const { result } = renderHook(() => useInitApp());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    // Second init call fails
+    initApp.mockRejectedValueOnce(new Error('silent refresh failed'));
+
+    // Run silentRefresh
+    await act(async () => {
+      await result.current.silentRefresh();
+    });
+
+    // Should not show critical error (just logs it)
+    expect(result.current.criticalError).toBe(false);
     expect(result.current.loading).toBe(false);
   });
 });
