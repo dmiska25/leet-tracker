@@ -8,14 +8,13 @@ import { syncProblemCatalog } from './syncProblemCatalog';
  *
  * Responsibilities:
  * - Start async catalog sync in background (non-blocking)
- * - Sync solve data from extension/demo (BLOCKING)
+ * - Sync solve data from extension/demo (BLOCKING, but gracefully handles missing extension)
  * - Identify user for analytics
  *
  * Does NOT compute progress - that's the Dashboard's responsibility.
  * Does NOT manage catalog logic - that's in syncProblemCatalog.
  *
  * @returns Username and any errors encountered
- * @throws Error if extension unavailable for non-demo users
  */
 export async function initApp(): Promise<{
   username: string | undefined;
@@ -44,10 +43,13 @@ export async function initApp(): Promise<{
     }
   } catch (err: any) {
     if (err?.code === 'EXTENSION_UNAVAILABLE') {
-      throw new Error('Extension not available');
+      // Extension not available - not a critical error, user may be in onboarding
+      // or may have uninstalled extension. App will still load.
+      console.log('[initApp] Extension not available - skipping solve data sync');
+    } else {
+      console.warn('[initApp] Failed to sync solve data', err);
+      errors.push('An unexpected error occurred while loading solve data.');
     }
-    console.warn('[initApp] Failed to sync solve data', err);
-    errors.push('An unexpected error occurred while loading solve data.');
   }
 
   // Identify user for analytics (no profileId needed)

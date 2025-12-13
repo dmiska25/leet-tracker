@@ -53,12 +53,15 @@ describe('initApp', () => {
     expect(syncSolveData).toHaveBeenCalledWith('user');
   });
 
-  it('throws error when extension unavailable', async () => {
+  it('handles extension unavailable gracefully', async () => {
     const err: any = new Error('Extension unavailable');
     err.code = 'EXTENSION_UNAVAILABLE';
     vi.mocked(syncSolveData).mockRejectedValue(err);
 
-    await expect(initApp()).rejects.toThrow('Extension not available');
+    // Should NOT throw - just return username with no errors
+    const res = await initApp();
+    expect(res.username).toBe('user');
+    expect(res.errors).toEqual([]);
   });
 
   it('handles unexpected sync errors', async () => {
