@@ -98,6 +98,13 @@ export function buildSteps(opts: {
         'Compare your past approaches and learning notes.',
       anchor: '[data-tour="submission-details"]',
       placement: 'dynamic',
+      onNext: async () => {
+        // Scroll the feedback section into view for the next step
+        const feedbackSection = document.querySelector('[data-tour="detail-feedback"]');
+        if (feedbackSection instanceof HTMLElement) {
+          feedbackSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      },
     },
     {
       id: 'detail-feedback',

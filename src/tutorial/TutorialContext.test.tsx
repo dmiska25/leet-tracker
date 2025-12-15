@@ -236,4 +236,37 @@ describe('TutorialContext', () => {
 
     consoleSpy.mockRestore();
   });
+
+  it('should reset stepIndex to 0 when stopping tutorial', async () => {
+    await act(async () => {
+      render(
+        <TutorialProvider>
+          <TestComponent />
+        </TutorialProvider>,
+      );
+    });
+
+    // Start the tutorial
+    const startButton = screen.getByTestId('start-tutorial');
+    await act(async () => {
+      fireEvent.click(startButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('tutorial-active')).toHaveTextContent('true');
+      expect(screen.getByTestId('current-step')).toHaveTextContent('0');
+    });
+
+    // Stop the tutorial
+    const finishButton = screen.getByTestId('finish-tutorial');
+    await act(async () => {
+      fireEvent.click(finishButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('tutorial-active')).toHaveTextContent('false');
+      expect(screen.getByTestId('current-step')).toHaveTextContent('0'); // Should be reset to 0
+      expect(db.setTutorialStep).toHaveBeenCalledWith(0);
+    });
+  });
 });

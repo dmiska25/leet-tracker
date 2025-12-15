@@ -169,9 +169,11 @@ function App() {
   const startTutorialFlow = async () => {
     setShowPrompt(false);
 
-    // If the user is already demo, just start the tutorial
+    // If the user is already demo, start the tutorial and reload to reset all state
     if (username === demoUsername) {
-      tutorial.start(steps, { startedWith: 'demo' });
+      await tutorial.start(steps, { startedWith: 'demo' });
+      // Reload to ensure we're on dashboard with clean state
+      window.location.reload();
       return;
     }
 
