@@ -98,6 +98,45 @@ describe('Tutorial Steps', () => {
         expect(mockOnNavigateToHistory).toHaveBeenCalled();
       }
     });
+
+    it('should have onNext callback for submission-details step to scroll feedback into view', () => {
+      const steps = buildSteps({
+        extensionInstalled: true,
+        onNavigateToHistory: mockOnNavigateToHistory,
+      });
+
+      const submissionDetailsStep = steps.find((s) => s.id === 'submission-details');
+      expect(submissionDetailsStep).toBeDefined();
+      expect(submissionDetailsStep?.onNext).toBeDefined();
+    });
+
+    it('should scroll feedback section into view when submission-details onNext is called', async () => {
+      const steps = buildSteps({
+        extensionInstalled: true,
+        onNavigateToHistory: mockOnNavigateToHistory,
+      });
+
+      // Create a real DOM element for the test
+      const feedbackElement = document.createElement('div');
+      feedbackElement.setAttribute('data-tour', 'detail-feedback');
+      const mockScrollIntoView = vi.fn();
+      feedbackElement.scrollIntoView = mockScrollIntoView;
+      document.body.appendChild(feedbackElement);
+
+      const submissionDetailsStep = steps.find((s) => s.id === 'submission-details');
+
+      if (submissionDetailsStep?.onNext) {
+        await submissionDetailsStep.onNext();
+
+        expect(mockScrollIntoView).toHaveBeenCalledWith({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+
+      // Cleanup
+      document.body.removeChild(feedbackElement);
+    });
   });
 
   describe('Extension Integration', () => {

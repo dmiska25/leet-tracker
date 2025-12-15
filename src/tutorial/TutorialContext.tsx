@@ -124,7 +124,12 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
     const handleReplayTour = async () => {
       // Reset tutorial state and clear seen status so the prompt shows
       await setTutorialActive(false);
+      await setTutorialStep(0);
       await clearTutorialSeen();
+
+      // Reset local state to beginning
+      setStepIndex(0);
+      setActive(false);
 
       // Always just show the prompt, don't switch users automatically
       window.dispatchEvent(new CustomEvent('leet:show-tutorial-prompt'));
@@ -184,6 +189,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
     const isCompleted = stepIndex >= steps.length - 1;
 
     setActive(false);
+    setStepIndex(0); // Reset local state to beginning
     await setTutorialActive(false);
     await setTutorialStep(0);
 
@@ -387,7 +393,7 @@ function TutorialOverlay() {
       <div
         ref={cardRef}
         className="absolute max-w-[calc(100vw-2rem)] sm:max-w-sm rounded-lg bg-card border p-4 shadow pointer-events-auto"
-        style={tooltipPos(rect, actualPlacement)}
+        style={tooltipPos(rect, actualPlacement, cardDimensions)}
       >
         <h4 className="font-semibold mb-1">{step.title}</h4>
         <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{step.body}</p>
@@ -411,7 +417,11 @@ function TutorialOverlay() {
   );
 }
 
-function tooltipPos(rect: DOMRect | null, placement: Step['placement']) {
+function tooltipPos(
+  rect: DOMRect | null,
+  placement: Step['placement'],
+  cardSize: { width: number; height: number },
+) {
   // Fallback center if no rect
   if (!rect) return { left: '50%', top: '50%', transform: 'translate(-50%,-50%)' } as const;
 
@@ -425,7 +435,7 @@ function tooltipPos(rect: DOMRect | null, placement: Step['placement']) {
     : 384; // Desktop: normal sizing
 
   const pos = {
-    top: { left: rect.left, top: rect.top - 12 - 140 }, // approx card height
+    top: { left: rect.left, top: rect.top - 12 - cardSize.height }, // Use actual card height
     bottom: { left: rect.left, top: rect.bottom + padding },
     left: { left: rect.left - dynamicCardWidth, top: rect.top },
     right: { left: rect.right + padding, top: rect.top },
@@ -444,7 +454,7 @@ function tooltipPos(rect: DOMRect | null, placement: Step['placement']) {
   // Ensure the tooltip stays on screen - clamp to viewport bounds
   // This is critical for mobile where we must keep tooltips visible
   const cardWidth = isMobile ? dynamicCardWidth : actualPlacement === 'center' ? 192 : 384; // Desktop: normal sizing
-  const cardHeight = 140; // approximate height
+  const cardHeight = cardSize.height; // Use actual measured height
 
   if (typeof position.left === 'number') {
     // Special handling for center placement with transform
