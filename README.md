@@ -26,13 +26,13 @@ LeetCode and other platforms are great for improving algorithm skills and learni
 
 ## Live App
 
-Try the app here: [leet-tracker-log.vercel.app](https://leet-tracker-log.vercel.app/)
+Try the app here: [leet-tracker-log.vercel.app](https://leet-tracker-log.vercel.app/?utm_source=github&utm_medium=readme)
 
 ## Chrome Extension
 
 Includes and requires the LeetTracker Chrome Extension:
 
-👉 [Install on Chrome Web Store](https://chrome.google.com/webstore/detail/leettracker/aabfdphdfflecolneofmehajjmmpmgeg)
+👉 [Install on Chrome Web Store](https://chrome.google.com/webstore/detail/leettracker/aabfdphdfflecolneofmehajjmmpmgeg?utm_source=github&utm_medium=readme&utm_campaign=open-source)
 
 Once installed, the extension runs in the background while you're signed in to LeetCode, automatically syncing your full solve history with the app. This includes older submissions that are not available through the public API, enabling more accurate tracking and smarter recommendations.
 
