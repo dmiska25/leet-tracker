@@ -46,6 +46,7 @@ vi.mock('@/hooks/useInitApp', () => ({
 
 // Mock analytics
 vi.mock('@/utils/analytics', () => ({
+  initializeAttribution: vi.fn(),
   trackTourStarted: vi.fn(),
   trackTourFinished: vi.fn(),
   trackTourStep: vi.fn(),
