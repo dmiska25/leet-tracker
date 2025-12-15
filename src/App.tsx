@@ -22,6 +22,7 @@ import {
 import { checkExtensionInstalled } from '@/api/extensionBridge';
 import { syncProblemCatalog } from '@/domain/syncProblemCatalog';
 import { useExtensionPoller } from '@/hooks/useExtensionPoller';
+import { initializeAttribution } from '@/utils/analytics';
 
 function App() {
   const { loading, username } = useInitApp();
@@ -44,6 +45,11 @@ function App() {
       }),
     [extensionInstalled],
   );
+
+  // Capture UTM parameters and attribution on first app load
+  useEffect(() => {
+    initializeAttribution();
+  }, []);
 
   // Initialize problem catalog on app startup (runs once, independent of user sign-in)
   useEffect(() => {

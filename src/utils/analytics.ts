@@ -1,4 +1,5 @@
 import posthog from 'posthog-js';
+import { captureInitialAttribution, getStoredAttribution } from './utm';
 
 const DEMO_USERNAME = import.meta.env.VITE_DEMO_USERNAME;
 
@@ -15,18 +16,57 @@ export async function sha256(message: string): Promise<string> {
 }
 
 let identified = false;
+let attributionCaptured = false;
+
+/**
+ * Capture UTM parameters and referrer on first app load.
+ * Call this early in the app lifecycle, before user identification.
+ * Safe to call multiple times - only captures once per session.
+ */
+export function initializeAttribution(): void {
+  if (attributionCaptured) return;
+
+  try {
+    captureInitialAttribution();
+    attributionCaptured = true;
+  } catch (err) {
+    console.warn('[analytics] Failed to capture attribution', err);
+  }
+}
 
 /**
  * Identify the current user (once per page load) and emit the `app_opened` event.
+ * Automatically includes first-touch attribution data (UTMs, referrer) if available.
  */
 export async function identifyUser(username: string, props: { lastSync: number }): Promise<void> {
   if (!username || identified || username == DEMO_USERNAME) return;
   try {
     const distinctId = await sha256(username);
-    posthog.identify(distinctId, { username: username });
+
+    // Get stored attribution data for first-touch attribution
+    const attribution = getStoredAttribution();
+
+    // Merge attribution data into user properties
+    const userProps = {
+      username: username,
+      ...(attribution && {
+        initial_utm_source: attribution.utm_source,
+        initial_utm_medium: attribution.utm_medium,
+        initial_utm_campaign: attribution.utm_campaign,
+        initial_utm_content: attribution.utm_content,
+        initial_utm_term: attribution.utm_term,
+        initial_referrer: attribution.initial_referrer,
+        initial_landing_page: attribution.initial_landing_page,
+        attribution_timestamp: attribution.attribution_timestamp,
+      }),
+    };
+
+    posthog.identify(distinctId, userProps);
     posthog.people.set(props);
     identified = true;
-    posthog.capture('app_opened', props);
+
+    // Include attribution in the app_opened event for immediate visibility
+    posthog.capture('app_opened', { ...props, ...attribution });
   } catch (err) {
     // Analytics failure shouldn't break the app
     console.warn('[analytics] identify failed', err);
@@ -42,6 +82,16 @@ export async function resetUser() {
     // Analytics failure shouldn't break the app
     console.warn('[analytics] reset failed', err);
   }
+}
+
+/**
+ * Reset attribution and identification flags.
+ * For testing purposes only - resets session state without clearing stored data.
+ * @internal
+ */
+export function __resetAnalyticsState() {
+  identified = false;
+  attributionCaptured = false;
 }
 
 /* ---------- helper wrappers ---------- */
