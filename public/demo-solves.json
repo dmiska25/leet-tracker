@@ -1375,5 +1375,881 @@
         "endMs": 1746878400000
       }
     }
+  },
+  {
+    "slug": "bus-routes",
+    "title": "bus routes",
+    "timestamp": 1747051200,
+    "status": "Accepted",
+    "lang": "python3",
+    "timeUsed": 3308,
+    "code": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        if source == target: return 0 # edge case, no buses\n\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = set()\n        ends = set()\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if stop == source: starts.add(bus)\n                if stop == target: ends.add(bus)\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add(bus)\n        \n        # navigate the bus graph\n        dist = 1\n        mem = set(starts)\n        q = deque(starts)\n        while q:\n            q_size = len(q)\n            for _ in range(q_size):\n                bus = q.popleft()\n                if bus in ends: return dist\n                for next_bus in bus_graph[bus]:\n                    if next_bus not in mem:\n                        q.append(next_bus)\n                        mem.add(next_bus)\n            dist+=1\n        return -1\n        \n\n            ",
+    "submissionDetails": {
+      "codeOutput": "",
+      "compileError": null,
+      "expectedOutput": "",
+      "fullCodeOutput": null,
+      "lastTestcase": "",
+      "memory": 50868000,
+      "memoryDisplay": "50.9 MB",
+      "memoryPercentile": 28.610199999999985,
+      "notes": "",
+      "runtime": 3768,
+      "runtimeDisplay": "3768 ms",
+      "runtimeError": null,
+      "runtimePercentile": 5.0056999999997025,
+      "totalCorrect": 54,
+      "totalTestcases": 54
+    },
+    "codingJourney": {
+      "firstSnapshot": 1747047892483,
+      "lastSnapshot": 1747051190374,
+      "snapshotCount": 105,
+      "snapshots": [
+        {
+          "checksumAfter": "1983380035",
+          "checksumBefore": "10",
+          "encodingInfo": "utf8 + nfc + lf",
+          "fullCode": "class Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        \n",
+          "isCheckpoint": true,
+          "patchText": "@@ -1 +1,120 @@\n+class Solution:%0A    def numBusesToDestination(self, routes: List%5BList%5Bint%5D%5D, source: int, target: int) -%3E int:%0A        \n %0A\n",
+          "timestamp": 1747047892483
+        },
+        {
+          "checksumAfter": "-2077604077",
+          "checksumBefore": "1983380035",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1,8 +1,16 @@\n+%22%22%22%0A%22%22%22%0A\n class So\n",
+          "timestamp": 1747048121290
+        },
+        {
+          "checksumAfter": "-1337492032",
+          "checksumBefore": "-2077604077",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1,12 +1,45 @@\n %22%22%22%0A\n+Ok, so i'm thinking for this pro%0A\n %22%22%22%0Aclas\n",
+          "timestamp": 1747048128289
+        },
+        {
+          "checksumAfter": "-1415905942",
+          "checksumBefore": "-1337492032",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -29,16 +29,49 @@\n this pro\n+blem that we'll probably want to \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048142293
+        },
+        {
+          "checksumAfter": "993913879",
+          "checksumBefore": "-1415905942",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -62,16 +62,50 @@\n want to \n+use some kind of dfs. I don't thin\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048191293
+        },
+        {
+          "checksumAfter": "-950426036",
+          "checksumBefore": "993913879",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -96,16 +96,47 @@\n n't thin\n+k dykstras would%0Abe helpful her\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048199291
+        },
+        {
+          "checksumAfter": "244997142",
+          "checksumBefore": "-950426036",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -127,16 +127,52 @@\n pful her\n+e cuz theres no lenths to worry abou\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048214291
+        },
+        {
+          "checksumAfter": "666962214",
+          "checksumBefore": "244997142",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -163,16 +163,46 @@\n rry abou\n+t. What i'm confused about tho\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048241307
+        },
+        {
+          "checksumAfter": "-651697773",
+          "checksumBefore": "666962214",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -193,16 +193,47 @@\n bout tho\n+, is how to keep track of which\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048249291
+        },
+        {
+          "checksumAfter": "-1214711776",
+          "checksumBefore": "-651697773",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -224,16 +224,48 @@\n of which\n+ bus%0Awe're on. We can count the \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048270291
+        },
+        {
+          "checksumAfter": "1445856926",
+          "checksumBefore": "-1214711776",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -256,16 +256,49 @@\n unt the \n+stops, but the actual bus is more\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048278291
+        },
+        {
+          "checksumAfter": "-1110201432",
+          "checksumBefore": "1445856926",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -289,16 +289,49 @@\n  is more\n+ difficult to know I thnk. Maybe \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048375292
+        },
+        {
+          "checksumAfter": "1600808805",
+          "checksumBefore": "-1110201432",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -322,16 +322,51 @@\n . Maybe \n+what we could do is just%0Ahave a loo\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048385299
+        },
+        {
+          "checksumAfter": "2125725896",
+          "checksumBefore": "1600808805",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -357,16 +357,48 @@\n ve a loo\n+kup for buses thats routes inter\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048422296
+        },
+        {
+          "checksumAfter": "508642766",
+          "checksumBefore": "2125725896",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -389,16 +389,46 @@\n es inter\n+act with a space. Then loop th\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048436304
+        },
+        {
+          "checksumAfter": "2079032005",
+          "checksumBefore": "508642766",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -419,16 +419,46 @@\n  loop th\n+rough first the possible busse\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048443292
+        },
+        {
+          "checksumAfter": "375994999",
+          "checksumBefore": "2079032005",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -447,18 +447,51 @@\n ible bus\n-s\n e\n+s to take from%0Athat space, then th\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048453292
+        },
+        {
+          "checksumAfter": "-752387521",
+          "checksumBefore": "375994999",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -482,16 +482,53 @@\n  then th\n+e possible spaces to move to on that \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048465293
+        },
+        {
+          "checksumAfter": "1470938423",
+          "checksumBefore": "-752387521",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -519,16 +519,48 @@\n on that \n+bus. We'll keep track of mem to \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048473292
+        },
+        {
+          "checksumAfter": "-1918978730",
+          "checksumBefore": "1470938423",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -551,16 +551,48 @@\n  mem to \n+avoid going in circles and%0Akeep \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048499295
+        },
+        {
+          "checksumAfter": "1781181971",
+          "checksumBefore": "-1918978730",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -583,16 +583,48 @@\n nd%0Akeep \n+track of the number of times we \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048506293
+        },
+        {
+          "checksumAfter": "1531993658",
+          "checksumBefore": "1781181971",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -615,16 +615,49 @@\n imes we \n+switch buses. Ok. looking at the \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048888323
+        },
+        {
+          "checksumAfter": "275088242",
+          "checksumBefore": "1531993658",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -648,16 +648,48 @@\n  at the \n+constrainsts I don't think this \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048894322
+        },
+        {
+          "checksumAfter": "-981812743",
+          "checksumBefore": "275088242",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -680,16 +680,46 @@\n nk this \n+will work because%0Awe have a ve\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048901320
+        },
+        {
+          "checksumAfter": "148071482",
+          "checksumBefore": "-981812743",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -710,16 +710,47 @@\n ave a ve\n+ry large amount of routes for e\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048913320
+        },
+        {
+          "checksumAfter": "-1839492225",
+          "checksumBefore": "148071482",
+          "encodingInfo": "utf8 + nfc + lf",
+          "fullCode": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses to\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        \n",
+          "isCheckpoint": true,
+          "patchText": "@@ -741,16 +741,46 @@\n es for e\n+ach bus and up to 500 buses to\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747048924323
+        },
+        {
+          "checksumAfter": "290838087",
+          "checksumBefore": "-1839492225",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -769,18 +769,46 @@\n 0 buses \n+as well. I'm thinking it migh\n t\n-o\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049033325
+        },
+        {
+          "checksumAfter": "714530099",
+          "checksumBefore": "290838087",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -799,16 +799,48 @@\n it might\n+ be a better%0Aidea to use A* here\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049041322
+        },
+        {
+          "checksumAfter": "1857102846",
+          "checksumBefore": "714530099",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -831,16 +831,46 @@\n  A* here\n+ since the space is large and \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049052326
+        },
+        {
+          "checksumAfter": "-284053123",
+          "checksumBefore": "1857102846",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -861,16 +861,48 @@\n rge and \n+we need the optimal path. Althou\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049075326
+        },
+        {
+          "checksumAfter": "-887063090",
+          "checksumBefore": "-284053123",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -893,16 +893,48 @@\n . Althou\n+gh, i'm not sure how to incorpor\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049082323
+        },
+        {
+          "checksumAfter": "-2104718350",
+          "checksumBefore": "-887063090",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -925,16 +925,48 @@\n incorpor\n+ate%0Aminimizing the buses and not\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049089321
+        },
+        {
+          "checksumAfter": "-1826680573",
+          "checksumBefore": "-2104718350",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -957,16 +957,50 @@\n  and not\n+ just the stops. Ok, i'm thinking \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049659343
+        },
+        {
+          "checksumAfter": "-1433608396",
+          "checksumBefore": "-1826680573",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -991,16 +991,46 @@\n hinking \n+we can't use A* cuz theres no \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049666348
+        },
+        {
+          "checksumAfter": "-1219430291",
+          "checksumBefore": "-1433608396",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1021,16 +1021,46 @@\n eres no \n+distance estimate. Maybe,%0Ainst\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049673352
+        },
+        {
+          "checksumAfter": "-1742463705",
+          "checksumBefore": "-1219430291",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1051,16 +1051,51 @@\n be,%0Ainst\n+ead we could use dykstra and conver\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049682348
+        },
+        {
+          "checksumAfter": "-273017640",
+          "checksumBefore": "-1742463705",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1086,16 +1086,50 @@\n d conver\n+t the problem space to a conventio\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049687343
+        },
+        {
+          "checksumAfter": "1251656128",
+          "checksumBefore": "-273017640",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1120,16 +1120,48 @@\n onventio\n+nal graph. If we represent the g\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049706348
+        },
+        {
+          "checksumAfter": "-1899188751",
+          "checksumBefore": "1251656128",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1152,16 +1152,50 @@\n nt the g\n+raph as%0Abuses and not stops we mig\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049715347
+        },
+        {
+          "checksumAfter": "1889701059",
+          "checksumBefore": "-1899188751",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1186,16 +1186,50 @@\n s we mig\n+ht be able to significantly reduce\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049721356
+        },
+        {
+          "checksumAfter": "1240428476",
+          "checksumBefore": "1889701059",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1220,16 +1220,47 @@\n y reduce\n+ the problem space. For example\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049729347
+        },
+        {
+          "checksumAfter": "-1199425377",
+          "checksumBefore": "1240428476",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1251,16 +1251,47 @@\n  example\n+, if we have%0Aroute 1: 1-%3E2-%3E1..\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049744348
+        },
+        {
+          "checksumAfter": "1750037877",
+          "checksumBefore": "-1199425377",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1283,11 +1283,42 @@\n %3E2-%3E\n-1..\n+3-%3E4-%3E5-%3E1..%0Aroute 2: 5-%3E6-%3E7-%3E8-%3E\n %0A%22%22%22\n",
+          "timestamp": 1747049768346
+        },
+        {
+          "checksumAfter": "621757039",
+          "checksumBefore": "1750037877",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1313,16 +1313,27 @@\n -%3E7-%3E8-%3E\n+9-%3E5..%0A%0Athe\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049789345
+        },
+        {
+          "checksumAfter": "-1555007439",
+          "checksumBefore": "621757039",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1324,12 +1324,44 @@\n 5..%0A\n-%0Athe\n+start 1, goal 9%0Athen we really just \n %0A%22%22%22\n",
+          "timestamp": 1747049801349
+        },
+        {
+          "checksumAfter": "-1043815567",
+          "checksumBefore": "-1555007439",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1356,16 +1356,47 @@\n ly just \n+have route 1 %3C-%3E route 2 graph \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049813349
+        },
+        {
+          "checksumAfter": "-1800553651",
+          "checksumBefore": "-1043815567",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1387,16 +1387,47 @@\n 2 graph \n+and route 2 is our goal cuz it \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049820349
+        },
+        {
+          "checksumAfter": "-1238593334",
+          "checksumBefore": "-1800553651",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1418,16 +1418,48 @@\n  cuz it \n+contains our goal node.%0Aso to co\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049840355
+        },
+        {
+          "checksumAfter": "44833533",
+          "checksumBefore": "-1238593334",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1450,16 +1450,50 @@\n so to co\n+nvert our space I think we want to\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049852346
+        },
+        {
+          "checksumAfter": "-645442116",
+          "checksumBefore": "44833533",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1484,16 +1484,46 @@\n  want to\n+ find every bus we can get on \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049868351
+        },
+        {
+          "checksumAfter": "1351992010",
+          "checksumBefore": "-645442116",
+          "encodingInfo": "utf8 + nfc + lf",
+          "fullCode": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll inde\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        \n",
+          "isCheckpoint": true,
+          "patchText": "@@ -1514,16 +1514,49 @@\n  get on \n+at every step. So first i'll inde\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049876349
+        },
+        {
+          "checksumAfter": "-462786390",
+          "checksumBefore": "1351992010",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1547,16 +1547,50 @@\n 'll inde\n+x%0Abuses by stops. Then we'll go th\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049904351
+        },
+        {
+          "checksumAfter": "-164329623",
+          "checksumBefore": "-462786390",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1581,16 +1581,46 @@\n ll go th\n+rough each of the buses stops \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049909347
+        },
+        {
+          "checksumAfter": "445344142",
+          "checksumBefore": "-164329623",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1611,16 +1611,46 @@\n s stops \n+and create an edge for every b\n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049916363
+        },
+        {
+          "checksumAfter": "1221787763",
+          "checksumBefore": "445344142",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1641,16 +1641,49 @@\n  every b\n+us we can go%0Ato from the current \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049925350
+        },
+        {
+          "checksumAfter": "-995005653",
+          "checksumBefore": "1221787763",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1674,16 +1674,48 @@\n current \n+bus. We'll repeat for every bus \n %0A%22%22%22%0Acla\n",
+          "timestamp": 1747049941348
+        },
+        {
+          "checksumAfter": "1336789657",
+          "checksumBefore": "-995005653",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1705,16 +1705,48 @@\n very bus\n+. Then I think we could just use\n  %0A%22%22%22%0Acl\n",
+          "timestamp": 1747049952358
+        },
+        {
+          "checksumAfter": "246613731",
+          "checksumBefore": "1336789657",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1738,16 +1738,37 @@\n ust use \n+bfs or else dykstras.\n %0A%22%22%22%0Acla\n@@ -1883,9 +1883,22 @@\n         \n+# index stops\n %0A\n",
+          "timestamp": 1747050054350
+        },
+        {
+          "checksumAfter": "-1262494065",
+          "checksumBefore": "246613731",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1896,9 +1896,40 @@\n ex stops\n+ -%3E buses%0A        for route in \n %0A\n",
+          "timestamp": 1747050063353
+        },
+        {
+          "checksumAfter": "525319567",
+          "checksumBefore": "-1262494065",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1917,16 +1917,19 @@\n      for\n+ i,\n  route i\n@@ -1930,9 +1930,40 @@\n oute in \n+enumerate(routes):%0A            \n %0A\n",
+          "timestamp": 1747050084353
+        },
+        {
+          "checksumAfter": "1955364981",
+          "checksumBefore": "525319567",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1906,16 +1906,25 @@\n %3E buses%0A\n+        %0A\n         \n@@ -1962,17 +1962,4 @@\n s):%0A\n-            %0A\n",
+          "timestamp": 1747050088353
+        },
+        {
+          "checksumAfter": "-925969801",
+          "checksumBefore": "1955364981",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1914,16 +1914,46 @@\n         \n+stop_to_bus = defaultdict(set)\n %0A       \n",
+          "timestamp": 1747050118351
+        },
+        {
+          "checksumAfter": "492025678",
+          "checksumBefore": "-925969801",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1988,8 +1988,39 @@\n outes):%0A\n+            for stop in route:%0A\n",
+          "timestamp": 1747050134364
+        },
+        {
+          "checksumAfter": "1918833533",
+          "checksumBefore": "492025678",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2019,8 +2019,38 @@\n  route:%0A\n+                stop_to_bus%5B%5D%0A\n",
+          "timestamp": 1747050154351
+        },
+        {
+          "checksumAfter": "279465614",
+          "checksumBefore": "1918833533",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1957,17 +1957,19 @@\n     for \n-i\n+bus\n , route \n@@ -2049,10 +2049,37 @@\n _to_bus%5B\n-%5D\n+stop%5D.add(bus)%0A%0A            \n %0A\n",
+          "timestamp": 1747050190355
+        },
+        {
+          "checksumAfter": "-564227397",
+          "checksumBefore": "279465614",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2065,21 +2065,52 @@\n d(bus)%0A%0A    \n+    # create the adj bus graph%0A\n         %0A\n",
+          "timestamp": 1747050210355
+        },
+        {
+          "checksumAfter": "1054837459",
+          "checksumBefore": "-564227397",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2108,9 +2108,47 @@\n         \n+bus_graph = defaultdict(set)%0A        f\n %0A\n",
+          "timestamp": 1747050228352
+        },
+        {
+          "checksumAfter": "1500470021",
+          "checksumBefore": "1054837459",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2146,9 +2146,43 @@\n        f\n+or bus, route in enumerate(routes)\n %0A\n",
+          "timestamp": 1747050237352
+        },
+        {
+          "checksumAfter": "2058270501",
+          "checksumBefore": "1500470021",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2180,9 +2180,39 @@\n (routes)\n+:%0A            for stop in rout\n %0A\n",
+          "timestamp": 1747050253352
+        },
+        {
+          "checksumAfter": "1497106806",
+          "checksumBefore": "2058270501",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2210,9 +2210,39 @@\n  in rout\n+e:%0A                for bus in \n %0A\n",
+          "timestamp": 1747050280356
+        },
+        {
+          "checksumAfter": "-1516539915",
+          "checksumBefore": "1497106806",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2240,9 +2240,48 @@\n  bus in \n+stop_to_bus%5Bstop%5D:%0A                    \n %0A\n",
+          "timestamp": 1747050292357
+        },
+        {
+          "checksumAfter": "1425455337",
+          "checksumBefore": "-1516539915",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2233,16 +2233,22 @@\n     for \n+other_\n bus in s\n@@ -2285,9 +2285,34 @@\n         \n+bus_graph%5Bbus%5D.add(other)\n %0A\n",
+          "timestamp": 1747050323353
+        },
+        {
+          "checksumAfter": "178974725",
+          "checksumBefore": "1425455337",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2309,10 +2309,44 @@\n dd(other\n-)\n+_bus)%0A                    bus_graph\n %0A\n",
+          "timestamp": 1747050329358
+        },
+        {
+          "checksumAfter": "1017698631",
+          "checksumBefore": "178974725",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2340,13 +2340,51 @@\n    bus_graph\n+%5Bother_bus%5D.add%5Bbus%5D%0A        %0A        \n %0A\n",
+          "timestamp": 1747050341358
+        },
+        {
+          "checksumAfter": "-1186216783",
+          "checksumBefore": "1017698631",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2129,32 +2129,47 @@\n efaultdict(set)%0A\n+        starts%0A\n         for bus,\n@@ -2389,17 +2389,32 @@\n        %0A        \n+# navigate the \n %0A\n",
+          "timestamp": 1747050373358
+        },
+        {
+          "checksumAfter": "852715570",
+          "checksumBefore": "-1186216783",
+          "encodingInfo": "utf8 + nfc + lf",
+          "fullCode": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = []\n        ends = []\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add[bus]\n        \n        # navigate the \n",
+          "isCheckpoint": true,
+          "patchText": "@@ -2151,16 +2151,39 @@\n   starts\n+ = %5B%5D%0A        ends = %5B%5D\n %0A       \n@@ -2243,32 +2243,51 @@\n  stop in route:%0A\n+                if%0A\n                 \n",
+          "timestamp": 1747050393358
+        },
+        {
+          "checksumAfter": "1282082165",
+          "checksumBefore": "852715570",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2150,26 +2150,29 @@\n    starts = \n-%5B%5D\n+set()\n %0A        end\n@@ -2179,10 +2179,13 @@\n s = \n-%5B%5D\n+set()\n %0A   \n@@ -2275,16 +2275,32 @@\n       if\n+ stop == source:\n %0A       \n",
+          "timestamp": 1747050416357
+        },
+        {
+          "checksumAfter": "-1098119063",
+          "checksumBefore": "1282082165",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2291,16 +2291,51 @@\n  source:\n+ starts.add(bus)%0A                if\n %0A       \n",
+          "timestamp": 1747050431355
+        },
+        {
+          "checksumAfter": "-190821738",
+          "checksumBefore": "-1098119063",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2326,16 +2326,46 @@\n       if\n+ stop == target: ends.add(bus)\n %0A       \n",
+          "timestamp": 1747050446355
+        },
+        {
+          "checksumAfter": "408297833",
+          "checksumBefore": "-190821738",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2542,8 +2542,40 @@\n te the %0A\n+            for start in starts%0A\n",
+          "timestamp": 1747050461359
+        },
+        {
+          "checksumAfter": "1153786233",
+          "checksumBefore": "408297833",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2541,21 +2541,21 @@\n ate the \n-%0A    \n+bus %0A\n         \n@@ -2573,9 +2573,23 @@\n n starts\n+:%0A            \n %0A\n",
+          "timestamp": 1747050471356
+        },
+        {
+          "checksumAfter": "-825166590",
+          "checksumBefore": "1153786233",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2545,16 +2545,47 @@\n the bus \n+graph%0A        best = math.inf()\n %0A       \n",
+          "timestamp": 1747050509359
+        },
+        {
+          "checksumAfter": "34597479",
+          "checksumBefore": "-825166590",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2574,18 +2574,16 @@\n math.inf\n-()\n %0A       \n@@ -2604,16 +2604,49 @@\n starts:%0A\n+            # perform bfs for ea%0A\n         \n",
+          "timestamp": 1747050543360
+        },
+        {
+          "checksumAfter": "870546279",
+          "checksumBefore": "34597479",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2636,16 +2636,47 @@\n s for ea\n+ch possible starting bus until \n %0A       \n",
+          "timestamp": 1747050552360
+        },
+        {
+          "checksumAfter": "-2033528162",
+          "checksumBefore": "870546279",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2667,16 +2667,46 @@\n s until \n+we reach the closest ending bu\n %0A       \n",
+          "timestamp": 1747050559357
+        },
+        {
+          "checksumAfter": "-679336758",
+          "checksumBefore": "-2033528162",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2697,16 +2697,54 @@\n nding bu\n+s%0A            mem = set()%0A            \n %0A       \n",
+          "timestamp": 1747050630361
+        },
+        {
+          "checksumAfter": "330745971",
+          "checksumBefore": "-679336758",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2620,95 +2620,9 @@\n     \n-# perform bfs for each possible starting bus until we reach the closest ending bus%0A    \n+%0A\n     \n@@ -2637,34 +2637,42 @@\n = set()%0A        \n-    \n+q = deque()%0A\n %0A            %0A\n",
+          "timestamp": 1747050685363
+        },
+        {
+          "checksumAfter": "-1205490950",
+          "checksumBefore": "330745971",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2587,41 +2587,8 @@\n     \n-for start in starts:%0A            \n %0A   \n",
+          "timestamp": 1747050689363
+        },
+        {
+          "checksumAfter": "1227807913",
+          "checksumBefore": "-1205490950",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2575,25 +2575,16 @@\n ath.inf%0A\n-        %0A\n         \n@@ -2614,16 +2614,26 @@\n  deque()\n+%0A        q\n %0A%0A      \n",
+          "timestamp": 1747050693359
+        },
+        {
+          "checksumAfter": "297333071",
+          "checksumBefore": "1227807913",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2563,23 +2563,16 @@\n     \n-be\n+di\n st = \n-math.inf\n+0\n %0A   \n@@ -2606,16 +2606,22 @@\n = deque(\n+starts\n )%0A      \n@@ -2622,17 +2622,26 @@\n         \n-q\n+w%0A        \n %0A%0A      \n",
+          "timestamp": 1747050758360
+        },
+        {
+          "checksumAfter": "-1736569828",
+          "checksumBefore": "297333071",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2582,24 +2582,30 @@\n   mem = set(\n+starts\n )%0A        q \n@@ -2629,16 +2629,42 @@\n        w\n+hile q:%0A            bus = \n %0A       \n",
+          "timestamp": 1747050825362
+        },
+        {
+          "checksumAfter": "-744551806",
+          "checksumBefore": "-1736569828",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2655,16 +2655,50 @@\n   bus = \n+q.popleft()%0A            if bus in \n %0A       \n",
+          "timestamp": 1747050833363
+        },
+        {
+          "checksumAfter": "1996384830",
+          "checksumBefore": "-744551806",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2637,16 +2637,29 @@\n hile q:%0A\n+            %0A\n         \n@@ -2702,16 +2702,33 @@\n  bus in \n+ends: return dist\n %0A       \n",
+          "timestamp": 1747050852368
+        },
+        {
+          "checksumAfter": "619444398",
+          "checksumBefore": "1996384830",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2641,32 +2641,64 @@\n  q:%0A            \n+len%0A            for _ in range()\n %0A            bus\n",
+          "timestamp": 1747050872367
+        },
+        {
+          "checksumAfter": "287160597",
+          "checksumBefore": "619444398",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2649,19 +2649,31 @@\n         \n-len\n+q_size = len(q)\n %0A       \n@@ -2692,18 +2692,26 @@\n n range(\n-)%0A\n+q_size)%0A  \n         \n@@ -2714,16 +2714,18 @@\n         \n+  \n bus = q.\n@@ -2730,24 +2730,28 @@\n q.popleft()%0A\n+    \n             \n@@ -2778,16 +2778,29 @@\n rn dist%0A\n+            %0A\n         \n",
+          "timestamp": 1747050899367
+        },
+        {
+          "checksumAfter": "175892239",
+          "checksumBefore": "287160597",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2782,32 +2782,65 @@\n ist%0A            \n+    for next_%0A            dist+=1\n %0A        %0A%0A     \n",
+          "timestamp": 1747050923364
+        },
+        {
+          "checksumAfter": "2124774558",
+          "checksumBefore": "175892239",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2803,16 +2803,62 @@\n or next_\n+bus in bus_graph%5Bbus%5D:%0A                    if \n %0A       \n",
+          "timestamp": 1747050938362
+        },
+        {
+          "checksumAfter": "-705719581",
+          "checksumBefore": "2124774558",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2849,16 +2849,61 @@\n      if \n+next_bus not in mem:%0A                        \n %0A       \n",
+          "timestamp": 1747050944367
+        },
+        {
+          "checksumAfter": "365125578",
+          "checksumBefore": "-705719581",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2886,32 +2886,76 @@\n                 \n+q.append(next_bus)%0A                        m\n %0A            dis\n",
+          "timestamp": 1747050973363
+        },
+        {
+          "checksumAfter": "471632984",
+          "checksumBefore": "365125578",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2938,16 +2938,32 @@\n        m\n+em.add(next_bus)\n %0A       \n@@ -2975,16 +2975,32 @@\n dist+=1%0A\n+        return %0A\n         \n",
+          "timestamp": 1747050995367
+        },
+        {
+          "checksumAfter": "-1347757526",
+          "checksumBefore": "471632984",
+          "encodingInfo": "utf8 + nfc + lf",
+          "fullCode": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = set()\n        ends = set()\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if stop == source: starts.add(bus)\n                if stop == target: ends.add(bus)\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add(bus)\n\n                    \n        \n        # navigate the bus graph\n        dist = 1\n        mem = set(starts)\n        q = deque(starts)\n        while q:\n            q_size = len(q)\n            for _ in range(q_size):\n                bus = q.popleft()\n                if bus in ends: return dist\n                for next_bus in bus_graph[bus]:\n                    if next_bus not in mem:\n                        q.append(next_bus)\n                        mem.add(next_bus)\n            dist+=1\n        return -1\n        \n\n            \n",
+          "isCheckpoint": true,
+          "patchText": "@@ -2503,21 +2503,43 @@\n bus%5D.add\n-%5B\n+(\n bus\n-%5D\n+)%0A%0A                    \n %0A       \n@@ -2588,17 +2588,17 @@\n  dist = \n-0\n+1\n %0A       \n@@ -2721,16 +2721,17 @@\n (q_size)\n+:\n %0A       \n@@ -3013,16 +3013,18 @@\n  return \n+-1\n %0A       \n",
+          "timestamp": 1747051171367
+        },
+        {
+          "checksumAfter": "-731481366",
+          "checksumBefore": "-1347757526",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -2512,30 +2512,8 @@\n bus)\n-%0A%0A                    \n %0A   \n",
+          "timestamp": 1747051175365
+        },
+        {
+          "checksumAfter": "399266666",
+          "checksumBefore": "-731481366",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1874,16 +1874,26 @@\n  -%3E int:\n+%0A%0A        \n %0A       \n",
+          "timestamp": 1747051178365
+        },
+        {
+          "checksumAfter": "432507242",
+          "checksumBefore": "399266666",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1875,17 +1875,16 @@\n -%3E int:%0A\n-%0A\n         \n@@ -1876,32 +1876,33 @@\n %3E int:%0A        %0A\n+%0A\n         # index \n",
+          "timestamp": 1747051179365
+        },
+        {
+          "checksumAfter": "-1227521180",
+          "checksumBefore": "432507242",
+          "encodingInfo": "utf8 + nfc + lf",
+          "patchText": "@@ -1875,32 +1875,63 @@\n -%3E int:%0A        \n+if source == target: return 0 #\n %0A%0A        # inde\n",
+          "timestamp": 1747051190374
+        }
+      ],
+      "totalCodingTime": 3297891,
+      "hasDetailedJourney": true
+    },
+    "runEvents": {
+      "_window": {
+        "endMs": 1747051200000,
+        "startMs": 1747047892000
+      },
+      "count": 5,
+      "firstRun": 1747051028514,
+      "hasDetailedRuns": true,
+      "lastRun": 1747051120307,
+      "runs": [
+        {
+          "code": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = set()\n        ends = set()\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if stop == source: starts.add(bus)\n                if stop == target: ends.add(bus)\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add[bus]\n        \n        # navigate the bus graph\n        dist = 0\n        mem = set(starts)\n        q = deque(starts)\n        while q:\n            q_size = len(q)\n            for _ in range(q_size)\n                bus = q.popleft()\n                if bus in ends: return dist\n                for next_bus in bus_graph[bus]:\n                    if next_bus not in mem:\n                        q.append(next_bus)\n                        mem.add(next_bus)\n            dist+=1\n        return -1\n        \n\n            ",
+          "compareResult": "00",
+          "id": "djmiska25_bus-routes_1765755525501",
+          "lastTestcase": null,
+          "memory": "N/A",
+          "runtime": "N/A",
+          "runtimeError": "Line 47: SyntaxError: expected ':'",
+          "startedAt": 1747051028514,
+          "statusMsg": "Runtime Error",
+          "totalCorrect": 0,
+          "totalTestcases": 2
+        },
+        {
+          "code": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = set()\n        ends = set()\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if stop == source: starts.add(bus)\n                if stop == target: ends.add(bus)\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add[bus]\n        \n        # navigate the bus graph\n        dist = 0\n        mem = set(starts)\n        q = deque(starts)\n        while q:\n            q_size = len(q)\n            for _ in range(q_size):\n                bus = q.popleft()\n                if bus in ends: return dist\n                for next_bus in bus_graph[bus]:\n                    if next_bus not in mem:\n                        q.append(next_bus)\n                        mem.add(next_bus)\n            dist+=1\n        return -1\n        \n\n            ",
+          "compareResult": "00",
+          "id": "djmiska25_bus-routes_1765755542102",
+          "lastTestcase": null,
+          "memory": "N/A",
+          "runtime": "N/A",
+          "runtimeError": "Line 39: TypeError: 'builtin_function_or_method' object is not subscriptable",
+          "startedAt": 1747051046093,
+          "statusMsg": "Runtime Error",
+          "totalCorrect": 0,
+          "totalTestcases": 2
+        },
+        {
+          "code": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = set()\n        ends = set()\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if stop == source: starts.add(bus)\n                if stop == target: ends.add(bus)\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add(bus)\n        \n        # navigate the bus graph\n        dist = 0\n        mem = set(starts)\n        q = deque(starts)\n        while q:\n            q_size = len(q)\n            for _ in range(q_size):\n                bus = q.popleft()\n                if bus in ends: return dist\n                for next_bus in bus_graph[bus]:\n                    if next_bus not in mem:\n                        q.append(next_bus)\n                        mem.add(next_bus)\n            dist+=1\n        return -1\n        \n\n            ",
+          "compareResult": "01",
+          "id": "djmiska25_bus-routes_1765755580289",
+          "lastTestcase": null,
+          "memory": "17.9 MB",
+          "runtime": "0 ms",
+          "runtimeError": null,
+          "startedAt": 1747051084586,
+          "statusMsg": "Accepted",
+          "totalCorrect": 1,
+          "totalTestcases": 2
+        },
+        {
+          "code": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = set()\n        ends = set()\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if stop == source: starts.add(bus)\n                if stop == target: ends.add(bus)\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add(bus)\n        \n        # navigate the bus graph\n        dist = 1\n        mem = set(starts)\n        q = deque(starts)\n        while q:\n            q_size = len(q)\n            for _ in range(q_size):\n                bus = q.popleft()\n                if bus in ends: return dist\n                for next_bus in bus_graph[bus]:\n                    if next_bus not in mem:\n                        q.append(next_bus)\n                        mem.add(next_bus)\n            dist+=1\n        return -1\n        \n\n            ",
+          "compareResult": "11",
+          "id": "djmiska25_bus-routes_1765755610058",
+          "lastTestcase": null,
+          "memory": "17.8 MB",
+          "runtime": "0 ms",
+          "runtimeError": null,
+          "startedAt": 1747051114774,
+          "statusMsg": "Accepted",
+          "totalCorrect": 2,
+          "totalTestcases": 2
+        },
+        {
+          "code": "\"\"\"\nOk, so i'm thinking for this problem that we'll probably want to use some kind of dfs. I don't think dykstras would\nbe helpful here cuz theres no lenths to worry about. What i'm confused about tho, is how to keep track of which bus\nwe're on. We can count the stops, but the actual bus is more difficult to know I thnk. Maybe what we could do is just\nhave a lookup for buses thats routes interact with a space. Then loop through first the possible buses to take from\nthat space, then the possible spaces to move to on that bus. We'll keep track of mem to avoid going in circles and\nkeep track of the number of times we switch buses. Ok. looking at the constrainsts I don't think this will work because\nwe have a very large amount of routes for each bus and up to 500 buses as well. I'm thinking it might be a better\nidea to use A* here since the space is large and we need the optimal path. Although, i'm not sure how to incorporate\nminimizing the buses and not just the stops. Ok, i'm thinking we can't use A* cuz theres no distance estimate. Maybe,\ninstead we could use dykstra and convert the problem space to a conventional graph. If we represent the graph as\nbuses and not stops we might be able to significantly reduce the problem space. For example, if we have\nroute 1: 1->2->3->4->5->1..\nroute 2: 5->6->7->8->9->5..\nstart 1, goal 9\nthen we really just have route 1 <-> route 2 graph and route 2 is our goal cuz it contains our goal node.\nso to convert our space I think we want to find every bus we can get on at every step. So first i'll index\nbuses by stops. Then we'll go through each of the buses stops and create an edge for every bus we can go\nto from the current bus. We'll repeat for every bus. Then I think we could just use bfs or else dykstras.\n\"\"\"\nclass Solution:\n    def numBusesToDestination(self, routes: List[List[int]], source: int, target: int) -> int:\n        # index stops -> buses\n        stop_to_bus = defaultdict(set)\n        for bus, route in enumerate(routes):\n            for stop in route:\n                stop_to_bus[stop].add(bus)\n\n        # create the adj bus graph\n        bus_graph = defaultdict(set)\n        starts = set()\n        ends = set()\n        for bus, route in enumerate(routes):\n            for stop in route:\n                if stop == source: starts.add(bus)\n                if stop == target: ends.add(bus)\n                for other_bus in stop_to_bus[stop]:\n                    bus_graph[bus].add(other_bus)\n                    bus_graph[other_bus].add(bus)\n        \n        # navigate the bus graph\n        dist = 1\n        mem = set(starts)\n        q = deque(starts)\n        while q:\n            q_size = len(q)\n            for _ in range(q_size):\n                bus = q.popleft()\n                if bus in ends: return dist\n                for next_bus in bus_graph[bus]:\n                    if next_bus not in mem:\n                        q.append(next_bus)\n                        mem.add(next_bus)\n            dist+=1\n        return -1\n        \n\n            ",
+          "compareResult": "111111111110101111011111111111111111111111111111111110",
+          "id": "djmiska25_bus-routes_1765755620501",
+          "lastTestcase": "[[1,7],[3,5]]\n5\n5",
+          "memory": "N/A",
+          "runtime": "N/A",
+          "runtimeError": null,
+          "startedAt": 1747051120307,
+          "statusMsg": "Wrong Answer",
+          "totalCorrect": 50,
+          "totalTestcases": 54
+        }
+      ]
+    },
+    "usedHints": "none",
+    "feedback": {
+      "performance": {
+        "time_to_solve": 3,
+        "time_complexity": "3: O(totalStops + overlaps)",
+        "space_complexity": "3: O(totalStops + busEdges)",
+        "comments": "Good pivot to \u201cbuses as nodes\u201d + BFS for fewest transfers. Biggest speed win: don\u2019t build full bus-to-bus adjacency; expand neighbors on-the-fly via stop_to_bus and mark/clear stops so each stop is processed once."
+      },
+      "code_quality": {
+        "readability": 3,
+        "correctness": 5,
+        "maintainability": 3,
+        "comments": "Correct and passes all cases, including fixing source==target. Readability would improve by removing the long brainstorming docstring and tightening comments. Maintainability/perf improve by eliminating bus_graph and doing BFS expansions through stop_to_bus with visited stops."
+      },
+      "summary": {
+        "final_score": 70,
+        "comments": "Accepted hard BFS solution with solid modeling; minor thrash and a few run errors. Main issue is performance overhead from materializing dense bus_graph; switch to stop-driven BFS expansions to reach near-linear behavior in totalStops."
+      }
+    }
   }
 ]
