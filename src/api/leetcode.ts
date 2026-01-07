@@ -96,8 +96,11 @@ query getUserProfile($username: String!) {
 /* ------------------------------- Public API -------------------------------- */
 /**
  * Verify a LeetCode username exists using a minimal GraphQL query.
+ * Returns the canonical username from LeetCode when found (LeetCode lowercases it).
  */
-export async function verifyUser(username: string): Promise<{ exists: boolean }> {
+export async function verifyUser(
+  username: string,
+): Promise<{ exists: boolean; username?: string }> {
   try {
     type UserProfileData = {
       matchedUser: {
@@ -111,7 +114,7 @@ export async function verifyUser(username: string): Promise<{ exists: boolean }>
       return { exists: false };
     }
 
-    return { exists: true };
+    return { exists: true, username: data.matchedUser.username };
   } catch (error) {
     // Handle the specific "user doesn't exist" error
     if (error instanceof Error && error.message === 'That user does not exist.') {

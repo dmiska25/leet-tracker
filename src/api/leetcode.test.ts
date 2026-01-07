@@ -99,7 +99,7 @@ describe('verifyUser', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns {exists:true} when API responds with matchedUser', async () => {
+  it('returns exists:true with canonical username when API responds with matchedUser', async () => {
     (fetch as any).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -111,7 +111,7 @@ describe('verifyUser', () => {
       }),
     });
 
-    expect(await verifyUser('foo')).toEqual({ exists: true });
+    expect(await verifyUser('foo')).toEqual({ exists: true, username: 'foo' });
   });
 
   it('returns {exists:false} when API returns matchedUser null', async () => {
