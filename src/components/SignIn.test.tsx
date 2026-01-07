@@ -40,10 +40,11 @@ describe('<SignIn>', () => {
     const user = userEvent.setup();
     renderWithToast();
 
-    await user.type(screen.getByPlaceholderText(/e\.g\./i), 'tester');
+    await user.type(screen.getByPlaceholderText(/e\.g\./i), 'Tester');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
+      expect(verifyUser).toHaveBeenCalledWith('tester');
       expect(db.setUsername).toHaveBeenCalledWith('tester');
       expect(reloadSpy).toHaveBeenCalled();
     });
