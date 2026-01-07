@@ -31,26 +31,24 @@ export default function SignIn() {
     e.preventDefault();
     const trimmed = username.trim();
     if (!trimmed) return;
-    const normalized = trimmed.toLowerCase();
     setSaving(true);
     try {
       // Verify if the user exists
       try {
-        const res = await verifyUser(normalized);
-        if (!res.exists) {
+        const res = await verifyUser(trimmed);
+        if (!res.exists || !res.username) {
           setSaving(false);
           toast('User not found. Please check your username and try again.', 'error');
           return;
         }
+        // Save the username returned by LeetCode (canonical casing)
+        await db.setUsername(res.username);
       } catch (err) {
         console.error('[SignIn] an error occurred while verifying user', err);
         setSaving(false);
         toast('An unexpected error occurred. Please try again later.', 'error');
         return;
       }
-
-      // Save the username to the database
-      await db.setUsername(normalized);
       trackUserSignedIn(false);
       // A full reload is simplest to re‑run initApp with the new username
       window.location.reload();

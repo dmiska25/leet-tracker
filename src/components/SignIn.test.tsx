@@ -33,8 +33,8 @@ describe('<SignIn>', () => {
       </ToastProvider>,
     );
 
-  it('saves username and reloads on successful sign-in', async () => {
-    vi.mocked(verifyUser).mockResolvedValue({ exists: true });
+  it('saves username returned by LeetCode and reloads on successful sign-in', async () => {
+    vi.mocked(verifyUser).mockResolvedValue({ exists: true, username: 'tester' });
     vi.mocked(db.setUsername).mockResolvedValue('tester');
 
     const user = userEvent.setup();
@@ -44,7 +44,7 @@ describe('<SignIn>', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(verifyUser).toHaveBeenCalledWith('tester');
+      expect(verifyUser).toHaveBeenCalledWith('Tester');
       expect(db.setUsername).toHaveBeenCalledWith('tester');
       expect(reloadSpy).toHaveBeenCalled();
     });
