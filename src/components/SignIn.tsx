@@ -31,11 +31,12 @@ export default function SignIn() {
     e.preventDefault();
     const trimmed = username.trim();
     if (!trimmed) return;
+    const normalized = trimmed.toLowerCase();
     setSaving(true);
     try {
       // Verify if the user exists
       try {
-        const res = await verifyUser(trimmed);
+        const res = await verifyUser(normalized);
         if (!res.exists) {
           setSaving(false);
           toast('User not found. Please check your username and try again.', 'error');
@@ -49,7 +50,7 @@ export default function SignIn() {
       }
 
       // Save the username to the database
-      await db.setUsername(trimmed);
+      await db.setUsername(normalized);
       trackUserSignedIn(false);
       // A full reload is simplest to re‑run initApp with the new username
       window.location.reload();
