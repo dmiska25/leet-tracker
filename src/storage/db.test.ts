@@ -61,6 +61,14 @@ describe('db storage module', () => {
     db._usernameCache = null;
     // Clear localStorage to ensure test isolation
     localStorage.clear();
+
+    // Close any open connections before deleting
+    if (db._dbPromise) {
+      const database = await db._dbPromise;
+      database.close();
+      db._dbPromise = null;
+    }
+
     // IndexedDB persists across tests — clearing it ensures isolation
     await new Promise<void>((resolve) => {
       const deleteReq = indexedDB.deleteDatabase('leet-tracker-db');
@@ -84,6 +92,7 @@ describe('db storage module', () => {
   });
 
   it('stores and retrieves a solve', async () => {
+    await db.setUsername('testuser');
     await db.saveSolve(exampleSolve);
     const solves = await db.getAllSolves();
     expect(solves).toHaveLength(1);
@@ -91,6 +100,7 @@ describe('db storage module', () => {
   });
 
   it('clears solves', async () => {
+    await db.setUsername('testuser');
     await db.saveSolve(exampleSolve);
     const solvesBeforeClear = await db.getAllSolves();
     expect(solvesBeforeClear).toHaveLength(1);
@@ -100,6 +110,7 @@ describe('db storage module', () => {
   });
 
   it('stores and retrieves a goal profile', async () => {
+    await db.setUsername('testuser');
     await db.saveGoalProfile(exampleProfile);
     const result = await db.getGoalProfile('default');
     expect(result?.id).toBe('default');
@@ -107,6 +118,7 @@ describe('db storage module', () => {
   });
 
   it('sets and retrieves the active goal profile ID', async () => {
+    await db.setUsername('testuser');
     await db.setActiveGoalProfile('default');
     const active = await db.getActiveGoalProfileId();
     expect(active).toBe('default');

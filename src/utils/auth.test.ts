@@ -22,7 +22,7 @@ describe('signOut', () => {
 
     // Mock window.confirm
     confirmSpy = vi.fn(() => true);
-    window.confirm = confirmSpy;
+    window.confirm = confirmSpy as any;
 
     // Mock alert
     window.alert = vi.fn();
@@ -33,7 +33,7 @@ describe('signOut', () => {
   });
 
   afterEach(() => {
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   });
 
   it('clears username and reloads page', async () => {

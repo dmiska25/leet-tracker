@@ -46,129 +46,139 @@ type ValidStoreName = keyof LeetTrackerDB;
 /* ----------------------------------------------------------------------------
    DB init (version 4) + one-time migration from legacy global keys
 ---------------------------------------------------------------------------- */
-const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 4, {
-  async upgrade(db, oldVersion, _newVersion, tx) {
-    if (oldVersion < 1) {
-      // v1 schema
-      db.createObjectStore('leetcode-username');
-      db.createObjectStore('problem-list');
-      db.createObjectStore('problem-metadata');
-      db.createObjectStore('solves');
-      db.createObjectStore('goal-profiles');
-      db.createObjectStore('active-goal-profile');
-    }
-    if (oldVersion < 2) {
-      // v2 – extension support
-      db.createObjectStore('extension-sync');
-    }
-
-    if (oldVersion < 3) {
-      // v3 – migrate existing global data to per-user namespaced keys AND add username indexes
-
-      db.createObjectStore('solves-metadata');
-
-      // Add indexes for username-based queries
-      const solvesStore = tx.objectStore('solves') as any;
-      if (!solvesStore.indexNames.contains('username')) {
-        solvesStore.createIndex('username', 'username');
+const initDb = () =>
+  openDB<LeetTrackerDB>('leet-tracker-db', 4, {
+    async upgrade(db, oldVersion, _newVersion, tx) {
+      if (oldVersion < 1) {
+        // v1 schema
+        db.createObjectStore('leetcode-username');
+        db.createObjectStore('problem-list');
+        db.createObjectStore('problem-metadata');
+        db.createObjectStore('solves');
+        db.createObjectStore('goal-profiles');
+        db.createObjectStore('active-goal-profile');
+      }
+      if (oldVersion < 2) {
+        // v2 – extension support
+        db.createObjectStore('extension-sync');
       }
 
-      const goalProfilesStore = tx.objectStore('goal-profiles') as any;
-      if (!goalProfilesStore.indexNames.contains('username')) {
-        goalProfilesStore.createIndex('username', 'username');
+      if (oldVersion < 3) {
+        // v3 – migrate existing global data to per-user namespaced keys AND add username indexes
+
+        db.createObjectStore('solves-metadata');
+
+        // Add indexes for username-based queries
+        const solvesStore = tx.objectStore('solves') as any;
+        if (!solvesStore.indexNames.contains('username')) {
+          solvesStore.createIndex('username', 'username');
+        }
+
+        const goalProfilesStore = tx.objectStore('goal-profiles') as any;
+        if (!goalProfilesStore.indexNames.contains('username')) {
+          goalProfilesStore.createIndex('username', 'username');
+        }
+
+        // If no username exists, we assume signed-out state ⇒ no data to migrate.
+        const username = await (tx.objectStore('leetcode-username') as any).get('username');
+        if (!username) {
+          // Skip the v3 migration logic but continue with other version upgrades
+          // Don't return here - we still need to process v4+ upgrades
+        } else {
+          const prefix = `${username}|`;
+
+          // ---- solves: `${slug}|${timestamp}` → `${username}|${slug}|${timestamp}`
+          const solveKeys = (await solvesStore.getAllKeys()) as string[];
+          for (const k of solveKeys) {
+            if (typeof k !== 'string') continue;
+            // legacy solve key has exactly one pipe
+            if (k.split('|').length === 2) {
+              const val = await solvesStore.get(k as any);
+              const target = `${prefix}${k}`;
+              const existing = await solvesStore.get(target as any);
+              if (val !== undefined && existing === undefined) {
+                // Add username field when migrating
+                const solveWithUsername = { ...val, username };
+                await solvesStore.put(solveWithUsername, target as any);
+              }
+              await solvesStore.delete(k as any);
+            }
+          }
+
+          // ---- goal-profiles: `${profileId}` → `${username}|${profileId}`
+          const profStore = goalProfilesStore;
+          const profKeys = (await profStore.getAllKeys()) as string[];
+          for (const k of profKeys) {
+            if (typeof k !== 'string') continue;
+            // namespaced keys already start with `${username}|`
+            if (!k.startsWith(prefix)) {
+              const val = await profStore.get(k as any);
+              const target = `${prefix}${k}`;
+              const existing = await profStore.get(target as any);
+              if (val !== undefined && existing === undefined) {
+                // Add username field when migrating
+                const profileWithUsername = { ...val, username };
+                await profStore.put(profileWithUsername, target as any);
+              }
+              await profStore.delete(k as any);
+            }
+          }
+
+          // ---- active-goal-profile: 'active' → `${username}|active`
+          const activeStore = tx.objectStore('active-goal-profile');
+          const legacyActiveVal = await activeStore.get('active');
+          if (legacyActiveVal !== undefined) {
+            const nsActiveKey = `${prefix}active`;
+            const existing = await activeStore.get(nsActiveKey as any);
+            if (existing === undefined) {
+              await activeStore.put(legacyActiveVal, nsActiveKey as any);
+            }
+            await activeStore.delete('active' as any);
+          }
+
+          // ---- extension-sync: 'lastTimestamp' → `${username}|lastTimestamp`
+          const extStore = tx.objectStore('extension-sync');
+          const legacyTs = await extStore.get('lastTimestamp');
+          if (legacyTs !== undefined) {
+            const nsTsKey = `${prefix}lastTimestamp`;
+            const existing = await extStore.get(nsTsKey as any);
+            if (existing === undefined) {
+              await extStore.put(legacyTs, nsTsKey as any);
+            }
+            await extStore.delete('lastTimestamp' as any);
+          }
+
+          // ---- problem-metadata: 'recentSolvesLastUpdated' → solves-metadata: `${username}|recentSolvesLastUpdated`
+          // Keep 'lastUpdated' global in problem-metadata.
+          const metaStore = tx.objectStore('problem-metadata');
+          const solvesMetaStore = tx.objectStore('solves-metadata');
+          const legacyRecent = await metaStore.get('recentSolvesLastUpdated' as any);
+          if (legacyRecent !== undefined) {
+            const nsRecentKey = `${prefix}recentSolvesLastUpdated`;
+            const existing = await solvesMetaStore.get(nsRecentKey as any);
+            if (existing === undefined) {
+              await solvesMetaStore.put(legacyRecent, nsRecentKey as any);
+            }
+            await metaStore.delete('recentSolvesLastUpdated' as any);
+          }
+        } // End of else block for username-based v3 migration
       }
 
-      // If no username exists, we assume signed-out state ⇒ no data to migrate.
-      const username = await (tx.objectStore('leetcode-username') as any).get('username');
-      if (!username) {
-        // Skip the v3 migration logic but continue with other version upgrades
-        // Don't return here - we still need to process v4+ upgrades
-      } else {
-        const prefix = `${username}|`;
+      if (oldVersion < 4) {
+        // v4 – add app-prefs store for tutorial and other preferences
+        db.createObjectStore('app-prefs');
+      }
+    },
+  });
 
-        // ---- solves: `${slug}|${timestamp}` → `${username}|${slug}|${timestamp}`
-        const solveKeys = (await solvesStore.getAllKeys()) as string[];
-        for (const k of solveKeys) {
-          if (typeof k !== 'string') continue;
-          // legacy solve key has exactly one pipe
-          if (k.split('|').length === 2) {
-            const val = await solvesStore.get(k as any);
-            const target = `${prefix}${k}`;
-            const existing = await solvesStore.get(target as any);
-            if (val !== undefined && existing === undefined) {
-              // Add username field when migrating
-              const solveWithUsername = { ...val, username };
-              await solvesStore.put(solveWithUsername, target as any);
-            }
-            await solvesStore.delete(k as any);
-          }
-        }
+let dbPromise: Promise<import('idb').IDBPDatabase<LeetTrackerDB>> | null = initDb();
 
-        // ---- goal-profiles: `${profileId}` → `${username}|${profileId}`
-        const profStore = goalProfilesStore;
-        const profKeys = (await profStore.getAllKeys()) as string[];
-        for (const k of profKeys) {
-          if (typeof k !== 'string') continue;
-          // namespaced keys already start with `${username}|`
-          if (!k.startsWith(prefix)) {
-            const val = await profStore.get(k as any);
-            const target = `${prefix}${k}`;
-            const existing = await profStore.get(target as any);
-            if (val !== undefined && existing === undefined) {
-              // Add username field when migrating
-              const profileWithUsername = { ...val, username };
-              await profStore.put(profileWithUsername, target as any);
-            }
-            await profStore.delete(k as any);
-          }
-        }
-
-        // ---- active-goal-profile: 'active' → `${username}|active`
-        const activeStore = tx.objectStore('active-goal-profile');
-        const legacyActiveVal = await activeStore.get('active');
-        if (legacyActiveVal !== undefined) {
-          const nsActiveKey = `${prefix}active`;
-          const existing = await activeStore.get(nsActiveKey as any);
-          if (existing === undefined) {
-            await activeStore.put(legacyActiveVal, nsActiveKey as any);
-          }
-          await activeStore.delete('active' as any);
-        }
-
-        // ---- extension-sync: 'lastTimestamp' → `${username}|lastTimestamp`
-        const extStore = tx.objectStore('extension-sync');
-        const legacyTs = await extStore.get('lastTimestamp');
-        if (legacyTs !== undefined) {
-          const nsTsKey = `${prefix}lastTimestamp`;
-          const existing = await extStore.get(nsTsKey as any);
-          if (existing === undefined) {
-            await extStore.put(legacyTs, nsTsKey as any);
-          }
-          await extStore.delete('lastTimestamp' as any);
-        }
-
-        // ---- problem-metadata: 'recentSolvesLastUpdated' → solves-metadata: `${username}|recentSolvesLastUpdated`
-        // Keep 'lastUpdated' global in problem-metadata.
-        const metaStore = tx.objectStore('problem-metadata');
-        const solvesMetaStore = tx.objectStore('solves-metadata');
-        const legacyRecent = await metaStore.get('recentSolvesLastUpdated' as any);
-        if (legacyRecent !== undefined) {
-          const nsRecentKey = `${prefix}recentSolvesLastUpdated`;
-          const existing = await solvesMetaStore.get(nsRecentKey as any);
-          if (existing === undefined) {
-            await solvesMetaStore.put(legacyRecent, nsRecentKey as any);
-          }
-          await metaStore.delete('recentSolvesLastUpdated' as any);
-        }
-      } // End of else block for username-based v3 migration
-    }
-
-    if (oldVersion < 4) {
-      // v4 – add app-prefs store for tutorial and other preferences
-      db.createObjectStore('app-prefs');
-    }
-  },
-});
+const getDbPromise = () => {
+  if (!dbPromise) {
+    dbPromise = initDb();
+  }
+  return dbPromise;
+};
 
 /* ----------------------------------------------------------------------------
    Public DB API (namespaced; no runtime legacy fallbacks)
@@ -176,11 +186,19 @@ const dbPromise = openDB<LeetTrackerDB>('leet-tracker-db', 4, {
 
 export const db = {
   /* ----------------------------------------------------------------------------
+     Private properties for testing
+  ---------------------------------------------------------------------------- */
+  _usernameCache: null as string | undefined | null, // null = not loaded, undefined = no username
+  get _dbPromise() {
+    return getDbPromise();
+  },
+  set _dbPromise(p: typeof dbPromise) {
+    dbPromise = p;
+  },
+
+  /* ----------------------------------------------------------------------------
      Private helpers for namespacing
   ---------------------------------------------------------------------------- */
-
-  // Cache for username to avoid repeated database calls
-  _usernameCache: null as string | undefined | null, // null = not loaded, undefined = no username
 
   async getUserPrefixOrThrow(): Promise<string> {
     const u = await this.getUsername();
@@ -228,35 +246,35 @@ export const db = {
     }
 
     // Load from database and cache
-    const username = await (await dbPromise).get('leetcode-username', 'username');
+    const username = await (await getDbPromise()).get('leetcode-username', 'username');
     this._usernameCache = username;
     return username;
   },
   async setUsername(username: string): Promise<string> {
     // Update cache when setting new username
     this._usernameCache = username;
-    return (await dbPromise).put('leetcode-username', username, 'username');
+    return (await getDbPromise()).put('leetcode-username', username, 'username');
   },
   async clearUsername(): Promise<void> {
     this._usernameCache = null; // Clear cache
-    return (await dbPromise).delete('leetcode-username', 'username');
+    return (await getDbPromise()).delete('leetcode-username', 'username');
   },
 
   // Problem catalog
   async getAllProblems(): Promise<Problem[]> {
-    return (await dbPromise).getAll('problem-list');
+    return (await getDbPromise()).getAll('problem-list');
   },
   async getProblem(slug: string): Promise<Problem | undefined> {
-    return (await dbPromise).get('problem-list', slug);
+    return (await getDbPromise()).get('problem-list', slug);
   },
   async addOrUpdateProblem(problem: Problem): Promise<string> {
-    return (await dbPromise).put('problem-list', problem, problem.slug);
+    return (await getDbPromise()).put('problem-list', problem, problem.slug);
   },
   async setProblemListLastUpdated(epochMs: number): Promise<string> {
-    return (await dbPromise).put('problem-metadata', epochMs, 'lastUpdated');
+    return (await getDbPromise()).put('problem-metadata', epochMs, 'lastUpdated');
   },
   async getProblemListLastUpdated(): Promise<number | undefined> {
-    return (await dbPromise).get('problem-metadata', 'lastUpdated');
+    return (await getDbPromise()).get('problem-metadata', 'lastUpdated');
   },
 
   // Solves (per user)
@@ -283,7 +301,7 @@ export const db = {
 
   async getSolve(slug: string, timestamp: number): Promise<Solve | undefined> {
     const nsKey = await this.nsSolveKey(slug, timestamp);
-    return (await dbPromise).get('solves', nsKey);
+    return (await getDbPromise()).get('solves', nsKey);
   },
 
   async saveSolve(solve: Solve): Promise<string> {
@@ -317,7 +335,7 @@ export const db = {
   // Goal profiles (per user)
   async getGoalProfile(id: string): Promise<GoalProfile | undefined> {
     const ns = await this.nsProfileKey(id);
-    return (await dbPromise).get('goal-profiles', ns);
+    return (await getDbPromise()).get('goal-profiles', ns);
   },
 
   async saveGoalProfile(profile: GoalProfile): Promise<string> {
@@ -327,12 +345,12 @@ export const db = {
     // Ensure username is set for indexing
     const profileWithUsername = { ...profile, username };
 
-    return (await dbPromise).put('goal-profiles', profileWithUsername, key);
+    return (await getDbPromise()).put('goal-profiles', profileWithUsername, key);
   },
 
   async deleteGoalProfile(id: string): Promise<void> {
     const key = await this.nsProfileKey(id);
-    await (await dbPromise).delete('goal-profiles', key);
+    await (await getDbPromise()).delete('goal-profiles', key);
   },
 
   async clearGoalProfiles(): Promise<void> {
@@ -351,12 +369,12 @@ export const db = {
 
   async setActiveGoalProfile(id: string): Promise<string> {
     const key = await this.nsActiveProfileKey();
-    return (await dbPromise).put('active-goal-profile', id, key);
+    return (await getDbPromise()).put('active-goal-profile', id, key);
   },
 
   async getActiveGoalProfileId(): Promise<string | undefined> {
     const key = await this.nsActiveProfileKey();
-    return (await dbPromise).get('active-goal-profile', key);
+    return (await getDbPromise()).get('active-goal-profile', key);
   },
 
   async getAllGoalProfiles(): Promise<GoalProfile[]> {
@@ -378,13 +396,13 @@ export const db = {
   // Extension sync (per user)
   async getExtensionLastTimestamp(): Promise<number> {
     const key = await this.nsExtensionLastTsKey();
-    const v = await (await dbPromise).get('extension-sync', key);
+    const v = await (await getDbPromise()).get('extension-sync', key);
     return v !== undefined ? v : 0;
   },
 
   async setExtensionLastTimestamp(ts: number): Promise<string> {
     const key = await this.nsExtensionLastTsKey();
-    return (await dbPromise).put('extension-sync', ts, key);
+    return (await getDbPromise()).put('extension-sync', ts, key);
   },
 
   // Transaction support
@@ -393,7 +411,7 @@ export const db = {
     mode: IDBTransactionMode = 'readonly',
   ): Promise<IDBPTransaction<LeetTrackerDB, any, typeof mode>> {
     const names = Array.isArray(storeNames) ? storeNames : [storeNames];
-    const idb = await dbPromise;
+    const idb = await getDbPromise();
     // cast to any so TS will pick the overload that accepts string[]:
     return idb.transaction(names as any, mode);
   },
@@ -412,17 +430,17 @@ export const db = {
      App preferences for tutorial and other settings
   ---------------------------------------------------------------------------- */
   async getAppPref<T>(key: string): Promise<T | undefined> {
-    const idb = await dbPromise;
+    const idb = await getDbPromise();
     return await idb.get('app-prefs', key);
   },
 
   async setAppPref<T>(key: string, val: T): Promise<void> {
-    const idb = await dbPromise;
+    const idb = await getDbPromise();
     await idb.put('app-prefs', val, key);
   },
 
   async deleteAppPref(key: string): Promise<void> {
-    const idb = await dbPromise;
+    const idb = await getDbPromise();
     await idb.delete('app-prefs', key);
   },
 };
