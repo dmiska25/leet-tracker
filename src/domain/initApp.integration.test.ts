@@ -17,7 +17,8 @@ describe('initApp (integration with fake‑indexeddb)', () => {
   beforeEach(async () => {
     // Mock the fetch function
     vi.stubGlobal('fetch', async (input: string, options?: { method?: string; body?: string }) => {
-      if (input === '/sample-problems.json') {
+      // Input can be absolute (http://localhost/...) or relative depending on test setup
+      if (input.endsWith('/sample-problems.json')) {
         // Load sample-problems.json from the public folder
         const filePath = path.join(__dirname, '../../public/sample-problems.json');
         const fileContents = await readFile(filePath, 'utf-8');
@@ -195,6 +196,9 @@ describe('initApp (integration with fake‑indexeddb)', () => {
   });
 
   afterEach(async () => {
+    if (testDb) {
+      testDb.close();
+    }
     await window.indexedDB.deleteDatabase('leet-tracker-db-test');
     vi.resetModules();
   });

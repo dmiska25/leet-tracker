@@ -25,7 +25,7 @@ describe('Analytics with UTM Attribution', () => {
     __resetAnalyticsState(); // Reset analytics session state
     // Reset window.location
     delete (window as any).location;
-    window.location = { search: '', pathname: '/', hostname: 'localhost' } as Location;
+    (window as any).location = { search: '', pathname: '/', hostname: 'localhost' };
   });
 
   afterEach(() => {
