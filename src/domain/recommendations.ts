@@ -173,11 +173,11 @@ async function getSuggestions(
       const daysAgo = Math.floor((nowMs - latest.timestamp * 1000) / 86_400_000);
       const boost = recencyBoost(daysAgo);
 
-      let quality = latest.qualityScore;
-      if (latest.feedback?.summary?.final_score !== undefined) {
-        quality = latest.feedback.summary.final_score / 100;
-      }
-      quality = quality ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
+      const qualityEstimate = latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0;
+      const quality =
+        latest.feedback?.summary?.final_score !== undefined
+          ? latest.feedback.summary.final_score / 100
+          : qualityEstimate;
 
       const refreshScore = (1 - quality) * boost * (0.7 + 0.3 * popularityScore);
 

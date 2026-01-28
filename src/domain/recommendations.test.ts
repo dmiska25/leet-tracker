@@ -70,7 +70,7 @@ const problems: Problem[] = [
 
 const now = Math.floor(Date.now() / 1000);
 const solves: Solve[] = [
-  // Low‑quality recent solve → should land in refresh bucket
+  // Recent solve → should land in refresh bucket
   {
     slug: 'needs-refresh',
     title: 'Needs Refresh',
@@ -79,7 +79,6 @@ const solves: Solve[] = [
     lang: 'ts',
     difficulty: Difficulty.Easy,
     tags: ['Array'],
-    qualityScore: 0.4,
   },
 ];
 
@@ -158,7 +157,6 @@ describe('recommendation engine', () => {
         lang: 'ts',
         difficulty: Difficulty.Easy,
         tags: ['Array'],
-        qualityScore: 0.8, // Should be ignored
         feedback: {
           performance: {
             time_to_solve: 0,
@@ -183,7 +181,6 @@ describe('recommendation engine', () => {
         lang: 'ts',
         difficulty: Difficulty.Easy,
         tags: ['Array'],
-        qualityScore: 0.2, // Should be ignored
         feedback: {
           performance: {
             time_to_solve: 0,

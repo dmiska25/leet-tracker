@@ -203,7 +203,6 @@ export interface Solve {
   timeUsed?: number;
 
   usedHints?: HintType;
-  qualityScore?: number; // Optional: manual or GPT
   notes?: string; // Optional: user notes
 
   /** Optional LeetCode submission identifier. */

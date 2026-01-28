@@ -10,7 +10,6 @@ const makeSolve = (
   status: string,
   diff: Difficulty,
   daysAgo: number,
-  quality?: number,
   feedbackScore?: number,
 ): Solve => {
   const solve: Solve = {
@@ -21,7 +20,6 @@ const makeSolve = (
     lang: 'ts',
     difficulty: diff,
     tags: ['Array'],
-    qualityScore: quality,
   };
 
   if (feedbackScore !== undefined) {
@@ -76,7 +74,7 @@ describe('evaluateCategoryProgress', () => {
   it('penalizes multiple failed attempts on same day', () => {
     const single = [makeSolve('x', 'Accepted', Difficulty.Hard, 1)];
     const failedFirst = [
-      makeSolve('x', 'Rejected', Difficulty.Hard, 1, 0),
+      makeSolve('x', 'Rejected', Difficulty.Hard, 1),
       makeSolve('x', 'Accepted', Difficulty.Hard, 1),
     ];
     const scoreSingle = evaluateCategoryProgress(single).adjustedScore;
@@ -107,13 +105,11 @@ describe('evaluateCategoryProgress', () => {
     const earlierSolve = {
       ...makeSolve('same-day', 'Accepted', Difficulty.Medium, 1),
       timestamp: timestampMorning,
-      qualityScore: 0.5,
     };
 
     const laterSolve = {
       ...makeSolve('same-day', 'Accepted', Difficulty.Medium, 1),
       timestamp: timestampEvening,
-      qualityScore: 1.0,
     };
 
     const result = evaluateCategoryProgress([earlierSolve, laterSolve]);
@@ -198,42 +194,22 @@ describe('evaluateCategoryProgress', () => {
     expect(result.adjustedScore).toBe(0);
   });
 
-  it('uses feedback final_score (normalized) over qualityScore', () => {
-    // Quality 0.5, Feedback 90 (0.9)
-    const solveWithFeedback = makeSolve(
-      'feedback-solve',
-      'Accepted',
-      Difficulty.Medium,
-      1,
-      0.5,
-      90,
-    );
-    const solveWithoutFeedback = makeSolve(
-      'no-feedback-solve',
-      'Accepted',
-      Difficulty.Medium,
-      1,
-      0.5,
-    );
+  it('uses feedback final_score (normalized)', () => {
+    // Default quality (0.8), Feedback 100 (1.0)
+    const solveWithFeedback = makeSolve('feedback-solve', 'Accepted', Difficulty.Medium, 1, 100);
+    const solveWithoutFeedback = makeSolve('no-feedback-solve', 'Accepted', Difficulty.Medium, 1);
 
-    // With feedback 90 (=0.9), score should be higher than with quality 0.5
+    // With feedback 100 (=1.0), score should be higher than with default 0.8
     const scoreWith = evaluateCategoryProgress([solveWithFeedback]).adjustedScore;
     const scoreWithout = evaluateCategoryProgress([solveWithoutFeedback]).adjustedScore;
 
     expect(scoreWith).toBeGreaterThan(scoreWithout);
   });
 
-  it('uses feedback final_score over default if qualityScore is missing', () => {
-    // Quality undefined (default 0.8), Feedback 20 (0.2)
-    const solveWithFeedback = makeSolve(
-      'feedback-solve-2',
-      'Accepted',
-      Difficulty.Medium,
-      1,
-      undefined,
-      20,
-    );
-    const solveDefault = makeSolve('default-solve', 'Accepted', Difficulty.Medium, 1, undefined);
+  it('uses feedback final_score over default', () => {
+    // Default (0.8), Feedback 20 (0.2)
+    const solveWithFeedback = makeSolve('feedback-solve-2', 'Accepted', Difficulty.Medium, 1, 20);
+    const solveDefault = makeSolve('default-solve', 'Accepted', Difficulty.Medium, 1);
 
     // With feedback 0.2, score should be lower than default 0.8
     const scoreWith = evaluateCategoryProgress([solveWithFeedback]).adjustedScore;
