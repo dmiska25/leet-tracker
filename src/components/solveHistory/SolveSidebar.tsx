@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Clock, ChevronLeft, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,6 +24,55 @@ const needsFeedback = (s: Solve) => s.feedback?.summary?.final_score === undefin
 
 export default function SolveSidebar({ solves, selectedId, onSelect, onHide }: Props) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const lastSelectedIdRef = useRef<string | null>(null);
+  const autoExpandTarget = useRef<string | null>(null);
+  const userInteractedRef = useRef(false);
+
+  // Auto-scroll to selected item when it changes
+  useEffect(() => {
+    if (selectedId) {
+      // Logic skipped if user explicitly clicked an item (no need to auto-scroll)
+      if (userInteractedRef.current) {
+        userInteractedRef.current = false;
+        lastSelectedIdRef.current = selectedId;
+        autoExpandTarget.current = null;
+        return;
+      }
+
+      const el = itemRefs.current.get(selectedId);
+
+      // Check if we should scroll:
+      // 1. New selection (prevent scrolling if user is just expanding other groups)
+      // 2. OR we are in a pending auto-expand state for this ID
+      const shouldScroll =
+        lastSelectedIdRef.current !== selectedId || autoExpandTarget.current === selectedId;
+
+      if (el && shouldScroll) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        lastSelectedIdRef.current = selectedId;
+        autoExpandTarget.current = null;
+      } else if (!el) {
+        // If element is not found, it might be in a collapsed group.
+        // Check if the selected ID belongs to a child in a group
+        const parentGroup = groupedSolves.find((g) =>
+          g.children.some((child) => solveId(child) === selectedId),
+        );
+
+        if (parentGroup && !expandedGroups.has(parentGroup.key)) {
+          // Mark this ID as waiting for expansion
+          autoExpandTarget.current = selectedId;
+
+          // Ensure parent is expanded
+          setExpandedGroups((prev) => {
+            const next = new Set(prev);
+            next.add(parentGroup.key);
+            return next;
+          });
+        }
+      }
+    }
+  }, [selectedId, expandedGroups]); // Add expandedGroups to re-run after expansion renders children
 
   const groupedSolves = useMemo(() => {
     // Determine sessions using the 4h gap logic
@@ -41,6 +90,16 @@ export default function SolveSidebar({ solves, selectedId, onSelect, onHide }: P
     const next = new Set(expandedGroups);
     if (next.has(key)) {
       next.delete(key);
+
+      // If closing a group that contains the currently selected item,
+      // move selection to the group parent to prevent auto-expansion loop.
+      if (selectedId) {
+        const group = groupedSolves.find((g) => g.key === key);
+        if (group && group.children.some((child) => solveId(child) === selectedId)) {
+          userInteractedRef.current = true;
+          onSelect(group.head);
+        }
+      }
     } else {
       next.add(key);
     }
@@ -59,76 +118,87 @@ export default function SolveSidebar({ solves, selectedId, onSelect, onHide }: P
     return (
       <div
         key={id}
-        onClick={() => onSelect(s)}
+        ref={(el) => {
+          if (el) itemRefs.current.set(id, el);
+          else itemRefs.current.delete(id);
+        }}
         className={clsx(
-          'rounded-lg border cursor-pointer transition-colors hover:bg-accent relative group/item',
+          'flex items-stretch rounded-lg border transition-colors hover:bg-accent relative group/item',
           selectedId === id && 'bg-accent border-primary',
-          isChild && 'ml-6 mt-1 border-l-4 border-l-muted-foreground/20',
+          isChild
+            ? 'w-[calc(100%-1.5rem)] ml-6 mt-1 border-l-4 border-l-muted-foreground/20'
+            : 'w-full',
         )}
       >
-        <div className="flex items-stretch">
-          <div className={`flex-1 min-w-0 py-3 ${!hasChildren || isChild ? 'px-3' : 'pl-3 pr-1'}`}>
-            <h4 className="font-medium text-sm break-words leading-tight">{s.title}</h4>
-            <div className="flex items-center gap-2 mt-1">
-              <StatusBadge status={s.status} />
-              {s.feedback?.summary?.final_score !== undefined ? (
-                <Badge
-                  variant="outline"
-                  className={`text-[11px] px-1.5 py-0.5 ${
-                    s.feedback.summary.final_score >= 80
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : s.feedback.summary.final_score >= 50
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-rose-100 text-rose-800'
-                  }`}
-                >
-                  Score: {s.feedback.summary.final_score}
+        <button
+          type="button"
+          onClick={() => {
+            userInteractedRef.current = true;
+            onSelect(s);
+          }}
+          className={`flex-1 min-w-0 py-3 text-left ${!hasChildren || isChild ? 'px-3' : 'pl-3 pr-1'}`}
+        >
+          <h4 className="font-medium text-sm break-words leading-tight">{s.title}</h4>
+          <div className="flex items-center gap-2 mt-1">
+            <StatusBadge status={s.status} />
+            {s.feedback?.summary?.final_score !== undefined ? (
+              <Badge
+                variant="outline"
+                className={`text-[11px] px-1.5 py-0.5 ${
+                  s.feedback.summary.final_score >= 80
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : s.feedback.summary.final_score >= 50
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-rose-100 text-rose-800'
+                }`}
+              >
+                Score: {s.feedback.summary.final_score}
+              </Badge>
+            ) : (
+              !isChild &&
+              needsFeedback(s) && (
+                <Badge variant="outline" className="bg-orange-500/10 text-yellow-600">
+                  Needs Feedback!
                 </Badge>
-              ) : (
-                !isChild &&
-                needsFeedback(s) && (
-                  <Badge variant="outline" className="bg-orange-500/10 text-yellow-600">
-                    Needs Feedback!
-                  </Badge>
-                )
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <Clock className="h-3 w-3 inline mr-1" />
-              {localDateTime}
-            </p>
+              )
+            )}
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            <Clock className="h-3 w-3 inline mr-1" />
+            {localDateTime}
+          </p>
+        </button>
 
-          {hasChildren && !isChild && (
-            <>
-              <div
-                className={clsx(
-                  'w-px ml-2',
-                  selectedId === id
-                    ? 'bg-foreground/20'
-                    : 'bg-border group-hover/item:bg-foreground/20',
+        {hasChildren && !isChild && (
+          <>
+            <div
+              className={clsx(
+                'w-px ml-2',
+                selectedId === id
+                  ? 'bg-foreground/20'
+                  : 'bg-border group-hover/item:bg-foreground/20',
+              )}
+            />
+            <div className="flex items-center justify-center p-2 pl-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 !p-0 hover:bg-muted text-muted-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleGroup(key);
+                }}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" strokeWidth={3} />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" strokeWidth={3} />
                 )}
-              />
-              <div className="flex items-center justify-center p-2 pl-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 !p-0 hover:bg-muted text-muted-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleGroup(key);
-                  }}
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" strokeWidth={3} />
-                  ) : (
-                    <ChevronLeft className="h-4 w-4" strokeWidth={3} />
-                  )}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     );
   };

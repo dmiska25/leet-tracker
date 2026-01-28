@@ -2,6 +2,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import { vi, describe, it, expect, beforeEach, Mock } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import { TutorialProvider } from '../tutorial/TutorialContext';
 import * as db from '@/storage/db';
@@ -111,9 +112,11 @@ describe('App Tutorial Integration', () => {
   describe('Tutorial prompt display', () => {
     it('should show tutorial prompt for new users', async () => {
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -125,9 +128,11 @@ describe('App Tutorial Integration', () => {
       (db.getTutorialSeen as Mock).mockResolvedValue(true);
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -143,9 +148,11 @@ describe('App Tutorial Integration', () => {
       });
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       expect(screen.getByText(/Loading…/i)).toBeInTheDocument();
@@ -158,9 +165,11 @@ describe('App Tutorial Integration', () => {
       const user = userEvent.setup();
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -184,9 +193,11 @@ describe('App Tutorial Integration', () => {
       const user = userEvent.setup();
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -207,9 +218,11 @@ describe('App Tutorial Integration', () => {
       const user = userEvent.setup();
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -240,9 +253,11 @@ describe('App Tutorial Integration', () => {
       });
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       // Should not show prompt, should start tutorial directly
@@ -263,9 +278,11 @@ describe('App Tutorial Integration', () => {
       });
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       // Should resume tutorial without showing prompt
@@ -278,9 +295,11 @@ describe('App Tutorial Integration', () => {
   describe('Navigation event handling', () => {
     it('should handle leet:navigate-to-history event', async () => {
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       // Initially should show dashboard
@@ -303,9 +322,11 @@ describe('App Tutorial Integration', () => {
       (db.getTutorialSeen as Mock).mockResolvedValue(true); // Tutorial was seen
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       // Initially no prompt should show
@@ -332,9 +353,11 @@ describe('App Tutorial Integration', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
-        <TutorialProvider>
-          <App />
-        </TutorialProvider>,
+        <MemoryRouter>
+          <TutorialProvider>
+            <App />
+          </TutorialProvider>
+        </MemoryRouter>,
       );
 
       // Should still render without crashing

@@ -2,12 +2,20 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { vi, describe, it, expect, beforeEach, afterEach, Mock } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 
 import HeaderNav from './HeaderNav';
 import { db } from '@/storage/db';
 
-// Helper: noop onChange
-const noop = () => undefined;
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe('<HeaderNav>', () => {
   /* ------------------------------------------------------------ */
@@ -23,6 +31,7 @@ describe('<HeaderNav>', () => {
   const originalLocation = window.location;
 
   beforeEach(() => {
+    mockNavigate.mockClear();
     /* confirm dialog */
     confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true) as Mock;
 
@@ -57,24 +66,30 @@ describe('<HeaderNav>', () => {
   /* ------------------------------------------------------------ */
   /*  Navigation buttons                                          */
   /* ------------------------------------------------------------ */
-  it('calls onChange with "history" when History nav is clicked', async () => {
+  it('navigates to "solve-history" when History nav is clicked', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
 
-    render(<HeaderNav view="dashboard" onChange={onChange} />);
+    render(
+      <MemoryRouter>
+        <HeaderNav />
+      </MemoryRouter>,
+    );
 
-    await user.click(screen.getByRole('button', { name: /history/i }));
-    expect(onChange).toHaveBeenCalledWith('history');
+    await user.click(screen.getByRole('button', { name: /solve history/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/solve-history');
   });
 
-  it('calls onChange with "dashboard" when Dashboard nav is clicked', async () => {
+  it('navigates to "dashboard" when Dashboard nav is clicked', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
 
-    render(<HeaderNav view="history" onChange={onChange} />);
+    render(
+      <MemoryRouter initialEntries={['/solve-history']}>
+        <HeaderNav />
+      </MemoryRouter>,
+    );
 
     await user.click(screen.getByRole('button', { name: /dashboard/i }));
-    expect(onChange).toHaveBeenCalledWith('dashboard');
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
   });
 
   /* ------------------------------------------------------------ */
@@ -83,7 +98,11 @@ describe('<HeaderNav>', () => {
   it('confirms and signs out when Sign Out button is clicked', async () => {
     const user = userEvent.setup();
 
-    render(<HeaderNav view="dashboard" onChange={noop} />);
+    render(
+      <MemoryRouter>
+        <HeaderNav />
+      </MemoryRouter>,
+    );
 
     const signOutBtn = screen.getByRole('button', { name: /sign out/i });
     await user.click(signOutBtn);

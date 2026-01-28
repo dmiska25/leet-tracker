@@ -25,6 +25,7 @@
     "posthog-js": "^1.331.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7.13.0",
     "react-tooltip": "^5.28.1"
   },
   "devDependencies": {

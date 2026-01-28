@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SolveSidebar from './SolveSidebar';
 import SolveDetail from './SolveDetail';
 import { useSolveHistory } from '@/hooks/useSolveHistory';
@@ -7,7 +8,12 @@ import type { Solve } from '@/types/types';
 /** Stable composite key for a solve */
 const solveId = (s: Solve) => `${s.slug}|${s.timestamp}`;
 
-export default function SolveHistory() {
+interface Props {
+  activeSolveId?: string;
+}
+
+export default function SolveHistory({ activeSolveId }: Props) {
+  const navigate = useNavigate();
   const { loading, solves, refresh } = useSolveHistory();
 
   /* ---------- UI state ---------- */
@@ -15,30 +21,45 @@ export default function SolveHistory() {
   const [mobileView, setMobileView] = useState<'listing' | 'details'>('listing'); // < sm
   const [selected, setSelected] = useState<Solve | null>(null);
 
-  /* Sync the selected solve reference when the solves list updates */
+  /* Sync the selected solve reference when the solves list updates or URL param changes */
   useEffect(() => {
-    if (selected) {
+    if (loading || !solves.length) return;
+
+    if (activeSolveId) {
+      // URL dictates selection
+      const decodedId = decodeURIComponent(activeSolveId);
+      const match = solves.find((s) => solveId(s) === decodedId);
+      if (match) {
+        if (match !== selected) {
+          setSelected(match);
+        }
+      } else {
+        // ID in URL not found -> invalid link? clear it.
+        // But only if we are done loading
+        navigate('/solve-history', { replace: true });
+      }
+    } else if (!selected && solves.length) {
+      // No URL param, and nothing selected -> default to most recent
+      setSelected(solves[0]);
+    } else if (selected) {
+      // If we have a selection, but no URL param, ensure selection is still valid in fresh list
       const id = solveId(selected);
       const fresh = solves.find((s) => solveId(s) === id);
       if (fresh && fresh !== selected) {
         setSelected(fresh);
       }
     }
-  }, [solves]);
-
-  /* Select most-recent solve on first successful load */
-  useEffect(() => {
-    if (!loading && !selected && solves.length) {
-      setSelected(solves[0]);
-    }
-  }, [loading, solves, selected]);
+  }, [solves, activeSolveId, loading, selected, navigate]);
 
   if (loading) return <p className="p-6">Loading…</p>;
   if (!solves.length) return <p className="p-6">No solves found.</p>;
 
   /* ---------- handlers ---------- */
   const selectSolve = (s: Solve) => {
-    setSelected(s);
+    // Navigate to URL; useEffect will handle setting 'selected'
+    const id = encodeURIComponent(solveId(s));
+    navigate(`/solve-history/${id}`);
+
     if (window.innerWidth < 640) {
       setMobileView('details'); // take over full width on mobile
     }
