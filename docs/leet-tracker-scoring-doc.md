@@ -188,7 +188,7 @@ adjustedScore = 0.672 × 0.141 ≈ 0.095
 
 - **Confidence threshold** is set at 20 weighted solves to reflect a baseline for meaningful category insights. It is mostly an arbitrary number. It could easily be adjusted as needs evolve.
 - Linear **recency decay** (from 1 to 0 over 90 days) is simple, interpretable, and easy to implement. Alternatives like exponential decay were considered but add complexity without clear gain.
-- **Clean solves** are rewarded through the attempt penalty, ensuring we value learning efficiency and not just brute-force persistence. This is done through grouping problem solves by day which has certain edge case limitations with timezone. The limitations may need to be revisited in the future.
+- **Clean solves** are rewarded through the attempt penalty, ensuring we value learning efficiency and not just brute-force persistence. This is done through grouping problem solves into **sessions** (defined by a 4-hour inactivity gap), effectively capturing coding "sprints" regardless of timezone or midnight boundaries.
 - **Varied, recent practice** yields higher scores than older or repeated problem attempts, aligning with modern understanding of learning retention. One limitation is that the model does not _yet_ consider that if a user has a solid solve history, then regaining mastery is easier with fewer attempts in the future.
 - Confidence is based on **total weight**, not solved count—emphasizing the _depth_ of experience via harder or more recent problems.
 - Evidence is normalized to **Easy-equivalent solves** for consistent interpretation across users.

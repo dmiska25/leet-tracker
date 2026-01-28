@@ -217,4 +217,33 @@ describe('evaluateCategoryProgress', () => {
 
     expect(scoreWith).toBeLessThan(scoreDefault);
   });
+
+  it('groups solves across UTC midnight if within 4 hours', () => {
+    // 23:00 UTC
+    const late = makeSolve('midnight', 'Rejected', Difficulty.Medium, 1);
+    late.timestamp = now - (now % 86400) - 3600; // 23:00 aligned
+
+    // 01:00 UTC next day (2h later)
+    const early = makeSolve('midnight', 'Accepted', Difficulty.Medium, 0);
+    early.timestamp = late.timestamp + 7200; // +2 hours
+
+    // If grouped: 1 session with 1 fail -> penalty applies -> Score < 0.8
+    // If split: Rejected session ignored, Accepted session perfect -> Score == 0.8
+    const groupedResult = evaluateCategoryProgress([late, early]);
+    const perfectResult = evaluateCategoryProgress([early]);
+
+    expect(groupedResult.estimatedScore).toBeLessThan(perfectResult.estimatedScore);
+  });
+
+  it('separates solves if gap is > 4 hours', () => {
+    const t1 = makeSolve('gap', 'Accepted', Difficulty.Medium, 1);
+    const t2 = makeSolve('gap', 'Accepted', Difficulty.Medium, 1);
+    t2.timestamp = t1.timestamp + 5 * 3600; // +5h
+
+    // Two sessions = more evidence (2x) -> higher confidence than 1 session
+    const twoSessions = evaluateCategoryProgress([t1, t2]);
+    const oneSession = evaluateCategoryProgress([t1]);
+
+    expect(twoSessions.confidenceLevel).toBeGreaterThan(oneSession.confidenceLevel);
+  });
 });
