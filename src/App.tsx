@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Routes, Route, useNavigate, useLocation, matchPath } from 'react-router-dom';
 import { useInitApp } from '@/hooks/useInitApp';
 import Dashboard from '@/components/Dashboard';
 import SignIn from '@/components/SignIn';
@@ -25,11 +26,19 @@ import { useExtensionPoller } from '@/hooks/useExtensionPoller';
 import { initializeAttribution } from '@/utils/analytics';
 
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { loading, username } = useInitApp();
-  const [view, setView] = useState<'dashboard' | 'history'>('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [extensionInstalled, setExtensionInstalled] = useState(false);
+
+  // Determine current view state for manual rendering
+  const isDashboard =
+    location.pathname === '/dashboard' || location.pathname === '/' || location.pathname === '';
+  const isHistory = location.pathname.startsWith('/solve-history');
+  const historyMatch = matchPath({ path: '/solve-history/:solveId', end: true }, location.pathname);
+  const solveId = historyMatch?.params.solveId;
 
   const tutorial = useTutorial();
   const [showPrompt, setShowPrompt] = useState(false);
@@ -41,9 +50,9 @@ function App() {
     () =>
       buildSteps({
         extensionInstalled,
-        onNavigateToHistory: () => setView('history'),
+        onNavigateToHistory: () => navigate('/solve-history'),
       }),
-    [extensionInstalled],
+    [extensionInstalled, navigate],
   );
 
   // Capture UTM parameters and attribution on first app load
@@ -123,7 +132,7 @@ function App() {
 
   // Handle navigation events from tutorial
   useEffect(() => {
-    const handleNavigateToHistory = () => setView('history');
+    const handleNavigateToHistory = () => navigate('/solve-history');
     const handleShowTutorialPrompt = () => setShowPrompt(true);
 
     window.addEventListener('leet:navigate-to-history', handleNavigateToHistory);
@@ -132,7 +141,7 @@ function App() {
       window.removeEventListener('leet:navigate-to-history', handleNavigateToHistory);
       window.removeEventListener('leet:show-tutorial-prompt', handleShowTutorialPrompt);
     };
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     (async () => {
@@ -179,7 +188,7 @@ function App() {
     if (username === demoUsername) {
       await tutorial.start(steps, { startedWith: 'demo' });
       // Reload to ensure we're on dashboard with clean state
-      window.location.reload();
+      window.location.assign('/dashboard');
       return;
     }
 
@@ -192,7 +201,7 @@ function App() {
     await tutorial.start(steps, { startedWith: 'normal' });
 
     // Important: after setting state, reload to ensure demo data loads
-    window.location.reload();
+    window.location.assign('/dashboard');
   };
 
   const handleOnboardingComplete = async () => {
@@ -216,7 +225,7 @@ function App() {
 
   return (
     <>
-      <HeaderNav view={view} onChange={setView} />
+      <HeaderNav />
       <TutorialPrompt
         open={showPrompt}
         onStart={startTutorialFlow}
@@ -226,13 +235,21 @@ function App() {
           setShowPrompt(false);
         }}
       />
-      {/* Render both components to preserve state, hide inactive one with CSS */}
-      <div style={{ display: view === 'dashboard' ? 'block' : 'none' }}>
+      {/* We use manual display toggling to preserve state/prevent re-renders when switching tabs */}
+      <div style={{ display: isDashboard ? 'block' : 'none' }}>
         <Dashboard username={username} />
       </div>
-      <div style={{ display: view === 'history' ? 'block' : 'none' }}>
-        <SolveHistory />
+      <div style={{ display: isHistory ? 'block' : 'none' }}>
+        <SolveHistory activeSolveId={solveId} />
       </div>
+
+      {/* Keep Routes for URL side-effects or future dedicated routes, but main views are handled above */}
+      <Routes>
+        <Route path="/" element={null} />
+        <Route path="/dashboard" element={null} />
+        <Route path="/solve-history" element={null} />
+        <Route path="/solve-history/:solveId" element={null} />
+      </Routes>
     </>
   );
 }

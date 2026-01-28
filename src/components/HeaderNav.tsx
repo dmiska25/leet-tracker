@@ -1,34 +1,34 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/utils/auth';
 
-type View = 'dashboard' | 'history';
+export default function HeaderNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
 
-interface Props {
-  view: View;
-  onChange: (_: View) => void;
-}
-
-export default function HeaderNav({ view, onChange }: Props) {
   /* ---------- helpers ---------- */
   const NavBtn = ({
-    value,
+    path,
     label,
     className,
+    isActive,
     ...buttonProps
   }: {
-    value: View;
+    path: string;
     label: string;
     className?: string;
+    isActive: boolean;
   } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button
       type="button"
-      onClick={() => onChange(value)}
+      onClick={() => navigate(path)}
       className={clsx(
         'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium',
-        view === value
+        isActive
           ? 'bg-background text-foreground shadow'
           : 'text-muted-foreground hover:text-foreground',
         className,
@@ -52,12 +52,18 @@ export default function HeaderNav({ view, onChange }: Props) {
         <div className="ml-auto flex items-center gap-4">
           {/* View selector */}
           <div className="hidden sm:inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1">
-            <NavBtn value="dashboard" label="Dashboard" className="dashboard-nav" />
             <NavBtn
-              value="history"
+              path="/dashboard"
+              label="Dashboard"
+              className="dashboard-nav"
+              isActive={currentPath === '/dashboard' || currentPath === '/'}
+            />
+            <NavBtn
+              path="/solve-history"
               label="Solve History"
               className="solve-history-nav"
               data-tour="nav-history"
+              isActive={currentPath.startsWith('/solve-history')}
             />
           </div>
 

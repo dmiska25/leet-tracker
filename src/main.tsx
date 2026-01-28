@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import App from './App.tsx';
@@ -35,14 +36,16 @@ initializeTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ConditionalPostHogProvider>
-      <ErrorBoundary>
-        <ToastProvider>
-          <TutorialProvider>
-            <App />
-          </TutorialProvider>
-        </ToastProvider>
-      </ErrorBoundary>
-    </ConditionalPostHogProvider>
+    <BrowserRouter>
+      <ConditionalPostHogProvider>
+        <ErrorBoundary>
+          <ToastProvider>
+            <TutorialProvider>
+              <App />
+            </TutorialProvider>
+          </ToastProvider>
+        </ErrorBoundary>
+      </ConditionalPostHogProvider>
+    </BrowserRouter>
   </StrictMode>,
 );

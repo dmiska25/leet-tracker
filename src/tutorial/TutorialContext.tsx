@@ -205,7 +205,7 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
       if (prev) {
         await db.setUsername(prev);
         await clearPrevUser();
-        window.location.reload();
+        window.location.assign('/dashboard');
       }
     }
   };

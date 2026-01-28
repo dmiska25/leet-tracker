@@ -24,6 +24,11 @@ function makeSolve(overrides: Partial<Solve> = {}): Solve {
 describe('<SolveSidebar>', () => {
   const noop = () => {};
 
+  // Mock scrollIntoView
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
   it('shows a score badge when final_score is present', () => {
     const solveWithScore = makeSolve({
       feedback: {
@@ -109,5 +114,61 @@ describe('<SolveSidebar>', () => {
 
     expect(screen.getByText('Problem 1')).toBeInTheDocument();
     expect(screen.getByText('Problem 2')).toBeInTheDocument();
+  });
+
+  it('auto-scrolls to selected item on mount/update', () => {
+    const solve = makeSolve();
+    const id = `${solve.slug}|${solve.timestamp}`;
+
+    render(<SolveSidebar solves={[solve]} selectedId={id} onSelect={noop} onHide={noop} />);
+
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({
+      block: 'center',
+      behavior: 'smooth',
+    });
+  });
+
+  it('auto-expands group if selected ID is a hidden child', () => {
+    const now = Math.floor(Date.now() / 1000);
+    // Parent
+    const s1 = makeSolve({ slug: 'same-slug', title: 'Group Problem', timestamp: now });
+    // Child (same session, same slug)
+    const s2 = makeSolve({ slug: 'same-slug', title: 'Group Problem', timestamp: now - 3600 });
+    const s2Id = `${s2.slug}|${s2.timestamp}`;
+
+    // Render with CHILD selected. Group starts collapsed by default.
+    render(<SolveSidebar solves={[s1, s2]} selectedId={s2Id} onSelect={noop} onHide={noop} />);
+
+    // It should have auto-expanded.
+    // If expanded, we see the title twice (parent + child).
+    // If collapsed, we see it once.
+    const items = screen.getAllByText('Group Problem');
+    expect(items.length).toBe(2);
+
+    // And scrolled
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  });
+
+  it('selects parent when collapsing a group containing the active child', () => {
+    const now = Math.floor(Date.now() / 1000);
+    const s1 = makeSolve({ title: 'Parent', timestamp: now });
+    const s2 = makeSolve({ title: 'Child', timestamp: now - 3600 });
+    const s2Id = `${s2.slug}|${s2.timestamp}`;
+
+    const onSelectSpy = vi.fn();
+
+    const { container } = render(
+      <SolveSidebar solves={[s1, s2]} selectedId={s2Id} onSelect={onSelectSpy} onHide={noop} />,
+    );
+
+    // Find toggle button (ChevronDown when expanded)
+    const toggleBtn = container.querySelector('button.h-6.w-6');
+    expect(toggleBtn).toBeInTheDocument();
+
+    // Collapsing...
+    if (toggleBtn) fireEvent.click(toggleBtn);
+
+    // Should have called onSelect with the PARENT solve
+    expect(onSelectSpy).toHaveBeenCalledWith(s1);
   });
 });
