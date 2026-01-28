@@ -70,7 +70,7 @@ const problems: Problem[] = [
 
 const now = Math.floor(Date.now() / 1000);
 const solves: Solve[] = [
-  // Low‑quality recent solve → should land in refresh bucket
+  // Recent solve → should land in refresh bucket
   {
     slug: 'needs-refresh',
     title: 'Needs Refresh',
@@ -79,7 +79,6 @@ const solves: Solve[] = [
     lang: 'ts',
     difficulty: Difficulty.Easy,
     tags: ['Array'],
-    qualityScore: 0.4,
   },
 ];
 
@@ -145,5 +144,95 @@ describe('recommendation engine', () => {
     for (const p of all) {
       expect(p.tags).toBeDefined();
     }
+  });
+
+  it('prefers low quality (low feedback score) for refresh', async () => {
+    const nowLocal = Math.floor(Date.now() / 1000);
+    const feedbackSolves: Solve[] = [
+      {
+        slug: 'low-feedback',
+        title: 'Low Feedback',
+        timestamp: nowLocal - 5 * 86_400,
+        status: 'Accepted',
+        lang: 'ts',
+        difficulty: Difficulty.Easy,
+        tags: ['Array'],
+        feedback: {
+          performance: {
+            time_to_solve: 0,
+            time_complexity: '',
+            space_complexity: '',
+            comments: '',
+          },
+          code_quality: {
+            readability: 0,
+            correctness: 0,
+            maintainability: 0,
+            comments: '',
+          },
+          summary: { final_score: 10, comments: '' }, // 0.1 quality -> 0.9 refresh score (HIGH chance)
+        },
+      },
+      {
+        slug: 'high-feedback',
+        title: 'High Feedback',
+        timestamp: nowLocal - 5 * 86_400,
+        status: 'Accepted',
+        lang: 'ts',
+        difficulty: Difficulty.Easy,
+        tags: ['Array'],
+        feedback: {
+          performance: {
+            time_to_solve: 0,
+            time_complexity: '',
+            space_complexity: '',
+            comments: '',
+          },
+          code_quality: {
+            readability: 0,
+            correctness: 0,
+            maintainability: 0,
+            comments: '',
+          },
+          summary: { final_score: 90, comments: '' }, // 0.9 quality -> 0.1 refresh score (LOW chance)
+        },
+      },
+    ];
+
+    const feedbackProblems: Problem[] = [
+      {
+        slug: 'low-feedback',
+        title: 'Low Feedback',
+        tags: ['Array'],
+        description: '',
+        difficulty: Difficulty.Easy,
+        isPaid: false,
+        popularity: 0.5,
+        isFundamental: false,
+        createdAt: 0,
+      },
+      {
+        slug: 'high-feedback',
+        title: 'High Feedback',
+        tags: ['Array'],
+        description: '',
+        difficulty: Difficulty.Easy,
+        isPaid: false,
+        popularity: 0.5,
+        isFundamental: false,
+        createdAt: 0,
+      },
+    ];
+
+    clearCache();
+    vi.mocked(db.getAllProblems).mockResolvedValue(feedbackProblems);
+    vi.mocked(db.getAllSolves).mockResolvedValue(feedbackSolves);
+    await primeData();
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const res = await getCategorySuggestions('Array', 1);
+    expect(res.refresh).toHaveLength(1);
+    expect(res.refresh[0].slug).toBe('low-feedback');
   });
 });

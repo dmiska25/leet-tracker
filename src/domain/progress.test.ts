@@ -10,17 +10,40 @@ const makeSolve = (
   status: string,
   diff: Difficulty,
   daysAgo: number,
-  quality?: number,
-): Solve => ({
-  slug,
-  title: slug,
-  timestamp: now - daysAgo * 86_400,
-  status,
-  lang: 'ts',
-  difficulty: diff,
-  tags: ['Array'],
-  qualityScore: quality,
-});
+  feedbackScore?: number,
+): Solve => {
+  const solve: Solve = {
+    slug,
+    title: slug,
+    timestamp: now - daysAgo * 86_400,
+    status,
+    lang: 'ts',
+    difficulty: diff,
+    tags: ['Array'],
+  };
+
+  if (feedbackScore !== undefined) {
+    solve.feedback = {
+      performance: {
+        time_to_solve: 5,
+        time_complexity: 'O(n)',
+        space_complexity: 'O(1)',
+        comments: '',
+      },
+      code_quality: {
+        readability: 5,
+        correctness: 5,
+        maintainability: 5,
+        comments: '',
+      },
+      summary: {
+        final_score: feedbackScore,
+        comments: '',
+      },
+    };
+  }
+  return solve;
+};
 
 describe('evaluateCategoryProgress', () => {
   beforeAll(() => {
@@ -51,7 +74,7 @@ describe('evaluateCategoryProgress', () => {
   it('penalizes multiple failed attempts on same day', () => {
     const single = [makeSolve('x', 'Accepted', Difficulty.Hard, 1)];
     const failedFirst = [
-      makeSolve('x', 'Rejected', Difficulty.Hard, 1, 0),
+      makeSolve('x', 'Rejected', Difficulty.Hard, 1),
       makeSolve('x', 'Accepted', Difficulty.Hard, 1),
     ];
     const scoreSingle = evaluateCategoryProgress(single).adjustedScore;
@@ -82,13 +105,11 @@ describe('evaluateCategoryProgress', () => {
     const earlierSolve = {
       ...makeSolve('same-day', 'Accepted', Difficulty.Medium, 1),
       timestamp: timestampMorning,
-      qualityScore: 0.5,
     };
 
     const laterSolve = {
       ...makeSolve('same-day', 'Accepted', Difficulty.Medium, 1),
       timestamp: timestampEvening,
-      qualityScore: 1.0,
     };
 
     const result = evaluateCategoryProgress([earlierSolve, laterSolve]);
@@ -171,5 +192,29 @@ describe('evaluateCategoryProgress', () => {
     expect(result.estimatedScore).toBe(0);
     expect(result.confidenceLevel).toBe(0);
     expect(result.adjustedScore).toBe(0);
+  });
+
+  it('uses feedback final_score (normalized)', () => {
+    // Default quality (0.8), Feedback 100 (1.0)
+    const solveWithFeedback = makeSolve('feedback-solve', 'Accepted', Difficulty.Medium, 1, 100);
+    const solveWithoutFeedback = makeSolve('no-feedback-solve', 'Accepted', Difficulty.Medium, 1);
+
+    // With feedback 100 (=1.0), score should be higher than with default 0.8
+    const scoreWith = evaluateCategoryProgress([solveWithFeedback]).adjustedScore;
+    const scoreWithout = evaluateCategoryProgress([solveWithoutFeedback]).adjustedScore;
+
+    expect(scoreWith).toBeGreaterThan(scoreWithout);
+  });
+
+  it('uses feedback final_score over default', () => {
+    // Default (0.8), Feedback 20 (0.2)
+    const solveWithFeedback = makeSolve('feedback-solve-2', 'Accepted', Difficulty.Medium, 1, 20);
+    const solveDefault = makeSolve('default-solve', 'Accepted', Difficulty.Medium, 1);
+
+    // With feedback 0.2, score should be lower than default 0.8
+    const scoreWith = evaluateCategoryProgress([solveWithFeedback]).adjustedScore;
+    const scoreDefault = evaluateCategoryProgress([solveDefault]).adjustedScore;
+
+    expect(scoreWith).toBeLessThan(scoreDefault);
   });
 });

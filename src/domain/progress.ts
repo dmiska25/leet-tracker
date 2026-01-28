@@ -60,7 +60,11 @@ export function evaluateCategoryProgress(solves: Solve[]): Omit<CategoryProgress
     const diffWeight = difficultyWeights[latest.difficulty ?? Difficulty.Easy]; // NOTE: fallback _should_ never happen since we fill in difficulty
     const attemptPenalty = getAttemptPenalty(failedAttempts);
 
-    const quality = latest.qualityScore ?? DEFAULT_QUALITY_SCORE;
+    const quality =
+      latest.feedback?.summary?.final_score !== undefined
+        ? latest.feedback.summary.final_score / 100
+        : DEFAULT_QUALITY_SCORE;
+
     const adjustedQuality = quality * attemptPenalty;
 
     const weight = decay * diffWeight;
