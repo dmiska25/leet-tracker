@@ -11,16 +11,41 @@ const makeSolve = (
   diff: Difficulty,
   daysAgo: number,
   quality?: number,
-): Solve => ({
-  slug,
-  title: slug,
-  timestamp: now - daysAgo * 86_400,
-  status,
-  lang: 'ts',
-  difficulty: diff,
-  tags: ['Array'],
-  qualityScore: quality,
-});
+  feedbackScore?: number,
+): Solve => {
+  const solve: Solve = {
+    slug,
+    title: slug,
+    timestamp: now - daysAgo * 86_400,
+    status,
+    lang: 'ts',
+    difficulty: diff,
+    tags: ['Array'],
+    qualityScore: quality,
+  };
+
+  if (feedbackScore !== undefined) {
+    solve.feedback = {
+      performance: {
+        time_to_solve: 5,
+        time_complexity: 'O(n)',
+        space_complexity: 'O(1)',
+        comments: '',
+      },
+      code_quality: {
+        readability: 5,
+        correctness: 5,
+        maintainability: 5,
+        comments: '',
+      },
+      summary: {
+        final_score: feedbackScore,
+        comments: '',
+      },
+    };
+  }
+  return solve;
+};
 
 describe('evaluateCategoryProgress', () => {
   beforeAll(() => {
@@ -171,5 +196,49 @@ describe('evaluateCategoryProgress', () => {
     expect(result.estimatedScore).toBe(0);
     expect(result.confidenceLevel).toBe(0);
     expect(result.adjustedScore).toBe(0);
+  });
+
+  it('uses feedback final_score (normalized) over qualityScore', () => {
+    // Quality 0.5, Feedback 90 (0.9)
+    const solveWithFeedback = makeSolve(
+      'feedback-solve',
+      'Accepted',
+      Difficulty.Medium,
+      1,
+      0.5,
+      90,
+    );
+    const solveWithoutFeedback = makeSolve(
+      'no-feedback-solve',
+      'Accepted',
+      Difficulty.Medium,
+      1,
+      0.5,
+    );
+
+    // With feedback 90 (=0.9), score should be higher than with quality 0.5
+    const scoreWith = evaluateCategoryProgress([solveWithFeedback]).adjustedScore;
+    const scoreWithout = evaluateCategoryProgress([solveWithoutFeedback]).adjustedScore;
+
+    expect(scoreWith).toBeGreaterThan(scoreWithout);
+  });
+
+  it('uses feedback final_score over default if qualityScore is missing', () => {
+    // Quality undefined (default 0.8), Feedback 20 (0.2)
+    const solveWithFeedback = makeSolve(
+      'feedback-solve-2',
+      'Accepted',
+      Difficulty.Medium,
+      1,
+      undefined,
+      20,
+    );
+    const solveDefault = makeSolve('default-solve', 'Accepted', Difficulty.Medium, 1, undefined);
+
+    // With feedback 0.2, score should be lower than default 0.8
+    const scoreWith = evaluateCategoryProgress([solveWithFeedback]).adjustedScore;
+    const scoreDefault = evaluateCategoryProgress([solveDefault]).adjustedScore;
+
+    expect(scoreWith).toBeLessThan(scoreDefault);
   });
 });

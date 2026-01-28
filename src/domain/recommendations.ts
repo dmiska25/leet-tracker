@@ -172,8 +172,13 @@ async function getSuggestions(
       const latest = solved.reduce((a, b) => (a.timestamp > b.timestamp ? a : b));
       const daysAgo = Math.floor((nowMs - latest.timestamp * 1000) / 86_400_000);
       const boost = recencyBoost(daysAgo);
-      const quality =
-        latest.qualityScore ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
+
+      let quality = latest.qualityScore;
+      if (latest.feedback?.summary?.final_score !== undefined) {
+        quality = latest.feedback.summary.final_score / 100;
+      }
+      quality = quality ?? (latest.status === 'Accepted' ? DEFAULT_QUALITY_SCORE : 0);
+
       const refreshScore = (1 - quality) * boost * (0.7 + 0.3 * popularityScore);
 
       // add lastSolved so UI can show "Last solved …"
