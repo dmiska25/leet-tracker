@@ -74,7 +74,7 @@ adjustedScore = estimatedScore * confidenceLevel;
 - **Attempt Penalty:** Diminishes score if multiple failed attempts before success.
 - **Quality: Manually entered or GPT Calculated (Planned factor)**
 - **Confidence:** Measures how much relevant recent evidence you have in a category. Maxes out at ~20 weighted solves.
-- **Grouped Attempts:** Multiple attempts on the same problem within one day are grouped to avoid inflation.
+- **Grouped Attempts:** Multiple attempts on the same problem are grouped into "sessions" (defined by a 4-hour inactivity gap).
 
 You can read more about the scoring algorithm in the [Scoring Algorithm Deep Dive](docs/leet-tracker-scoring-doc.md).
 

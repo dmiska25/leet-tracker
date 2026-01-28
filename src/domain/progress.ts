@@ -1,5 +1,6 @@
 import { Difficulty, Solve } from '../types/types';
 import { CategoryProgress } from '../types/progress';
+import { groupSolvesBySession } from '../utils/solveGrouping';
 
 const DEFAULT_QUALITY_SCORE = 0.8;
 const SUGGESTED_CATEGORY_SOLVES = 20;
@@ -28,27 +29,15 @@ export function evaluateCategoryProgress(solves: Solve[]): Omit<CategoryProgress
     return { estimatedScore: 0, confidenceLevel: 0, adjustedScore: 0 };
   }
 
-  // Group by (problem, day)
-  const grouped: Record<string, Solve[]> = {};
-  for (const s of solves) {
-    // Fallback if tags/difficulty missing
-    if (!s.timestamp) continue;
-    const date = new Date(s.timestamp * 1000).toISOString().slice(0, 10);
-    // TODO: grouping by date is good but we should also consider
-    // that repeated problems over multiple days should also not be
-    // rewarded as highly as novel problems
-    // Also, note that timezone is not considered in grouping, so all timestamps are treated as UTC
-    // This will need to be addressed in the future
-    const key = `${s.slug}|${date}`;
-    (grouped[key] ||= []).push(s);
-  }
+  // Group by session (4h gap) instead of calendar day
+  const sessions = groupSolvesBySession(solves.filter((s) => !!s.timestamp));
 
   let totalScore = 0;
   let totalEvidence = 0;
   let totalEasyEquivalentEvidence = 0;
   const nowMs = Date.now();
 
-  for (const attempts of Object.values(grouped)) {
+  for (const attempts of sessions) {
     const accepted = attempts.filter((s) => s.status === 'Accepted');
     if (accepted.length === 0) continue;
 
